@@ -1,0 +1,4 @@
+Make sure you have /lib/dsp/dummy.dll64P in your rootfs.
+
+You can try putting dspdummy in the middle of normal gst-launch pipelines:
+gst-launch-0.10 videotestsrc ! dspdummy ! xvimagesink
