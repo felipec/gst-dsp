@@ -226,7 +226,8 @@ got_message(GstDspMp4vDec *self,
 	switch (command_id) {
 		case 0x0500:
 			pr_debug(self, "got flush");
-			g_comp_done(self->flush);
+			if (id == 0)
+				g_comp_done(self->flush);
 			break;
 		case 0x0600:
 			{
@@ -899,6 +900,7 @@ pad_event(GstPad *pad,
 
 			/* flush */
 			dsp_send_message(self->dsp_handle, self->node, 0x0500 | 0, 5, 0);
+			dsp_send_message(self->dsp_handle, self->node, 0x0500 | 1, 5, 0);
 
 			break;
 
