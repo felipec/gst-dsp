@@ -31,7 +31,6 @@
 #include "dsp_bridge.h"
 #include "log.h"
 
-#define ARM_BUFFER_ALIGNMENT 128
 #define ROUND_UP(num, scale) (((num) + ((scale) - 1)) & ~((scale) - 1))
 
 typedef struct
@@ -44,6 +43,7 @@ typedef struct
 	void *reserve;
 	void *map;
 	bool need_copy;
+	size_t alignment;
 } dmm_buffer_t;
 
 static inline dmm_buffer_t *
@@ -56,6 +56,7 @@ dmm_buffer_new(int handle,
 	pr_debug(NULL, "%p", b);
 	b->handle = handle;
 	b->node = node;
+	b->alignment = 128;
 
 	return b;
 }
@@ -118,12 +119,12 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 {
 	pr_debug(NULL, "%p", b);
 	free(b->allocated_data);
-#ifdef ARM_BUFFER_ALIGNMENT
-	posix_memalign(&b->allocated_data, ARM_BUFFER_ALIGNMENT, ROUND_UP(size, ARM_BUFFER_ALIGNMENT));
-	b->data = b->allocated_data;
-#else
-	b->data = b->allocated_data = malloc(size);
-#endif
+	if (b->alignment != 0) {
+		posix_memalign(&b->allocated_data, b->alignment, ROUND_UP(size, b->alignment));
+		b->data = b->allocated_data;
+	}
+	else
+		b->data = b->allocated_data = malloc(size);
 	b->size = size;
 	dmm_buffer_map(b);
 }

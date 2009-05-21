@@ -283,7 +283,7 @@ map_buffer(GstDspDummy *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf)
 {
-	if ((unsigned long) GST_BUFFER_DATA(g_buf) % ARM_BUFFER_ALIGNMENT == 0) {
+	if ((unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0) {
 		if (d_buf->data != GST_BUFFER_DATA(g_buf)) {
 			dmm_buffer_unmap(d_buf);
 			dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
@@ -292,7 +292,7 @@ map_buffer(GstDspDummy *self,
 	else {
 		GST_WARNING("buffer not aligned: %p, %lu",
 			    GST_BUFFER_DATA(g_buf),
-			    (unsigned long) GST_BUFFER_DATA(g_buf) % ARM_BUFFER_ALIGNMENT);
+			    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment);
 
 		/* reallocate? */
 		if (!d_buf->allocated_data ||
