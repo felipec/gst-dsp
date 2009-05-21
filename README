@@ -1,3 +1,9 @@
+== mp4vdec ==
+
+You'll need ringio.dll64P, usn.dll64P, and mp4vdec_sn.dll64P in your /lib/dsp directory.
+
+== dummy ==
+
 Make sure you have /lib/dsp/dummy.dll64P in your rootfs.
 
 You can try putting dspdummy in the middle of normal gst-launch pipelines:
