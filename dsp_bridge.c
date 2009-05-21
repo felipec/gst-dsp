@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009 Felipe Contreras
+ * Copyright (C) 2007 Texas Instruments, Incorporated
  *
  * Author: Felipe Contreras <felipe.contreras@gmail.com>
  *
@@ -31,6 +32,13 @@
 #include <stdlib.h> /* for free */
 
 #include <malloc.h> /* for memalign */
+
+#define ALLOCATE_SM
+
+#ifdef ALLOCATE_SM
+#include <malloc.h> /* for memalign */
+#include <sys/mman.h> /* for mmap */
+#endif
 
 int dsp_open(void)
 {
@@ -304,6 +312,244 @@ static inline bool dsp_node_delete(int handle,
 	return DSP_SUCCEEDED(ioctl(handle, 29, &arg));
 }
 
+#ifdef ALLOCATE_SM
+enum dsp_node_state
+{
+	NODE_ALLOCATED,
+	NODE_CREATED,
+	NODE_RUNNING,
+	NODE_PAUSED,
+	NODE_DONE
+};
+
+enum dsp_connect_type
+{
+	CONNECTTYPE_NODEOUTPUT,
+	CONNECTTYPE_GPPOUTPUT,
+	CONNECTTYPE_NODEINPUT,
+	CONNECTTYPE_GPPINPUT
+};
+
+struct dsp_stream_connect
+{
+	unsigned long cb;
+	enum dsp_connect_type type;
+	unsigned int index;
+	void *node;
+	dsp_uuid_t node_id;
+	unsigned int stream_index;
+};
+
+struct dsp_node_info
+{
+	unsigned long cb;
+	struct dsp_ndb_props props;
+	unsigned int priority;
+	enum dsp_node_state state;
+	void *owner;
+	unsigned int num_streams;
+	struct dsp_stream_connect streams[16];
+	unsigned int node_env;
+};
+
+struct dsp_node_attr
+{
+	unsigned long cb;
+	struct dsp_node_attr_in attr_in;
+	unsigned long inputs;
+	unsigned long outputs;
+	struct dsp_node_info info;
+};
+
+struct node_get_attr {
+	void *node_handle;
+	struct dsp_node_attr *attr;
+	unsigned int attr_size;
+};
+
+static inline bool dsp_node_get_attr(int handle,
+				     void *node_handle,
+				     struct dsp_node_attr *attr,
+				     size_t attr_size)
+{
+	struct node_get_attr arg = {
+		.node_handle = node_handle,
+		.attr = attr,
+		.attr_size = attr_size,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, 31, &arg));
+}
+
+struct dsp_buffer_attr
+{
+	unsigned long cb;
+	unsigned int segment;
+	unsigned int alignment;
+};
+
+struct node_alloc_buf {
+	void *node_handle;
+	unsigned int size;
+	struct dsp_buffer_attr *attr;
+	void **buffer;
+};
+
+static inline bool dsp_node_alloc_buf(int handle,
+				      void *node_handle,
+				      size_t size,
+				      struct dsp_buffer_attr *attr,
+				      void **buffer)
+{
+	struct node_alloc_buf arg = {
+		.node_handle = node_handle,
+		.size = size,
+		.attr = attr,
+		.buffer = buffer,
+	};
+
+	if (!DSP_SUCCEEDED(ioctl(handle, 25, &arg))) {
+		*buffer = NULL;
+		return false;
+	}
+
+	return true;
+}
+
+struct dsp_cmm_seg_info
+{
+	unsigned long base_pa;
+	unsigned long size;
+	unsigned long gpp_base_pa;
+	unsigned long gpp_size;
+	unsigned long dsp_base_va;
+	unsigned long dsp_size;
+	unsigned long use_count;
+	unsigned long base_va;
+};
+
+struct dsp_cmm_info
+{
+	unsigned long segments;
+	unsigned long use_count;
+	unsigned long min_block_size;
+	struct dsp_cmm_seg_info info[1];
+};
+
+struct cmm_get_handle {
+	void *proc_handle;
+	struct cmm_object **cmm;
+};
+
+struct cmm_get_info {
+	struct cmm_object *cmm;
+	struct dsp_cmm_info *info;
+};
+
+static inline bool get_cmm_info(int handle,
+				void *proc_handle,
+				struct dsp_cmm_info *cmm_info)
+{
+	struct cmm_object *cmm;
+	struct cmm_get_handle cmm_arg = {
+		.proc_handle = proc_handle,
+		.cmm = &cmm,
+	};
+	struct cmm_get_info cmm_info_arg = {
+		.info = cmm_info,
+	};
+
+	if (!DSP_SUCCEEDED(ioctl(handle, 52, &cmm_arg))) {
+		return false;
+	}
+
+	cmm_info_arg.cmm = cmm;
+	if (!DSP_SUCCEEDED(ioctl(handle, 53, &cmm_info_arg))) {
+		return false;
+	}
+
+	return true;
+}
+
+static inline bool allocate_segments(int handle,
+				     void *proc_handle,
+				     void *node_handle)
+{
+	struct dsp_cmm_info cmm_info;
+	struct dsp_node_attr attr;
+	enum dsp_node_type node_type;
+
+	if (!get_cmm_info(handle, proc_handle, &cmm_info)) {
+		return false;
+	}
+
+	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr))) {
+		return false;
+	}
+
+	node_type = attr.info.props.uNodeType;
+
+	if ((node_type != DSP_NODE_DEVICE) && (cmm_info.segments > 0))
+	{
+		struct dsp_cmm_seg_info *seg;
+
+		seg = &cmm_info.info[0];
+
+		if (seg->base_pa != 0 && seg->size > 0) {
+			void *base;
+			struct dsp_buffer_attr buffer_attr;
+
+			base = mmap(NULL, seg->size,
+				    PROT_READ | PROT_WRITE, MAP_SHARED | 0x2000 /* MAP_LOCKED */,
+				    handle, seg->base_pa);
+
+			// printf("segment: %p, size=%lu\n", base, seg->size);
+			if (!base)
+				return false;
+
+			buffer_attr.alignment = 0;
+			buffer_attr.segment = 1 | 0x10000000;
+			buffer_attr.cb = 0;
+			if (!dsp_node_alloc_buf(handle, node_handle, seg->size,
+						&buffer_attr, &base))
+			{
+				munmap(base, seg->size);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+#endif
+
+#ifdef ALLOCATE_HEAP
+struct get_uuid_props {
+	void *proc_handle;
+	const dsp_uuid_t *node_uuid;
+	struct dsp_ndb_props *props;
+};
+
+static inline bool get_uuid_props(int handle,
+				  void *proc_handle,
+				  const dsp_uuid_t *node_uuid,
+				  struct dsp_ndb_props *props)
+{
+	struct get_uuid_props arg = {
+		.proc_handle = proc_handle,
+		.node_uuid = node_uuid,
+		.props = props,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, 38, &arg));
+}
+
+#define PG_SIZE_4K 4096
+#define PG_MASK(pg_size) (~((pg_size)-1))
+#define PG_ALIGN_LOW(addr, pg_size) ((addr) & PG_MASK(pg_size))
+#define PG_ALIGN_HIGH(addr, pg_size) (((addr)+(pg_size)-1) & PG_MASK(pg_size))
+#endif
+
 struct node_allocate {
 	void *proc_handle;
 	const dsp_uuid_t *node_id;
@@ -328,11 +574,47 @@ bool dsp_node_allocate(int handle,
 		.ret_node = &node_handle,
 	};
 
+#ifdef ALLOCATE_HEAP
+	if (attrs) {
+		struct dsp_ndb_props props;
+
+		if (!get_uuid_props(handle, proc_handle, node_uuid, &props)) {
+			attrs->gpp_va = NULL;
+			return false;
+		}
+
+		if (attrs->profile_id < props.uCountProfiles) {
+			unsigned int heap_size = 0;
+
+			heap_size = props.aProfiles[attrs->profile_id].ulHeapSize;
+			if (heap_size) {
+				void *virtual = NULL;
+
+				heap_size = PG_ALIGN_HIGH(heap_size, PG_SIZE_4K);
+				virtual = memalign(128, heap_size);
+				if (!virtual)
+					return false;
+				attrs->heap_size = heap_size;
+				attrs->gpp_va = virtual;
+			}
+		}
+	}
+#endif
+
 	if (!DSP_SUCCEEDED(ioctl(handle, 24, &arg))) {
-		free(attrs->gpp_va);
-		attrs->gpp_va = NULL;
+		if (attrs) {
+			free(attrs->gpp_va);
+			attrs->gpp_va = NULL;
+		}
 		return false;
 	}
+
+#ifdef ALLOCATE_SM
+	if (!allocate_segments(handle, proc_handle, node_handle)) {
+		dsp_node_delete(handle, node_handle);
+		return false;
+	}
+#endif
 
 	*ret_node = node_handle;
 
@@ -342,7 +624,50 @@ bool dsp_node_allocate(int handle,
 bool dsp_node_free(int handle,
 		   void *node_handle)
 {
+#ifdef ALLOCATE_SM
+	struct dsp_cmm_info cmm_info;
+	struct dsp_node_attr attr;
+	enum dsp_node_type node_type;
+
+	if (!get_cmm_info(handle, NULL, &cmm_info)) {
+		return false;
+	}
+
+	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr))) {
+		return false;
+	}
+
+	node_type = attr.info.props.uNodeType;
+
+	if (node_type != DSP_NODE_DEVICE) {
+		struct dsp_cmm_seg_info *seg;
+
+		seg = &cmm_info.info[0];
+
+		if (seg->base_pa != 0 && seg->size > 0) {
+			void *base = NULL;
+			struct dsp_buffer_attr buffer_attr;
+
+			buffer_attr.alignment = 0;
+			buffer_attr.segment = 1 | 0x10000000;
+			if (!dsp_node_alloc_buf(handle, node_handle, 1,
+						&buffer_attr, &base))
+			{
+				return false;
+			}
+
+			if (base && munmap(base, seg->size) < 0) {
+				return false;
+			}
+		}
+	}
+#endif
+
 	dsp_node_delete(handle, node_handle);
+
+#ifdef ALLOCATE_HEAP
+	free(attr.attr_in.gpp_va);
+#endif
 
 	return true;
 }
