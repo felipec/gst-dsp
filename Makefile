@@ -1,8 +1,7 @@
 CC := gcc
-CFLAGS := -O2 -Wall -Werror -ansi -std=c99 -D_XOPEN_SOURCE=600
+CFLAGS := -O2 -ggdb -Wall -Wextra -Wno-unused-parameter -ansi -std=c99
 
-GLIB_CFLAGS := $(shell pkg-config --cflags glib-2.0)
-GLIB_LIBS := $(shell pkg-config --libs glib-2.0)
+override CFLAGS += -D_GNU_SOURCE
 
 GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10 gstreamer-base-0.10)
 GST_LIBS := $(shell pkg-config --libs gstreamer-0.10 gstreamer-base-0.10)
@@ -28,12 +27,7 @@ V = @
 Q = $(V:y=)
 QUIET_CC    = $(Q:@=@echo '   CC         '$@;)
 QUIET_LINK  = $(Q:@=@echo '   LINK       '$@;)
-QUIET_AR    = $(Q:@=@echo '   AR         '$@;)
 QUIET_CLEAN = $(Q:@=@echo '   CLEAN      '$@;)
-QUIET_DLL   = $(Q:@=@echo '   DLLCREATE  '$@;)
-
-%.a::
-	$(QUIET_AR)$(AR) rcs $@ $^
 
 %.o:: %.c
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
