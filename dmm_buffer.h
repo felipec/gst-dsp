@@ -28,6 +28,7 @@
 #include <stdlib.h> /* for calloc, free */
 
 #include "dsp_bridge.h"
+#include "log.h"
 
 #define DMM_PAGE_SIZE 4096
 #define ARM_BUFFER_ALIGNMENT 128
@@ -52,7 +53,7 @@ dmm_buffer_new(int handle,
 	dmm_buffer_t *b;
 	b = calloc(1, sizeof(*b));
 
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	b->handle = handle;
 	b->node = node;
 
@@ -62,7 +63,7 @@ dmm_buffer_new(int handle,
 static inline void
 dmm_buffer_free(dmm_buffer_t *b)
 {
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	if (b) {
 		free(b->allocated_data);
 		free(b);
@@ -73,7 +74,7 @@ static inline void
 dmm_buffer_map(dmm_buffer_t *b)
 {
 	size_t to_reserve;
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	to_reserve = ROUND_UP(b->size, DMM_PAGE_SIZE) + (2 * DMM_PAGE_SIZE);
 	dsp_reserve(b->handle, b->node, to_reserve, &b->reserve);
 	dsp_map(b->handle, b->node, b->data, b->size, b->reserve, &b->map, 0);
@@ -82,7 +83,7 @@ dmm_buffer_map(dmm_buffer_t *b)
 static inline void
 dmm_buffer_unmap(dmm_buffer_t *b)
 {
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	if (b->map) {
 		dsp_unmap(b->handle, b->node, b->map);
 		dsp_unreserve(b->handle, b->node, b->reserve);
@@ -92,14 +93,14 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 static inline void
 dmm_buffer_flush(dmm_buffer_t *b)
 {
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	dsp_flush(b->handle, b->node, b->data, b->size, 0);
 }
 
 static inline void
 dmm_buffer_invalidate(dmm_buffer_t *b)
 {
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	dsp_invalidate(b->handle, b->node, b->data, b->size);
 }
 
@@ -107,7 +108,7 @@ static inline void
 dmm_buffer_allocate(dmm_buffer_t *b,
 		    unsigned int size)
 {
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	free(b->allocated_data);
 #ifdef ARM_BUFFER_ALIGNMENT
 	posix_memalign(&b->allocated_data, ARM_BUFFER_ALIGNMENT, ROUND_UP(size, ARM_BUFFER_ALIGNMENT));
@@ -124,7 +125,7 @@ dmm_buffer_use(dmm_buffer_t *b,
 	       void *data,
 	       unsigned int size)
 {
-	pr_debug("%p", b);
+	pr_debug(NULL, "%p", b);
 	b->data = data;
 	b->size = size;
 	dmm_buffer_map(b);

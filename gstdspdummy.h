@@ -33,7 +33,6 @@ G_BEGIN_DECLS
 typedef struct GstDspDummy GstDspDummy;
 typedef struct GstDspDummyClass GstDspDummyClass;
 
-#define pr_debug(...)
 #include "dmm_buffer.h"
 
 struct GstDspDummy
