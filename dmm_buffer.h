@@ -65,6 +65,10 @@ dmm_buffer_free(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
 	if (b) {
+		if (b->map) {
+			dsp_unmap(b->handle, b->node, b->map);
+			dsp_unreserve(b->handle, b->node, b->reserve);
+		}
 		free(b->allocated_data);
 		free(b);
 	}
