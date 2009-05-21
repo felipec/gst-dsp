@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Nokia Corporation.
+ * Copyright (C) 2009 Felipe Contreras
  *
- * Author: Felipe Contreras <felipe.contreras@nokia.com>
+ * Author: Felipe Contreras <felipe.contreras@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
