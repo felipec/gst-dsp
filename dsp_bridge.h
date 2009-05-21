@@ -232,4 +232,20 @@ bool dsp_unregister(int handle,
 		    dsp_uuid_t *uuid,
 		    enum dsp_dcd_object_type type);
 
+static inline bool
+dsp_send_message(int handle,
+		 void *node_handle,
+		 uint32_t cmd,
+		 uint32_t arg_1,
+		 uint32_t arg_2)
+{
+	dsp_msg_t msg;
+
+	msg.cmd = cmd;
+	msg.arg_1 = arg_1;
+	msg.arg_2 = arg_2;
+
+	return dsp_node_put_message(handle, node_handle, &msg, -1);
+}
+
 #endif /* DSP_BRIDGE_H */
