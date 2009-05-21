@@ -68,27 +68,15 @@ static inline void
 g_sem_down_status(GSem *sem,
 		  const GstFlowReturn *status)
 {
+	GstFlowReturn ret;
 	g_mutex_lock(sem->mutex);
 
-	while (sem->count == 0 && *status == GST_FLOW_OK)
+	while (sem->count == 0 &&
+	       (ret = g_atomic_int_get(status)) == GST_FLOW_OK)
 		g_cond_wait(sem->condition, sem->mutex);
 
-	if (*status == GST_FLOW_OK)
+	if (ret == GST_FLOW_OK)
 		sem->count--;
-
-	g_mutex_unlock(sem->mutex);
-}
-
-static inline void
-g_sem_up_status(GSem *sem,
-		const GstFlowReturn *status)
-{
-	g_mutex_lock(sem->mutex);
-
-	if (*status == GST_FLOW_OK) {
-		sem->count++;
-		g_cond_signal(sem->condition);
-	}
 
 	g_mutex_unlock(sem->mutex);
 }
@@ -251,10 +239,12 @@ got_message(GstDspMp4vDec *self,
 
 				if (id == 1) {
 					self->out_buffer = b;
-					g_sem_up_status(self->port[1]->sem, &self->status);
+					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
+						g_sem_up(self->port[1]->sem);
 				}
 				else {
-					g_sem_up_status(self->port[0]->sem, &self->status);
+					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
+						g_sem_up(self->port[0]->sem);
 					if (b->user_data)
 						gst_buffer_unref(b->user_data);
 					dmm_buffer_free(b);
