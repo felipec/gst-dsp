@@ -341,7 +341,7 @@ output_loop(gpointer data)
 
 leave:
 	if (ret != GST_FLOW_OK) {
-		self->status = ret;
+		g_atomic_int_set(&self->status, ret);
 		gst_pad_pause_task(self->srcpad);
 	}
 
@@ -375,7 +375,7 @@ dsp_thread(gpointer data)
 		}
 		else {
 			pr_err(self, "wrong event index");
-			self->status = GST_FLOW_ERROR;
+			g_atomic_int_set(&self->status, GST_FLOW_ERROR);
 			goto leave;
 		}
 	}
@@ -708,7 +708,7 @@ change_state(GstElement *element,
 
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
 			self->done = TRUE;
-			self->status = GST_FLOW_WRONG_STATE;
+			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
 			g_sem_signal(self->port[0]->sem);
 			g_sem_signal(self->port[1]->sem);
 			break;
@@ -758,10 +758,8 @@ pad_chain(GstPad *pad,
 
 	pr_debug(self, "begin");
 
-	if (self->status != GST_FLOW_OK) {
-		ret = self->status;
+	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK)
 		goto leave;
-	}
 
 	d_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
 	d_buffer->alignment = 0;
@@ -897,7 +895,7 @@ pad_event(GstPad *pad,
 	switch (GST_EVENT_TYPE(event)) {
 		case GST_EVENT_FLUSH_START:
 			ret = gst_pad_push_event(self->srcpad, event);
-			self->status = GST_FLOW_WRONG_STATE;
+			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
 			self->out_buffer = NULL;
 
 			g_mutex_lock(self->ts_mutex);
@@ -920,7 +918,7 @@ pad_event(GstPad *pad,
 		case GST_EVENT_FLUSH_STOP:
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_comp_wait(self->flush);
-			self->status = GST_FLOW_OK;
+			g_atomic_int_set(&self->status, GST_FLOW_OK);
 
 			g_sem_reset(self->port[1]->sem, 0);
 			setup_output_buffers(self);
