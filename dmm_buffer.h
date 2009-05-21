@@ -26,11 +26,11 @@
 #define DMM_BUFFER_H
 
 #include <stdlib.h> /* for calloc, free */
+#include <unistd.h> /* for getpagesize */
 
 #include "dsp_bridge.h"
 #include "log.h"
 
-#define DMM_PAGE_SIZE 4096
 #define ARM_BUFFER_ALIGNMENT 128
 #define ROUND_UP(num, scale) (((num) + ((scale) - 1)) & ~((scale) - 1))
 
@@ -78,8 +78,10 @@ static inline void
 dmm_buffer_map(dmm_buffer_t *b)
 {
 	size_t to_reserve;
+	size_t page_size;
 	pr_debug(NULL, "%p", b);
-	to_reserve = ROUND_UP(b->size, DMM_PAGE_SIZE) + (2 * DMM_PAGE_SIZE);
+	page_size = getpagesize();
+	to_reserve = ROUND_UP(b->size, page_size) + page_size;
 	dsp_reserve(b->handle, b->node, to_reserve, &b->reserve);
 	dsp_map(b->handle, b->node, b->data, b->size, b->reserve, &b->map, 0);
 }
