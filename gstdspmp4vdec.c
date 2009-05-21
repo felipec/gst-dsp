@@ -283,8 +283,11 @@ output_loop(gpointer data)
 
 	b = self->out_buffer;
 
-	if (self->status != GST_FLOW_OK)
+	if (!b) {
+		pr_err(self, "out_buffer = NULL!");
+		ret = GST_FLOW_ERROR;
 		goto leave;
+	}
 
 	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
 						GST_BUFFER_OFFSET_NONE,
@@ -895,6 +898,7 @@ pad_event(GstPad *pad,
 		case GST_EVENT_FLUSH_START:
 			ret = gst_pad_push_event(self->srcpad, event);
 			self->status = GST_FLOW_WRONG_STATE;
+			self->out_buffer = NULL;
 
 			g_mutex_lock(self->ts_mutex);
 			self->ts = GST_CLOCK_TIME_NONE;
