@@ -19,15 +19,34 @@
  *
  */
 
-#ifndef GSTOMX_H
-#define GSTOMX_H
+#include "plugin.h"
 
-#include <gst/gst.h>
+#include "gstdspdummy.h"
 
-G_BEGIN_DECLS
+GstDebugCategory *gstdsp_debug;
 
-extern GstDebugCategory *gstdsp_debug;
+static gboolean
+plugin_init(GstPlugin *plugin)
+{
+#ifndef GST_DISABLE_GST_DEBUG
+	gstdsp_debug = _gst_debug_category_new("dsp", 0, "DSP stuff");
+#endif
 
-G_END_DECLS
+	if (!gst_element_register(plugin, "dspdummy", GST_RANK_PRIMARY, GST_DSP_DUMMY_TYPE))
+		return FALSE;
 
-#endif /* GSTOMX_H */
+	return TRUE;
+}
+
+GstPluginDesc gst_plugin_desc = {
+	.major_version = 0,
+	.minor_version = 10,
+	.name = "dsp",
+	.description = (gchar *) "Texas Instruments DSP elements",
+	.plugin_init = plugin_init,
+	.version = VERSION,
+	.license = "LGPL",
+	.source = "none",
+	.package = "none",
+	.origin = "none",
+};

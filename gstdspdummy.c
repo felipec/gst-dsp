@@ -20,7 +20,7 @@
  */
 
 #include "gstdspdummy.h"
-#include "gstdsp.h"
+#include "plugin.h"
 
 #include "dsp_bridge.h"
 
