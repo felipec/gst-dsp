@@ -891,6 +891,7 @@ pad_event(GstPad *pad,
 			g_mutex_unlock(self->ts_mutex);
 
 			g_sem_signal(self->port[0]->sem);
+			g_sem_signal(self->port[1]->sem);
 
 			gst_pad_pause_task(self->srcpad);
 
