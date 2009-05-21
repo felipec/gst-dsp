@@ -180,12 +180,9 @@ configure_dsp_node(int dsp_handle,
 		   dmm_buffer_t *input_buffer,
 		   dmm_buffer_t *output_buffer)
 {
-	dsp_msg_t msg;
-
-	msg.cmd = 0;
-	msg.arg_1 = (uint32_t) input_buffer->map;
-	msg.arg_2 = (uint32_t) output_buffer->map;
-	dsp_node_put_message(dsp_handle, node, &msg, -1);
+	dsp_send_message(dsp_handle, node, 0,
+			 (uint32_t) input_buffer->map,
+			 (uint32_t) output_buffer->map);
 }
 
 static gboolean
