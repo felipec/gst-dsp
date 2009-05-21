@@ -92,6 +92,7 @@ g_sem_up_status(GSem *sem,
 
 	g_mutex_unlock(sem->mutex);
 }
+
 static inline void
 g_sem_signal(GSem *sem)
 {
@@ -123,7 +124,7 @@ typedef struct
 
 static GstElementClass *parent_class;
 
-static GstCaps *
+static inline GstCaps *
 generate_sink_template(void)
 {
 	GstCaps *caps;
@@ -163,7 +164,7 @@ generate_sink_template(void)
 	return caps;
 }
 
-static GstCaps *
+static inline GstCaps *
 generate_src_template(void)
 {
 	GstCaps *caps;
@@ -212,7 +213,7 @@ struct foo_data {
 	unsigned short data[42];
 };
 
-static void
+static inline void
 got_message(GstDspMp4vDec *self,
 	    dsp_msg_t *msg)
 {
@@ -985,13 +986,13 @@ base_init(gpointer g_class)
 
 	template = gst_pad_template_new("src", GST_PAD_SRC,
 					GST_PAD_ALWAYS,
-					generate_src_template ());
+					generate_src_template());
 
 	gst_element_class_add_pad_template(element_class, template);
 
 	template = gst_pad_template_new("sink", GST_PAD_SINK,
 					GST_PAD_ALWAYS,
-					generate_sink_template ());
+					generate_sink_template());
 
 	gst_element_class_add_pad_template(element_class, template);
 }
