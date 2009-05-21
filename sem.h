@@ -19,38 +19,58 @@
  *
  */
 
-#include "plugin.h"
+#ifndef SEM_H
+#define SEM_H
 
-#include "gstdspdummy.h"
-#include "gstdspmp4vdec.h"
+#include <glib.h>
 
-GstDebugCategory *gstdsp_debug;
+typedef struct GSem GSem;
 
-static gboolean
-plugin_init(GstPlugin *plugin)
+struct GSem
 {
-#ifndef GST_DISABLE_GST_DEBUG
-	gstdsp_debug = _gst_debug_category_new("dsp", 0, "DSP stuff");
-#endif
+	GCond *condition;
+	GMutex *mutex;
+	guint count;
+};
 
-	if (!gst_element_register(plugin, "dspdummy", GST_RANK_PRIMARY, GST_DSP_DUMMY_TYPE))
-		return FALSE;
+static inline GSem *
+g_sem_new(guint count)
+{
+	GSem *sem;
 
-	if (!gst_element_register(plugin, "dspmp4vdec", GST_RANK_PRIMARY, GST_DSP_MP4VDEC_TYPE))
-		return FALSE;
+	sem = g_new(GSem, 1);
+	sem->condition = g_cond_new();
+	sem->mutex = g_mutex_new();
+	sem->count = count;
 
-	return TRUE;
+	return sem;
 }
 
-GstPluginDesc gst_plugin_desc = {
-	.major_version = 0,
-	.minor_version = 10,
-	.name = "dsp",
-	.description = (gchar *) "Texas Instruments DSP elements",
-	.plugin_init = plugin_init,
-	.version = VERSION,
-	.license = "LGPL",
-	.source = "none",
-	.package = "none",
-	.origin = "none",
-};
+static inline void
+g_sem_free(GSem *sem)
+{
+	g_cond_free(sem->condition);
+	g_mutex_free(sem->mutex);
+	g_free(sem);
+}
+
+static inline void
+g_sem_down(GSem *sem)
+{
+	g_mutex_lock(sem->mutex);
+	while (sem->count == 0)
+		g_cond_wait(sem->condition, sem->mutex);
+	sem->count--;
+	g_mutex_unlock(sem->mutex);
+}
+
+static inline void
+g_sem_up(GSem *sem)
+{
+	g_mutex_lock(sem->mutex);
+	sem->count++;
+	g_cond_signal(sem->condition);
+	g_mutex_unlock(sem->mutex);
+}
+
+#endif /* SEM_H */
