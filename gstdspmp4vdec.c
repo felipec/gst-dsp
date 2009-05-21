@@ -101,6 +101,15 @@ g_sem_signal(GSem *sem)
 	g_mutex_unlock(sem->mutex);
 }
 
+static inline void
+g_sem_reset(GSem *sem,
+	    guint count)
+{
+	g_mutex_lock(sem->mutex);
+	sem->count = count;
+	g_mutex_unlock(sem->mutex);
+}
+
 typedef struct
 {
 	uint32_t buffer_data;
@@ -908,6 +917,9 @@ pad_event(GstPad *pad,
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_comp_wait(self->flush);
 			self->status = GST_FLOW_OK;
+
+			g_sem_reset(self->port[1]->sem, 0);
+			setup_output_buffers(self);
 
 			gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
 			break;
