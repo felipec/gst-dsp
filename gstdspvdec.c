@@ -179,38 +179,6 @@ generate_src_template(void)
 	return caps;
 }
 
-struct mp4vdec_args
-{
-	uint16_t num_streams;
-
-	uint16_t in_id;
-	uint16_t in_type;
-	uint16_t in_count;
-
-	uint16_t out_id;
-	uint16_t out_type;
-	uint16_t out_count;
-
-	uint16_t reserved;
-
-	uint32_t max_width;
-	uint32_t max_height;
-	uint32_t color_format;
-	uint32_t max_framerate;
-	uint32_t max_bitrate;
-	uint32_t endianness;
-	uint32_t profile;
-	int32_t max_level;
-	uint32_t mode;
-	int32_t preroll;
-	uint32_t display_width;
-};
-
-struct foo_data {
-	unsigned long size;
-	unsigned short data[42];
-};
-
 static inline void
 got_message(GstDspVDec *self,
 	    dsp_msg_t *msg)
@@ -418,6 +386,38 @@ leave:
 
 	return NULL;
 }
+
+struct foo_data {
+	unsigned long size;
+	unsigned short data[42];
+};
+
+struct mp4vdec_args
+{
+	uint16_t num_streams;
+
+	uint16_t in_id;
+	uint16_t in_type;
+	uint16_t in_count;
+
+	uint16_t out_id;
+	uint16_t out_type;
+	uint16_t out_count;
+
+	uint16_t reserved;
+
+	uint32_t max_width;
+	uint32_t max_height;
+	uint32_t color_format;
+	uint32_t max_framerate;
+	uint32_t max_bitrate;
+	uint32_t endianness;
+	uint32_t profile;
+	int32_t max_level;
+	uint32_t mode;
+	int32_t preroll;
+	uint32_t display_width;
+};
 
 static inline void *
 create_node(GstDspVDec *self,
