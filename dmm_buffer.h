@@ -116,8 +116,14 @@ dmm_buffer_reserve(dmm_buffer_t *b,
 	size_t to_reserve;
 	size_t page_size;
 	page_size = getpagesize();
+	if (b->reserve) {
+		if (ROUND_UP(size, page_size) <= ROUND_UP(b->size, page_size))
+			goto leave;
+		dsp_unreserve(b->handle, b->node, b->reserve);
+	}
 	to_reserve = ROUND_UP(size, page_size) + page_size;
 	dsp_reserve(b->handle, b->node, to_reserve, &b->reserve);
+leave:
 	b->size = size;
 }
 
