@@ -80,6 +80,8 @@ static inline void
 dmm_buffer_map(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
+	if (b->map)
+		dsp_unmap(b->handle, b->node, b->map);
 	dsp_map(b->handle, b->node, b->data, b->size, b->reserve, &b->map, 0);
 }
 
