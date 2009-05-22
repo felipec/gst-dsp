@@ -44,6 +44,10 @@ typedef struct {
 	GSem *sem;
 } du_port_t;
 
+enum {
+	GSTDSP_MPEG4VDEC,
+};
+
 struct GstDspVDec
 {
 	GstElement element;
@@ -68,6 +72,7 @@ struct GstDspVDec
 #endif
 	GSem *flush;
 	dmm_buffer_t *array[4];
+	guint alg;
 };
 
 struct GstDspVDecClass

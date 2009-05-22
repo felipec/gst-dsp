@@ -420,11 +420,46 @@ struct mp4vdec_args
 };
 
 static inline void *
+get_mp4v_args(GstDspVDec *self)
+{
+	struct mp4vdec_args args = {
+		.num_streams = 2,
+		.in_id = 0,
+		.in_type = 0,
+		.in_count = self->port[0]->buffer_count,
+		.out_id = 1,
+		.out_type = 0,
+		.out_count = self->port[1]->buffer_count,
+		.max_width = 848,
+		.max_height = 480,
+		.color_format = 4,
+		.max_framerate = 0,
+		.max_bitrate = -1,
+		.endianness = 1,
+		.profile = 0,
+		.max_level = -1,
+		.mode = 0,
+		.preroll = 0,
+		.display_width = 0,
+	};
+
+	struct foo_data *cb_data;
+
+	cb_data = malloc(sizeof(*cb_data));
+	cb_data->size = sizeof(args);
+	memcpy(&cb_data->data, &args, sizeof(args));
+
+	return cb_data;
+}
+
+static inline void *
 create_node(GstDspVDec *self,
 	    int dsp_handle,
 	    void *proc)
 {
 	void *node;
+	const dsp_uuid_t *alg_uuid;
+	const char *alg_fn;
 	const dsp_uuid_t mp4v_dec_uuid = { 0x7e4b8541, 0x47a1, 0x11d6, 0xb1, 0x56,
 		{ 0x00, 0xb0, 0xd0, 0x17, 0x67, 0x4b } };
 
@@ -444,12 +479,22 @@ create_node(GstDspVDec *self,
 		return NULL;
 	}
 
-	if (!dsp_register(dsp_handle, &mp4v_dec_uuid, DSP_DCD_LIBRARYTYPE, "/lib/dsp/mp4vdec_sn.dll64P")) {
+	switch (self->alg) {
+		case GSTDSP_MPEG4VDEC:
+			alg_uuid = &mp4v_dec_uuid;
+			alg_fn = "/lib/dsp/mp4vdec_sn.dll64P";
+			break;
+		default:
+			pr_err(self, "unknown algorithm");
+			return NULL;
+	}
+
+	if (!dsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
 		pr_err(self, "failed to register mp4vdec node library");
 		return NULL;
 	}
 
-	if (!dsp_register(dsp_handle, &mp4v_dec_uuid, DSP_DCD_NODETYPE, "/lib/dsp/mp4vdec_sn.dll64P")) {
+	if (!dsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
 		pr_err(self, "failed to register mp4vdec node");
 		return NULL;
 	}
@@ -459,42 +504,26 @@ create_node(GstDspVDec *self,
 			.cb = sizeof(attrs),
 			.priority = 5,
 			.timeout = 1000,
-			.profile_id = 4,
 			.heap_size = 0,
 			.gpp_va = 0,
 		};
+		void *cb_data;
 
-		struct mp4vdec_args args = {
-			.num_streams = 2,
-			.in_id = 0,
-			.in_type = 0,
-			.in_count = self->port[0]->buffer_count,
-			.out_id = 1,
-			.out_type = 0,
-			.out_count = self->port[1]->buffer_count,
-			.max_width = 848,
-			.max_height = 480,
-			.color_format = 4,
-			.max_framerate = 0,
-			.max_bitrate = -1,
-			.endianness = 1,
-			.profile = 0,
-			.max_level = -1,
-			.mode = 0,
-			.preroll = 0,
-			.display_width = 0,
-		};
+		switch (self->alg) {
+			case GSTDSP_MPEG4VDEC:
+				attrs.profile_id = 4;
+				cb_data = get_mp4v_args(self);
+				break;
+			default:
+				cb_data = NULL;
+		}
 
-		struct foo_data cb_data = {
-			.size = sizeof(args),
-		};
-
-		memcpy(&cb_data.data, &args, sizeof(args));
-
-		if (!dsp_node_allocate(dsp_handle, proc, &mp4v_dec_uuid, &cb_data, &attrs, &node)) {
+		if (!dsp_node_allocate(dsp_handle, proc, alg_uuid, cb_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
+			free(cb_data);
 			return NULL;
 		}
+		free(cb_data);
 	}
 
 	if (!dsp_node_create(dsp_handle, node)) {
@@ -883,6 +912,8 @@ sink_setcaps(GstPad *pad,
 	}
 
 	in_struc = gst_caps_get_structure(caps, 0);
+
+	self->alg = GSTDSP_MPEG4VDEC;
 
 	out_caps = gst_caps_new_empty();
 
