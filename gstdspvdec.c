@@ -653,7 +653,7 @@ dsp_stop(GstDspVDec *self)
 	g_thread_join(self->dsp_thread);
 	gst_pad_pause_task(self->srcpad);
 
-	if (!dsp_node_terminate (self->dsp_handle, self->node, &exit_status)) {
+	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
 		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
 		return FALSE;
 	}
