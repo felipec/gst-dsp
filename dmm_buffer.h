@@ -66,14 +66,14 @@ static inline void
 dmm_buffer_free(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
-	if (b) {
-		if (b->map) {
-			dsp_unmap(b->handle, b->node, b->map);
-			dsp_unreserve(b->handle, b->node, b->reserve);
-		}
-		free(b->allocated_data);
-		free(b);
-	}
+	if (!b)
+		return;
+	if (b->map)
+		dsp_unmap(b->handle, b->node, b->map);
+	if (b->reserve)
+		dsp_unreserve(b->handle, b->node, b->reserve);
+	free(b->allocated_data);
+	free(b);
 }
 
 static inline void
@@ -92,10 +92,12 @@ static inline void
 dmm_buffer_unmap(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
-	if (b->map) {
-		dsp_unmap(b->handle, b->node, b->map);
-		dsp_unreserve(b->handle, b->node, b->reserve);
-	}
+	if (!b->map)
+		return;
+	dsp_unmap(b->handle, b->node, b->map);
+	dsp_unreserve(b->handle, b->node, b->reserve);
+	b->map = NULL;
+	b->reserve = NULL;
 }
 
 static inline void
