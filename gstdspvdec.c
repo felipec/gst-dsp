@@ -577,12 +577,6 @@ dsp_init(GstDspVDec *self)
 		dmm_buffer_allocate(p->buffer, sizeof(dsp_comm_t));
 	}
 
-	self->node = create_node(self, dsp_handle, self->proc);
-	if (!self->node) {
-		pr_err(self, "dsp node creation failed");
-		goto fail;
-	}
-
 	return TRUE;
 
 fail:
@@ -645,6 +639,12 @@ dsp_deinit(GstDspVDec *self)
 static gboolean
 dsp_start(GstDspVDec *self)
 {
+	self->node = create_node(self, self->dsp_handle, self->proc);
+	if (!self->node) {
+		pr_err(self, "dsp node creation failed");
+		return FALSE;
+	}
+
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node run failed");
 		return FALSE;
