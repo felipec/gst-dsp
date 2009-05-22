@@ -294,11 +294,6 @@ output_loop(gpointer data)
 	if (b->user_data) {
 		out_buf = b->user_data;
 		map_buffer(self, new_buf, b);
-		if (b->need_copy) {
-			pr_warning(self, "buffer not aligned: %p, %lu",
-				   GST_BUFFER_DATA(new_buf),
-				   (unsigned long) GST_BUFFER_DATA(new_buf) % b->alignment);
-		}
 	}
 	else {
 		out_buf = new_buf;
@@ -624,13 +619,19 @@ map_buffer(GstDspMp4vDec *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf)
 {
-	if (d_buf->alignment == 0||
+	if (d_buf->alignment == 0 ||
 	    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0)
 	{
 		if (d_buf->data != GST_BUFFER_DATA(g_buf))
 			dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
 		d_buf->user_data = g_buf;
 		return;
+	}
+
+	if (d_buf->alignment != 0) {
+		pr_warning(self, "buffer not aligned: %p, %lu",
+			   GST_BUFFER_DATA(g_buf),
+			   (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment);
 	}
 
 	/* reallocate? */
@@ -802,14 +803,8 @@ setup_output_buffers(GstDspMp4vDec *self)
 
 		b = dmm_buffer_new(self->dsp_handle, self->proc);
 
-		if (G_LIKELY(buf)) {
+		if (G_LIKELY(buf))
 			map_buffer(self, buf, b);
-			if (b->need_copy) {
-				pr_warning(self, "buffer not aligned: %p, %lu",
-					   GST_BUFFER_DATA(buf),
-					   (unsigned long) GST_BUFFER_DATA(buf) % b->alignment);
-			}
-		}
 		else {
 			dmm_buffer_allocate(b, self->output_buffer_size);
 			b->need_copy = true;
