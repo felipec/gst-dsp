@@ -134,6 +134,7 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 		    size_t size)
 {
 	pr_debug(NULL, "%p", b);
+	dmm_buffer_unmap(b);
 	free(b->allocated_data);
 	if (b->alignment != 0) {
 		posix_memalign(&b->allocated_data, b->alignment, ROUND_UP(size, b->alignment));
@@ -151,6 +152,7 @@ dmm_buffer_use(dmm_buffer_t *b,
 	       size_t size)
 {
 	pr_debug(NULL, "%p", b);
+	dmm_buffer_unmap(b);
 	b->data = data;
 	dmm_buffer_reserve(b, size);
 	dmm_buffer_map(b);
