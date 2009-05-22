@@ -235,7 +235,6 @@ got_message(GstDspMp4vDec *self,
 				pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 
 				b = (void *) msg_data->user_data;
-				dmm_buffer_free(cur);
 
 				if (id == 1) {
 					self->out_buffer = b;
@@ -485,6 +484,7 @@ static gboolean
 dsp_init(GstDspMp4vDec *self)
 {
 	int dsp_handle;
+	guint i;
 
 	self->dsp_handle = dsp_handle = dsp_open();
 
@@ -496,6 +496,12 @@ dsp_init(GstDspMp4vDec *self)
 	if (!dsp_attach(dsp_handle, 0, NULL, &self->proc)) {
 		pr_err(self, "dsp attach failed");
 		goto fail;
+	}
+
+	for (i = 0; i < 2; i++) {
+		du_port_t *p = self->port[i];
+		p->buffer = dmm_buffer_new(self->dsp_handle, self->proc);
+		dmm_buffer_allocate(p->buffer, sizeof(dsp_comm_t));
 	}
 
 	self->node = create_node(self, dsp_handle, self->proc);
@@ -528,6 +534,7 @@ static gboolean
 dsp_deinit(GstDspMp4vDec *self)
 {
 	gboolean ret = TRUE;
+	guint i;
 
 	if (self->node) {
 		if (!destroy_node(self, self->dsp_handle, self->node)) {
@@ -536,6 +543,11 @@ dsp_deinit(GstDspMp4vDec *self)
 		}
 
 		self->node = NULL;
+	}
+
+	for (i = 0; i < 2; i++) {
+		du_port_t *p = self->port[i];
+		dmm_buffer_free(p->buffer);
 	}
 
 	if (self->proc) {
@@ -643,9 +655,7 @@ send_buffer(GstDspMp4vDec *self,
 
 	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
 
-	tmp = dmm_buffer_new(self->dsp_handle, self->proc);
-	dmm_buffer_allocate(tmp, sizeof(*msg_data));
-
+	tmp = self->port[id]->buffer;
 	msg_data = tmp->data;
 
 	memset(msg_data, 0, sizeof(*msg_data));
@@ -658,8 +668,6 @@ send_buffer(GstDspMp4vDec *self,
 	msg_data->user_data = (uint32_t) buffer;
 
 	dmm_buffer_flush(tmp, sizeof(*msg_data));
-
-	self->port[id]->buffer = tmp;
 
 	dsp_send_message(self->dsp_handle, self->node,
 			 0x0600 | id, (uint32_t) tmp->map, 0);
