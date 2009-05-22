@@ -159,6 +159,11 @@ generate_sink_template(void)
 
 	gst_caps_append_structure(caps, struc);
 
+	struc = gst_structure_new("video/x-h264",
+				  NULL);
+
+	gst_caps_append_structure(caps, struc);
+
 	return caps;
 }
 
@@ -452,6 +457,68 @@ get_mp4v_args(GstDspVDec *self)
 	return cb_data;
 }
 
+struct h264vdec_args
+{
+	uint16_t num_streams;
+
+	uint16_t in_id;
+	uint16_t in_type;
+	uint16_t in_count;
+
+	uint16_t out_id;
+	uint16_t out_type;
+	uint16_t out_count;
+
+	uint16_t reserved;
+
+	uint32_t max_width;
+	uint32_t max_height;
+	uint32_t color_format;
+	uint32_t max_framerate;
+	uint32_t max_bitrate;
+	uint32_t endianness;
+	uint32_t profile;
+	int32_t max_level;
+	uint32_t mode;
+	int32_t preroll;
+	uint32_t stream_format;
+	uint32_t display_width;
+};
+
+static inline void *
+get_h264_args(GstDspVDec *self)
+{
+	struct h264vdec_args args = {
+		.num_streams = 2,
+		.in_id = 0,
+		.in_type = 0,
+		.in_count = self->port[0]->buffer_count,
+		.out_id = 1,
+		.out_type = 0,
+		.out_count = self->port[1]->buffer_count,
+		.max_width = 848,
+		.max_height = 480,
+		.color_format = 1,
+		.max_framerate = 0,
+		.max_bitrate = -1,
+		.endianness = 1,
+		.profile = 0,
+		.max_level = -1,
+		.mode = 0,
+		.preroll = 0,
+		.stream_format = 0,
+		.display_width = 0,
+	};
+
+	struct foo_data *cb_data;
+
+	cb_data = malloc(sizeof(*cb_data));
+	cb_data->size = sizeof(args);
+	memcpy(&cb_data->data, &args, sizeof(args));
+
+	return cb_data;
+}
+
 static inline void *
 create_node(GstDspVDec *self,
 	    int dsp_handle,
@@ -462,6 +529,9 @@ create_node(GstDspVDec *self,
 	const char *alg_fn;
 	const dsp_uuid_t mp4v_dec_uuid = { 0x7e4b8541, 0x47a1, 0x11d6, 0xb1, 0x56,
 		{ 0x00, 0xb0, 0xd0, 0x17, 0x67, 0x4b } };
+
+	const dsp_uuid_t h264v_dec_uuid = { 0xCB1E9F0F, 0x9D5A, 0x4434, 0x84, 0x49,
+	    { 0x1F, 0xED, 0x2F, 0x99, 0x2D, 0xF7 } };
 
 	const dsp_uuid_t usn_uuid = { 0x79A3C8B3, 0x95F2, 0x403F, 0x9A, 0x4B,
 		{ 0xCF, 0x80, 0x57, 0x73, 0x05, 0x41 } };
@@ -483,6 +553,10 @@ create_node(GstDspVDec *self,
 		case GSTDSP_MPEG4VDEC:
 			alg_uuid = &mp4v_dec_uuid;
 			alg_fn = "/lib/dsp/mp4vdec_sn.dll64P";
+			break;
+		case GSTDSP_H264DEC:
+			alg_uuid = &h264v_dec_uuid;
+			alg_fn = "/lib/dsp/h264vdec_sn.dll64P";
 			break;
 		default:
 			pr_err(self, "unknown algorithm");
@@ -513,6 +587,10 @@ create_node(GstDspVDec *self,
 			case GSTDSP_MPEG4VDEC:
 				attrs.profile_id = 4;
 				cb_data = get_mp4v_args(self);
+				break;
+			case GSTDSP_H264DEC:
+				attrs.profile_id = 3;
+				cb_data = get_h264_args(self);
 				break;
 			default:
 				cb_data = NULL;
@@ -898,6 +976,7 @@ sink_setcaps(GstPad *pad,
 	GstStructure *in_struc;
 	GstCaps *out_caps;
 	GstStructure *out_struc;
+	const char *name;
 
 	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 
@@ -909,7 +988,11 @@ sink_setcaps(GstPad *pad,
 
 	in_struc = gst_caps_get_structure(caps, 0);
 
-	self->alg = GSTDSP_MPEG4VDEC;
+	name = gst_structure_get_name(in_struc);
+	if (strcmp(name, "video/x-h264") == 0)
+		self->alg = GSTDSP_H264DEC;
+	else
+		self->alg = GSTDSP_MPEG4VDEC;
 
 	out_caps = gst_caps_new_empty();
 

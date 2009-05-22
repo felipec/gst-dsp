@@ -46,6 +46,7 @@ typedef struct {
 
 enum {
 	GSTDSP_MPEG4VDEC,
+	GSTDSP_H264DEC,
 };
 
 struct GstDspVDec
