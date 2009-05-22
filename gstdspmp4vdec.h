@@ -68,6 +68,7 @@ struct GstDspMp4vDec
 	gulong ts_count;
 #endif
 	GComp *flush;
+	dmm_buffer_t *array[4];
 };
 
 struct GstDspMp4vDecClass

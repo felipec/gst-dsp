@@ -29,6 +29,7 @@
 #include "log.h"
 
 #define GST_CAT_DEFAULT gstdsp_debug
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 static inline bool
 send_buffer(GstDspMp4vDec *self,
@@ -255,6 +256,48 @@ got_message(GstDspMp4vDec *self,
 	}
 }
 
+static inline dmm_buffer_t *
+get_slot(GstDspMp4vDec *self,
+	 GstBuffer *new_buf)
+{
+	guint i;
+	dmm_buffer_t *b = NULL;
+
+	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
+		dmm_buffer_t *cur = self->array[i];
+		if (cur && !cur->used) {
+			if (cur->data == GST_BUFFER_DATA(new_buf)) {
+				b = cur;
+				b->user_data = new_buf;
+				return b;
+			}
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
+		dmm_buffer_t *cur = self->array[i];
+		if (!cur) {
+			b = dmm_buffer_new(self->dsp_handle, self->proc);
+			self->array[i] = b;
+			goto found;
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
+		dmm_buffer_t *cur = self->array[i];
+		if (cur && !cur->used) {
+			b = cur;
+			goto found;
+		}
+	}
+
+	return NULL;
+
+found:
+	map_buffer(self, new_buf, b);
+	return b;
+}
+
 static void
 output_loop(gpointer data)
 {
@@ -278,6 +321,8 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
+	b->used = FALSE;
+
 	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
 						GST_BUFFER_OFFSET_NONE,
 						self->output_buffer_size,
@@ -292,8 +337,13 @@ output_loop(gpointer data)
 	dmm_buffer_invalidate(b, b->size);
 
 	if (b->user_data) {
+		dmm_buffer_t *tmp;
 		out_buf = b->user_data;
-		map_buffer(self, new_buf, b);
+		b->user_data = NULL;
+		tmp = get_slot(self, new_buf);
+		if (tmp)
+			b = tmp;
+		b->used = TRUE;
 	}
 	else {
 		out_buf = new_buf;
@@ -802,6 +852,8 @@ setup_output_buffers(GstDspMp4vDec *self)
 						  &buf);
 
 		b = dmm_buffer_new(self->dsp_handle, self->proc);
+		b->used = TRUE;
+		self->array[i] = b;
 
 		if (G_LIKELY(buf))
 			map_buffer(self, buf, b);

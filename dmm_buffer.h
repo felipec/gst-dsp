@@ -45,6 +45,7 @@ typedef struct
 	bool need_copy;
 	size_t alignment;
 	void *user_data;
+	bool used;
 } dmm_buffer_t;
 
 static inline dmm_buffer_t *
