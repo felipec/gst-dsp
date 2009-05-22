@@ -22,7 +22,7 @@
 #include "plugin.h"
 
 #include "gstdspdummy.h"
-#include "gstdspmp4vdec.h"
+#include "gstdspvdec.h"
 
 GstDebugCategory *gstdsp_debug;
 
@@ -36,7 +36,7 @@ plugin_init(GstPlugin *plugin)
 	if (!gst_element_register(plugin, "dspdummy", GST_RANK_PRIMARY, GST_DSP_DUMMY_TYPE))
 		return FALSE;
 
-	if (!gst_element_register(plugin, "dspmp4vdec", GST_RANK_PRIMARY, GST_DSP_MP4VDEC_TYPE))
+	if (!gst_element_register(plugin, "dspvdec", GST_RANK_PRIMARY, GST_DSP_VDEC_TYPE))
 		return FALSE;
 
 	return TRUE;

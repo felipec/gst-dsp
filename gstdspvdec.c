@@ -19,7 +19,7 @@
  *
  */
 
-#include "gstdspmp4vdec.h"
+#include "gstdspvdec.h"
 #include "plugin.h"
 
 #include "dsp_bridge.h"
@@ -32,13 +32,13 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 static inline bool
-send_buffer(GstDspMp4vDec *self,
+send_buffer(GstDspVDec *self,
 	    dmm_buffer_t *buffer,
 	    unsigned int id,
 	    size_t len);
 
 static inline void
-map_buffer(GstDspMp4vDec *self,
+map_buffer(GstDspVDec *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf);
 
@@ -212,7 +212,7 @@ struct foo_data {
 };
 
 static inline void
-got_message(GstDspMp4vDec *self,
+got_message(GstDspVDec *self,
 	    dsp_msg_t *msg)
 {
 	uint32_t id;
@@ -256,7 +256,7 @@ got_message(GstDspMp4vDec *self,
 }
 
 static inline dmm_buffer_t *
-get_slot(GstDspMp4vDec *self,
+get_slot(GstDspVDec *self,
 	 GstBuffer *new_buf)
 {
 	guint i;
@@ -301,13 +301,13 @@ static void
 output_loop(gpointer data)
 {
 	GstPad *pad;
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 	GstFlowReturn ret = GST_FLOW_OK;
 	GstBuffer *new_buf, *out_buf;
 	dmm_buffer_t *b;
 
 	pad = data;
-	self = GST_DSP_MP4VDEC(gst_pad_get_parent(pad));
+	self = GST_DSP_VDEC(gst_pad_get_parent(pad));
 
 	pr_debug(self, "begin");
 	g_sem_down_status(self->port[1]->sem, &self->status);
@@ -384,7 +384,7 @@ leave:
 gpointer
 dsp_thread(gpointer data)
 {
-	GstDspMp4vDec *self = data;
+	GstDspVDec *self = data;
 
 	pr_info(self, "begin");
 
@@ -420,7 +420,7 @@ leave:
 }
 
 static inline void *
-create_node(GstDspMp4vDec *self,
+create_node(GstDspVDec *self,
 	    int dsp_handle,
 	    void *proc)
 {
@@ -508,7 +508,7 @@ create_node(GstDspMp4vDec *self,
 }
 
 static inline bool
-destroy_node(GstDspMp4vDec *self,
+destroy_node(GstDspVDec *self,
 	     int dsp_handle,
 	     void *node)
 {
@@ -525,7 +525,7 @@ destroy_node(GstDspMp4vDec *self,
 }
 
 static gboolean
-dsp_init(GstDspMp4vDec *self)
+dsp_init(GstDspVDec *self)
 {
 	int dsp_handle;
 	guint i;
@@ -575,7 +575,7 @@ fail:
 }
 
 static gboolean
-dsp_deinit(GstDspMp4vDec *self)
+dsp_deinit(GstDspVDec *self)
 {
 	gboolean ret = TRUE;
 	guint i;
@@ -614,7 +614,7 @@ dsp_deinit(GstDspMp4vDec *self)
 }
 
 static gboolean
-dsp_start(GstDspMp4vDec *self)
+dsp_start(GstDspVDec *self)
 {
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node run failed");
@@ -643,7 +643,7 @@ dsp_start(GstDspMp4vDec *self)
 }
 
 static gboolean
-dsp_stop(GstDspMp4vDec *self)
+dsp_stop(GstDspVDec *self)
 {
 	unsigned long exit_status;
 
@@ -664,7 +664,7 @@ dsp_stop(GstDspMp4vDec *self)
 }
 
 static inline void
-map_buffer(GstDspMp4vDec *self,
+map_buffer(GstDspVDec *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf)
 {
@@ -692,7 +692,7 @@ map_buffer(GstDspMp4vDec *self,
 }
 
 static inline bool
-send_buffer(GstDspMp4vDec *self,
+send_buffer(GstDspVDec *self,
 	    dmm_buffer_t *buffer,
 	    unsigned int id,
 	    size_t len)
@@ -727,9 +727,9 @@ change_state(GstElement *element,
 	     GstStateChange transition)
 {
 	GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 
-	self = GST_DSP_MP4VDEC(element);
+	self = GST_DSP_VDEC(element);
 
 	pr_info(self, "%s -> %s",
 		gst_element_state_get_name(GST_STATE_TRANSITION_CURRENT(transition)),
@@ -795,11 +795,11 @@ static GstFlowReturn
 pad_chain(GstPad *pad,
 	  GstBuffer *buf)
 {
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 	dmm_buffer_t *d_buffer;
 	GstFlowReturn ret = GST_FLOW_OK;
 
-	self = GST_DSP_MP4VDEC(GST_OBJECT_PARENT(pad));
+	self = GST_DSP_VDEC(GST_OBJECT_PARENT(pad));
 
 	pr_debug(self, "begin");
 
@@ -836,7 +836,7 @@ leave:
 }
 
 static inline void
-setup_output_buffers(GstDspMp4vDec *self)
+setup_output_buffers(GstDspVDec *self)
 {
 	dmm_buffer_t *b;
 	guint i;
@@ -869,12 +869,12 @@ static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
 {
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 	GstStructure *in_struc;
 	GstCaps *out_caps;
 	GstStructure *out_struc;
 
-	self = GST_DSP_MP4VDEC(GST_PAD_PARENT(pad));
+	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 
 	{
 		gchar *str = gst_caps_to_string(caps);
@@ -926,10 +926,10 @@ static gboolean
 pad_event(GstPad *pad,
 	  GstEvent *event)
 {
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 	gboolean ret = TRUE;
 
-	self = GST_DSP_MP4VDEC(GST_OBJECT_PARENT(pad));
+	self = GST_DSP_VDEC(GST_OBJECT_PARENT(pad));
 
 	pr_info(self, "event: %s", GST_EVENT_TYPE_NAME(event));
 
@@ -978,11 +978,11 @@ static void
 instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 	GstElementClass *element_class;
 
 	element_class = GST_ELEMENT_CLASS(g_class);
-	self = GST_DSP_MP4VDEC(instance);
+	self = GST_DSP_VDEC(instance);
 
 	self->sinkpad =
 		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "sink"), "sink");
@@ -1011,9 +1011,9 @@ instance_init(GTypeInstance *instance,
 static void
 finalize(GObject *obj)
 {
-	GstDspMp4vDec *self;
+	GstDspVDec *self;
 
-	self = GST_DSP_MP4VDEC(obj);
+	self = GST_DSP_VDEC(obj);
 
 	g_sem_free(self->flush);
 
@@ -1034,9 +1034,9 @@ base_init(gpointer g_class)
 
 	element_class = GST_ELEMENT_CLASS(g_class);
 
-	details.longname = "DSP MPEG-4 video decoder";
+	details.longname = "DSP video decoder";
 	details.klass = "Codec/Decoder/Video";
-	details.description = "Decodes video in MPEG-4 format with TI's DSP algorithms";
+	details.description = "Decodes video with TI's DSP algorithms";
 	details.author = "Felipe Contreras";
 
 	gst_element_class_set_details(element_class, &details);
@@ -1071,7 +1071,7 @@ class_init(gpointer g_class,
 }
 
 GType
-gst_dsp_mp4v_dec_get_type(void)
+gst_dsp_vdec_get_type(void)
 {
 	static GType type = 0;
 
@@ -1079,13 +1079,13 @@ gst_dsp_mp4v_dec_get_type(void)
 		GTypeInfo *type_info;
 
 		type_info = g_new0(GTypeInfo, 1);
-		type_info->class_size = sizeof(GstDspMp4vDecClass);
+		type_info->class_size = sizeof(GstDspVDecClass);
 		type_info->class_init = class_init;
 		type_info->base_init = base_init;
-		type_info->instance_size = sizeof(GstDspMp4vDec);
+		type_info->instance_size = sizeof(GstDspVDec);
 		type_info->instance_init = instance_init;
 
-		type = g_type_register_static(GST_TYPE_ELEMENT, "GstDspMp4vDec", type_info, 0);
+		type = g_type_register_static(GST_TYPE_ELEMENT, "GstDspVDec", type_info, 0);
 		g_free(type_info);
 	}
 

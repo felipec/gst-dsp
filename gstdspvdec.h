@@ -19,21 +19,21 @@
  *
  */
 
-#ifndef GST_DSP_MP4VDEC_H
-#define GST_DSP_MP4VDEC_H
+#ifndef GST_DSP_VDEC_H
+#define GST_DSP_VDEC_H
 
 #include <gst/gst.h>
 
 G_BEGIN_DECLS
 
-#define GST_DSP_MP4VDEC(obj) (GstDspMp4vDec *)(obj)
-#define GST_DSP_MP4VDEC_TYPE (gst_dsp_mp4v_dec_get_type())
-#define GST_DSP_MP4VDEC_CLASS(obj) (GstDspMp4vDecClass *)(obj)
+#define GST_DSP_VDEC(obj) (GstDspVDec *)(obj)
+#define GST_DSP_VDEC_TYPE (gst_dsp_vdec_get_type())
+#define GST_DSP_VDEC_CLASS(obj) (GstDspVDecClass *)(obj)
 
 /* #define TS_COUNT */
 
-typedef struct GstDspMp4vDec GstDspMp4vDec;
-typedef struct GstDspMp4vDecClass GstDspMp4vDecClass;
+typedef struct GstDspVDec GstDspVDec;
+typedef struct GstDspVDecClass GstDspVDecClass;
 
 #include "dmm_buffer.h"
 #include "sem.h"
@@ -44,7 +44,7 @@ typedef struct {
 	GSem *sem;
 } du_port_t;
 
-struct GstDspMp4vDec
+struct GstDspVDec
 {
 	GstElement element;
 
@@ -70,13 +70,13 @@ struct GstDspMp4vDec
 	dmm_buffer_t *array[4];
 };
 
-struct GstDspMp4vDecClass
+struct GstDspVDecClass
 {
 	GstElementClass parent_class;
 };
 
-GType gst_dsp_mp4v_dec_get_type(void);
+GType gst_dsp_vdec_get_type(void);
 
 G_END_DECLS
 
-#endif /* GST_DSP_MP4VDEC_H */
+#endif /* GST_DSP_VDEC_H */
