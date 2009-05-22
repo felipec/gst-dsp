@@ -224,8 +224,7 @@ got_message(GstDspMp4vDec *self,
 	switch (command_id) {
 		case 0x0500:
 			pr_debug(self, "got flush");
-			if (id == 0)
-				g_comp_done(self->flush);
+			g_sem_up(self->flush);
 			break;
 		case 0x0600:
 			{
@@ -949,8 +948,6 @@ pad_event(GstPad *pad,
 
 			gst_pad_pause_task(self->srcpad);
 
-			g_comp_init(self->flush);
-
 			/* flush */
 			dsp_send_message(self->dsp_handle, self->node, 0x0500 | 0, 5, 0);
 			dsp_send_message(self->dsp_handle, self->node, 0x0500 | 1, 5, 0);
@@ -959,7 +956,8 @@ pad_event(GstPad *pad,
 
 		case GST_EVENT_FLUSH_STOP:
 			ret = gst_pad_push_event(self->srcpad, event);
-			g_comp_wait(self->flush);
+			g_sem_down(self->flush); /* input */
+			g_sem_down(self->flush); /* output */
 			g_atomic_int_set(&self->status, GST_FLOW_OK);
 
 			g_sem_reset(self->port[1]->sem, 0);
@@ -1005,7 +1003,7 @@ instance_init(GTypeInstance *instance,
 
 	self->ts_mutex = g_mutex_new();
 
-	self->flush = g_comp_new();
+	self->flush = g_sem_new(0);
 
 	gst_pad_set_setcaps_function(self->sinkpad, sink_setcaps);
 }
@@ -1017,7 +1015,7 @@ finalize(GObject *obj)
 
 	self = GST_DSP_MP4VDEC(obj);
 
-	g_comp_free(self->flush);
+	g_sem_free(self->flush);
 
 	g_mutex_free(self->ts_mutex);
 

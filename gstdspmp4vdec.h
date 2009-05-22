@@ -37,7 +37,6 @@ typedef struct GstDspMp4vDecClass GstDspMp4vDecClass;
 
 #include "dmm_buffer.h"
 #include "sem.h"
-#include "comp.h"
 
 typedef struct {
 	guint buffer_count;
@@ -67,7 +66,7 @@ struct GstDspMp4vDec
 #ifdef TS_COUNT
 	gulong ts_count;
 #endif
-	GComp *flush;
+	GSem *flush;
 	dmm_buffer_t *array[4];
 };
 
