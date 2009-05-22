@@ -79,12 +79,7 @@ dmm_buffer_free(dmm_buffer_t *b)
 static inline void
 dmm_buffer_map(dmm_buffer_t *b)
 {
-	size_t to_reserve;
-	size_t page_size;
 	pr_debug(NULL, "%p", b);
-	page_size = getpagesize();
-	to_reserve = ROUND_UP(b->size, page_size) + page_size;
-	dsp_reserve(b->handle, b->node, to_reserve, &b->reserve);
 	dsp_map(b->handle, b->node, b->data, b->size, b->reserve, &b->map, 0);
 }
 
@@ -95,9 +90,7 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 	if (!b->map)
 		return;
 	dsp_unmap(b->handle, b->node, b->map);
-	dsp_unreserve(b->handle, b->node, b->reserve);
 	b->map = NULL;
-	b->reserve = NULL;
 }
 
 static inline void
@@ -117,6 +110,18 @@ dmm_buffer_invalidate(dmm_buffer_t *b,
 }
 
 static inline void
+dmm_buffer_reserve(dmm_buffer_t *b,
+		   size_t size)
+{
+	size_t to_reserve;
+	size_t page_size;
+	page_size = getpagesize();
+	to_reserve = ROUND_UP(size, page_size) + page_size;
+	dsp_reserve(b->handle, b->node, to_reserve, &b->reserve);
+	b->size = size;
+}
+
+static inline void
 dmm_buffer_allocate(dmm_buffer_t *b,
 		    size_t size)
 {
@@ -128,7 +133,7 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 	}
 	else
 		b->data = b->allocated_data = malloc(size);
-	b->size = size;
+	dmm_buffer_reserve(b, size);
 	dmm_buffer_map(b);
 }
 
@@ -139,7 +144,7 @@ dmm_buffer_use(dmm_buffer_t *b,
 {
 	pr_debug(NULL, "%p", b);
 	b->data = data;
-	b->size = size;
+	dmm_buffer_reserve(b, size);
 	dmm_buffer_map(b);
 }
 
