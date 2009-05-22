@@ -1,7 +1,9 @@
 /*
  * Copyright (C) 2009 Felipe Contreras
  *
- * Author: Felipe Contreras <felipe.contreras@gmail.com>
+ * Authors:
+ * Felipe Contreras <felipe.contreras@gmail.com>
+ * Juha Alanen <juha.m.alanen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
