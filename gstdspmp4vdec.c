@@ -591,11 +591,11 @@ dsp_stop(GstDspMp4vDec *self)
 {
 	unsigned long exit_status;
 
-	g_thread_join(self->dsp_thread);
-	gst_pad_pause_task(self->srcpad);
-
 	/* stop */
 	dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0);
+
+	g_thread_join(self->dsp_thread);
+	gst_pad_pause_task(self->srcpad);
 
 	if (!dsp_node_terminate (self->dsp_handle, self->node, &exit_status)) {
 		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
