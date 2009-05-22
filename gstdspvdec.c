@@ -676,6 +676,9 @@ dsp_stop(GstDspVDec *self)
 {
 	unsigned long exit_status;
 
+	if (!self->node)
+		return TRUE;
+
 	/* stop */
 	dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0);
 
@@ -771,13 +774,6 @@ change_state(GstElement *element,
 				return GST_STATE_CHANGE_FAILURE;
 			}
 
-			break;
-
-		case GST_STATE_CHANGE_READY_TO_PAUSED:
-			if (!dsp_start(self)) {
-				pr_err(self, "dsp start failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
 			break;
 
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
@@ -947,6 +943,11 @@ sink_setcaps(GstPad *pad,
 	}
 
 	gst_pad_set_caps(self->srcpad, out_caps);
+
+	if (!dsp_start(self)) {
+		pr_err(self, "dsp start failed");
+		return FALSE;
+	}
 
 	setup_output_buffers(self);
 
