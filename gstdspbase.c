@@ -133,10 +133,6 @@ got_message(GstDspBase *self,
 	command_id = msg->cmd & 0xffffff00;
 
 	switch (command_id) {
-		case 0x0500:
-			pr_debug(self, "got flush");
-			g_sem_up(self->flush);
-			break;
 		case 0x0600:
 			{
 				dmm_buffer_t *b;
@@ -160,6 +156,10 @@ got_message(GstDspBase *self,
 					dmm_buffer_free(b);
 				}
 			}
+			break;
+		case 0x0500:
+			pr_debug(self, "got flush");
+			g_sem_up(self->flush);
 			break;
 		case 0x0200:
 			pr_debug(self, "got stop");
