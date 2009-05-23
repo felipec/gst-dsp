@@ -224,23 +224,24 @@ setup_output_buffers(GstDspBase *self)
 {
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
+	GstFlowReturn ret;
 
-	gst_pad_alloc_buffer_and_set_caps(self->srcpad,
-					  GST_BUFFER_OFFSET_NONE,
-					  self->output_buffer_size,
-					  GST_PAD_CAPS(self->srcpad),
-					  &buf);
+	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
+						GST_BUFFER_OFFSET_NONE,
+						self->output_buffer_size,
+						GST_PAD_CAPS(self->srcpad),
+						&buf);
+
+	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
+		pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+		return;
+	}
 
 	b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->used = TRUE;
 	self->array[0] = b;
 
-	if (G_LIKELY(buf))
-		map_buffer(self, buf, b);
-	else {
-		dmm_buffer_allocate(b, self->output_buffer_size);
-		b->need_copy = true;
-	}
+	map_buffer(self, buf, b);
 
 	send_buffer(self, b, 1, 0);
 }
@@ -270,6 +271,8 @@ output_loop(gpointer data)
 
 	b->used = FALSE;
 
+	dmm_buffer_invalidate(b, b->size);
+
 	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
 						GST_BUFFER_OFFSET_NONE,
 						self->output_buffer_size,
@@ -280,8 +283,6 @@ output_loop(gpointer data)
 		pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
 		goto leave;
 	}
-
-	dmm_buffer_invalidate(b, b->size);
 
 	if (b->user_data) {
 		dmm_buffer_t *tmp;
@@ -303,6 +304,8 @@ output_loop(gpointer data)
 		}
 	}
 
+	send_buffer(self, b, 1, 0);
+
 	g_mutex_lock(self->ts_mutex);
 	if (self->ts == GST_CLOCK_TIME_NONE)
 		pr_err(self, "dang!");
@@ -313,8 +316,6 @@ output_loop(gpointer data)
 		pr_info(self, "tsc=%lu", self->ts_count);
 #endif
 	g_mutex_unlock(self->ts_mutex);
-
-	send_buffer(self, b, 1, 0);
 
 	ret = gst_pad_push(self->srcpad, out_buf);
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
