@@ -358,7 +358,7 @@ leave:
 	pr_debug(self, "end");
 }
 
-gpointer
+static gpointer
 dsp_thread(gpointer data)
 {
 	GstDspVDec *self = data;
