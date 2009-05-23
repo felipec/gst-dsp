@@ -30,50 +30,19 @@ G_BEGIN_DECLS
 #define GST_DSP_VDEC_TYPE (gst_dsp_vdec_get_type())
 #define GST_DSP_VDEC_CLASS(obj) (GstDspVDecClass *)(obj)
 
-/* #define TS_COUNT */
-
 typedef struct GstDspVDec GstDspVDec;
 typedef struct GstDspVDecClass GstDspVDecClass;
 
-#include "dmm_buffer.h"
-#include "sem.h"
-
-typedef struct {
-	guint buffer_count;
-	dmm_buffer_t *buffer;
-	GSem *sem;
-} du_port_t;
+#include "gstdspbase.h"
 
 struct GstDspVDec
 {
-	GstElement element;
-
-	GstPad *sinkpad, *srcpad;
-
-	int dsp_handle;
-	void *proc, *node;
-	struct dsp_notification *events[3];
-
-	GstFlowReturn status;
-	unsigned long output_buffer_size;
-	GThread *dsp_thread, *out_thread;
-	gboolean done;
-
-	du_port_t *port[2];
-	dmm_buffer_t *out_buffer;
-	GstClockTime ts;
-	GMutex *ts_mutex;
-#ifdef TS_COUNT
-	gulong ts_count;
-#endif
-	GSem *flush;
-	dmm_buffer_t *array[4];
-	guint alg;
+	GstDspBase element;
 };
 
 struct GstDspVDecClass
 {
-	GstElementClass parent_class;
+	GstDspBaseClass parent_class;
 };
 
 GType gst_dsp_vdec_get_type(void);
