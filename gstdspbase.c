@@ -161,6 +161,13 @@ got_message(GstDspBase *self,
 				}
 			}
 			break;
+		case 0x0200:
+			pr_debug(self, "got stop");
+			break;
+		case 0x0e00:
+			pr_err(self, "error: cmd=%u, arg1=%u, arg2=%u",
+			       msg->cmd, msg->arg_1, msg->arg_2);
+			break;
 		default:
 			pr_warning(self, "unhandled command: %u", command_id);
 	}
