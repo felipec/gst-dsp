@@ -14,7 +14,7 @@ version := $(shell ./get-version.sh)
 
 gst_plugin := libgstdsp.so
 
-$(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o dsp_bridge.o log.o
+$(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o gstdspvenc.o dsp_bridge.o log.o
 $(gst_plugin): CFLAGS := $(CFLAGS) $(UTIL_CFLAGS) $(GST_CFLAGS) -D VERSION='"$(version)"'
 $(gst_plugin): LIBS := $(UTIL_LIBS) $(GST_LIBS)
 

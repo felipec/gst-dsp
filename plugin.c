@@ -23,6 +23,7 @@
 
 #include "gstdspdummy.h"
 #include "gstdspvdec.h"
+#include "gstdspvenc.h"
 
 GstDebugCategory *gstdsp_debug;
 
@@ -37,6 +38,9 @@ plugin_init(GstPlugin *plugin)
 		return FALSE;
 
 	if (!gst_element_register(plugin, "dspvdec", GST_RANK_PRIMARY, GST_DSP_VDEC_TYPE))
+		return FALSE;
+
+	if (!gst_element_register(plugin, "dspvenc", GST_RANK_PRIMARY, GST_DSP_VENC_TYPE))
 		return FALSE;
 
 	return TRUE;
