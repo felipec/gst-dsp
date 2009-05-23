@@ -210,6 +210,52 @@ create_node(GstDspVEnc *self)
 	return node;
 }
 
+struct jpegenc_dyn_params
+{
+	uint32_t size;
+	uint32_t num_au; /* set to 0 */
+	uint32_t color_format;
+	uint32_t height;
+	uint32_t width;
+	uint32_t capture_width;
+	uint32_t gen_header;
+	uint32_t quality;
+	uint32_t capture_height;
+	uint32_t dri_interval;
+	uint32_t huffman_table;
+	uint32_t quant_table;
+};
+
+static inline void
+jpegenc_send_params(GstDspBase *base,
+		    guint width,
+		    guint height)
+{
+	struct jpegenc_dyn_params *params;
+	dmm_buffer_t *b;
+
+	b = dmm_buffer_new(base->dsp_handle, base->proc);
+	dmm_buffer_allocate(b, sizeof(*params));
+
+	params = b->data;
+	params->num_au = 0;
+	params->size = sizeof(*params);
+	params->color_format = 4;
+	params->width = width;
+	params->height = height;
+	params->capture_width = width;
+	params->capture_height = height;
+	params->gen_header = 0;
+	params->quality = 90;
+	params->dri_interval = 0;
+	params->huffman_table = 0;
+	params->quant_table = 0;
+
+	base->alg_ctrl = b;
+
+	dsp_send_message(base->dsp_handle, base->node, 0x0400, 3, (uint32_t) b->map);
+}
+
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -220,6 +266,7 @@ sink_setcaps(GstPad *pad,
 	GstCaps *out_caps;
 	GstStructure *out_struc;
 	const char *name;
+	gint width = 0, height = 0;
 
 	self = GST_DSP_VENC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -241,7 +288,6 @@ sink_setcaps(GstPad *pad,
 				      NULL);
 
 	{
-		gint width = 0, height = 0;
 		if (gst_structure_get_int(in_struc, "width", &width))
 			gst_structure_set(out_struc, "width", G_TYPE_INT, width, NULL);
 		if (gst_structure_get_int(in_struc, "height", &height))
@@ -277,6 +323,8 @@ sink_setcaps(GstPad *pad,
 		pr_err(self, "dsp start failed");
 		return FALSE;
 	}
+
+	jpegenc_send_params(GST_DSP_BASE(self), width, height);
 
 	return gst_pad_set_caps(pad, caps);
 }

@@ -164,6 +164,11 @@ got_message(GstDspBase *self,
 		case 0x0200:
 			pr_debug(self, "got stop");
 			break;
+		case 0x0400:
+			pr_debug(self, "got alg ctrl");
+			dmm_buffer_free(self->alg_ctrl);
+			self->alg_ctrl = NULL;
+			break;
 		case 0x0e00:
 			pr_err(self, "error: cmd=%u, arg1=%u, arg2=%u",
 			       msg->cmd, msg->arg_1, msg->arg_2);

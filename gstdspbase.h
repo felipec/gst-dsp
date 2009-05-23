@@ -61,6 +61,7 @@ struct GstDspBase
 
 	du_port_t *port[2];
 	dmm_buffer_t *out_buffer;
+	dmm_buffer_t *alg_ctrl;
 	GstClockTime ts;
 	GMutex *ts_mutex;
 #ifdef TS_COUNT
