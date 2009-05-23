@@ -43,12 +43,11 @@ map_buffer(GstDspBase *self,
 	   dmm_buffer_t *d_buf);
 
 static inline du_port_t *
-du_port_new(guint buffer_count)
+du_port_new()
 {
 	du_port_t *p;
 	p = calloc(1, sizeof(*p));
 
-	p->buffer_count = buffer_count;
 	p->sem = g_sem_new(0);
 
 	return p;
@@ -766,8 +765,8 @@ instance_init(GTypeInstance *instance,
 	gst_element_add_pad(GST_ELEMENT(self), self->sinkpad);
 	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);
 
-	self->port[0] = du_port_new(1);
-	self->port[1] = du_port_new(1);
+	self->port[0] = du_port_new();
+	self->port[1] = du_port_new();
 
 	self->ts_mutex = g_mutex_new();
 

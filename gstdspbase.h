@@ -39,7 +39,6 @@ typedef struct GstDspBaseClass GstDspBaseClass;
 #include "sem.h"
 
 typedef struct {
-	guint buffer_count;
 	dmm_buffer_t *buffer;
 	GSem *sem;
 } du_port_t;
