@@ -223,31 +223,27 @@ found:
 static inline void
 setup_output_buffers(GstDspBase *self)
 {
+	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
-	guint i;
 
-	for (i = 0; i < self->port[1]->buffer_count; i++) {
-		GstBuffer *buf = NULL;
+	gst_pad_alloc_buffer_and_set_caps(self->srcpad,
+					  GST_BUFFER_OFFSET_NONE,
+					  self->output_buffer_size,
+					  GST_PAD_CAPS(self->srcpad),
+					  &buf);
 
-		gst_pad_alloc_buffer_and_set_caps(self->srcpad,
-						  GST_BUFFER_OFFSET_NONE,
-						  self->output_buffer_size,
-						  GST_PAD_CAPS(self->srcpad),
-						  &buf);
+	b = dmm_buffer_new(self->dsp_handle, self->proc);
+	b->used = TRUE;
+	self->array[0] = b;
 
-		b = dmm_buffer_new(self->dsp_handle, self->proc);
-		b->used = TRUE;
-		self->array[i] = b;
-
-		if (G_LIKELY(buf))
-			map_buffer(self, buf, b);
-		else {
-			dmm_buffer_allocate(b, self->output_buffer_size);
-			b->need_copy = true;
-		}
-
-		send_buffer(self, b, 1, 0);
+	if (G_LIKELY(buf))
+		map_buffer(self, buf, b);
+	else {
+		dmm_buffer_allocate(b, self->output_buffer_size);
+		b->need_copy = true;
 	}
+
+	send_buffer(self, b, 1, 0);
 }
 
 static void
