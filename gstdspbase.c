@@ -195,6 +195,8 @@ get_slot(GstDspBase *self,
 		}
 	}
 
+	pr_debug(self, "couldn't reuse mapping");
+
 	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
 		dmm_buffer_t *cur = self->array[i];
 		if (!cur) {
@@ -212,6 +214,7 @@ get_slot(GstDspBase *self,
 		}
 	}
 
+	pr_err(self, "couldn't find slot");
 	return NULL;
 
 found:
