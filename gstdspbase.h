@@ -69,6 +69,8 @@ struct GstDspBase
 	GSem *flush;
 	dmm_buffer_t *array[4];
 	guint alg;
+
+	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
 };
 
 struct GstDspBaseClass

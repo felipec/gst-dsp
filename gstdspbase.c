@@ -224,24 +224,28 @@ setup_output_buffers(GstDspBase *self)
 {
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
-	GstFlowReturn ret;
-
-	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
-						GST_BUFFER_OFFSET_NONE,
-						self->output_buffer_size,
-						GST_PAD_CAPS(self->srcpad),
-						&buf);
-
-	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-		pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
-		return;
-	}
 
 	b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->used = TRUE;
 	self->array[0] = b;
 
-	map_buffer(self, buf, b);
+	if (self->use_pad_alloc) {
+		GstFlowReturn ret;
+		ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
+							GST_BUFFER_OFFSET_NONE,
+							self->output_buffer_size,
+							GST_PAD_CAPS(self->srcpad),
+							&buf);
+
+		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
+			pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+			return;
+		}
+
+		map_buffer(self, buf, b);
+	}
+	else
+		dmm_buffer_allocate(b, self->output_buffer_size);
 
 	send_buffer(self, b, 1, 0);
 }
@@ -252,7 +256,7 @@ output_loop(gpointer data)
 	GstPad *pad;
 	GstDspBase *self;
 	GstFlowReturn ret = GST_FLOW_OK;
-	GstBuffer *new_buf, *out_buf;
+	GstBuffer *out_buf;
 	dmm_buffer_t *b;
 
 	pad = data;
@@ -273,35 +277,49 @@ output_loop(gpointer data)
 
 	dmm_buffer_invalidate(b, b->size);
 
-	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
-						GST_BUFFER_OFFSET_NONE,
-						self->output_buffer_size,
-						GST_PAD_CAPS(self->srcpad),
-						&new_buf);
+	if (self->use_pad_alloc) {
+		GstBuffer *new_buf;
 
-	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-		pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
-		goto leave;
-	}
+		ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
+							GST_BUFFER_OFFSET_NONE,
+							self->output_buffer_size,
+							GST_PAD_CAPS(self->srcpad),
+							&new_buf);
 
-	if (b->user_data) {
-		dmm_buffer_t *tmp;
-		out_buf = b->user_data;
-		b->user_data = NULL;
-		tmp = get_slot(self, new_buf);
-		if (tmp)
-			b = tmp;
-		else
-			map_buffer(self, new_buf, b);
-		b->used = TRUE;
+		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
+			pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+			goto leave;
+		}
+
+		if (b->user_data) {
+			dmm_buffer_t *tmp;
+			out_buf = b->user_data;
+			b->user_data = NULL;
+			tmp = get_slot(self, new_buf);
+			if (tmp)
+				b = tmp;
+			else
+				map_buffer(self, new_buf, b);
+			b->used = TRUE;
+		}
+		else {
+			out_buf = new_buf;
+
+			if (b->need_copy) {
+				pr_info(self, "copy");
+				memcpy(GST_BUFFER_DATA(out_buf), b->data, b->size);
+			}
+		}
 	}
 	else {
-		out_buf = new_buf;
+		out_buf = gst_buffer_new();
+		GST_BUFFER_DATA(out_buf) = b->data;
+		GST_BUFFER_MALLOCDATA(out_buf) = b->allocated_data;
+		GST_BUFFER_SIZE(out_buf) = b->size;
+		gst_buffer_set_caps(out_buf, GST_PAD_CAPS(self->srcpad));
 
-		if (b->need_copy) {
-			pr_info(self, "copy");
-			memcpy(GST_BUFFER_DATA(out_buf), b->data, b->size);
-		}
+		b->allocated_data = NULL;
+		dmm_buffer_allocate(b, self->output_buffer_size);
 	}
 
 	send_buffer(self, b, 1, 0);

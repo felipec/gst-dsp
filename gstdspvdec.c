@@ -426,6 +426,8 @@ instance_init(GTypeInstance *instance,
 
 	base = GST_DSP_BASE(instance);
 
+	base->use_pad_alloc = TRUE;
+
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 }
 
