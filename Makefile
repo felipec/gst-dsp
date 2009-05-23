@@ -33,7 +33,7 @@ QUIET_CLEAN = $(Q:@=@echo '   CLEAN      '$@;)
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
 
 %.so::
-	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS)
+	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -Wl,--no-undefined -o $@ $^ $(LIBS)
 
 clean:
 	$(QUIET_CLEAN)$(RM) -v $(targets) *.o *.d
