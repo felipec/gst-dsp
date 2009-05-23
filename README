@@ -1,6 +1,7 @@
-== mp4vdec ==
+== vdec ==
 
-You'll need ringio.dll64P, usn.dll64P, and mp4vdec_sn.dll64P in your /lib/dsp directory.
+You'll need these in /lib/dsp: ringio.dll64P, usn.dll64P, and the corresponding
+SN mp4vdec_sn.dll64P (MPEG-4 video), h264vdec_sn.dll64P (H.264).
 
 == dummy ==
 
