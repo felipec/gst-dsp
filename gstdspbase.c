@@ -523,6 +523,7 @@ static gboolean
 dsp_stop(GstDspBase *self)
 {
 	unsigned long exit_status;
+	guint i;
 
 	if (!self->node)
 		return TRUE;
@@ -532,6 +533,14 @@ dsp_stop(GstDspBase *self)
 
 	g_thread_join(self->dsp_thread);
 	gst_pad_pause_task(self->srcpad);
+
+	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
+		dmm_buffer_t *cur = self->array[i];
+		if (cur) {
+			dmm_buffer_free(cur);
+			self->array[i] = NULL;
+		}
+	}
 
 	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
 		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
