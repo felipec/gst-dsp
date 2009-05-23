@@ -317,6 +317,8 @@ output_loop(gpointer data)
 		tmp = get_slot(self, new_buf);
 		if (tmp)
 			b = tmp;
+		else
+			map_buffer(self, new_buf, b);
 		b->used = TRUE;
 	}
 	else {
@@ -566,12 +568,12 @@ create_node(GstDspVDec *self,
 	}
 
 	if (!dsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
-		pr_err(self, "failed to register mp4vdec node library");
+		pr_err(self, "failed to register algo node library");
 		return NULL;
 	}
 
 	if (!dsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
-		pr_err(self, "failed to register mp4vdec node");
+		pr_err(self, "failed to register algo node");
 		return NULL;
 	}
 
