@@ -1,11 +1,17 @@
+Allo socket nodes should be in /lib/dsp
+
 == vdec ==
 
-You'll need these in /lib/dsp: ringio.dll64P, usn.dll64P, and the corresponding
+You'll need these ringio.dll64P, usn.dll64P, and the corresponding
 SN mp4vdec_sn.dll64P (MPEG-4 video), h264vdec_sn.dll64P (H.264).
+
+== venc (and image) ==
+
+You'll need usn.dll64P, and the corresponding SN JPEG (jpegenc_sn.dll64P).
 
 == dummy ==
 
-Make sure you have /lib/dsp/dummy.dll64P in your rootfs.
+Make sure you have dummy.dll64P.
 
 You can try putting dspdummy in the middle of normal gst-launch pipelines:
 gst-launch-0.10 videotestsrc ! dspdummy ! xvimagesink
