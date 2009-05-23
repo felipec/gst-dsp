@@ -44,11 +44,6 @@ typedef struct {
 	GSem *sem;
 } du_port_t;
 
-enum {
-	GSTDSP_MPEG4VDEC,
-	GSTDSP_H264DEC,
-};
-
 struct GstDspVDec
 {
 	GstElement element;

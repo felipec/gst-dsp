@@ -33,6 +33,11 @@
 #define GST_CAT_DEFAULT gstdsp_debug
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+enum {
+	GSTDSP_MPEG4VDEC,
+	GSTDSP_H264DEC,
+};
+
 static inline bool
 send_buffer(GstDspVDec *self,
 	    dmm_buffer_t *buffer,
@@ -272,6 +277,36 @@ found:
 	return b;
 }
 
+static inline void
+setup_output_buffers(GstDspVDec *self)
+{
+	dmm_buffer_t *b;
+	guint i;
+
+	for (i = 0; i < self->port[1]->buffer_count; i++) {
+		GstBuffer *buf = NULL;
+
+		gst_pad_alloc_buffer_and_set_caps(self->srcpad,
+						  GST_BUFFER_OFFSET_NONE,
+						  self->output_buffer_size,
+						  GST_PAD_CAPS(self->srcpad),
+						  &buf);
+
+		b = dmm_buffer_new(self->dsp_handle, self->proc);
+		b->used = TRUE;
+		self->array[i] = b;
+
+		if (G_LIKELY(buf))
+			map_buffer(self, buf, b);
+		else {
+			dmm_buffer_allocate(b, self->output_buffer_size);
+			b->need_copy = true;
+		}
+
+		send_buffer(self, b, 1, 0);
+	}
+}
+
 static void
 output_loop(gpointer data)
 {
@@ -435,10 +470,10 @@ get_mp4v_args(GstDspVDec *self)
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = self->port[0]->buffer_count,
+		.in_count = 1,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = self->port[1]->buffer_count,
+		.out_count = 1,
 		.max_width = 848,
 		.max_height = 480,
 		.color_format = 4,
@@ -496,10 +531,10 @@ get_h264_args(GstDspVDec *self)
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = self->port[0]->buffer_count,
+		.in_count = 1,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = self->port[1]->buffer_count,
+		.out_count = 1,
 		.max_width = 848,
 		.max_height = 480,
 		.color_format = 1,
@@ -524,10 +559,9 @@ get_h264_args(GstDspVDec *self)
 }
 
 static inline void *
-create_node(GstDspVDec *self,
-	    int dsp_handle,
-	    void *proc)
+create_node(GstDspVDec *self)
 {
+	int dsp_handle;
 	void *node;
 	const dsp_uuid_t *alg_uuid;
 	const char *alg_fn;
@@ -542,6 +576,8 @@ create_node(GstDspVDec *self,
 
 	const dsp_uuid_t ringio_uuid = { 0x47698bfb, 0xa7ee, 0x417e, 0xa6, 0x7a,
 		{ 0x41, 0xc0, 0x27, 0x9e, 0xb8, 0x05 } };
+
+	dsp_handle = self->dsp_handle;
 
 	if (!dsp_register(dsp_handle, &ringio_uuid, DSP_DCD_LIBRARYTYPE, "/lib/dsp/ringio.dll64P")) {
 		pr_err(self, "failed to register ringio node library");
@@ -600,7 +636,7 @@ create_node(GstDspVDec *self,
 				cb_data = NULL;
 		}
 
-		if (!dsp_node_allocate(dsp_handle, proc, alg_uuid, cb_data, &attrs, &node)) {
+		if (!dsp_node_allocate(dsp_handle, self->proc, alg_uuid, cb_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
 			free(cb_data);
 			return NULL;
@@ -721,12 +757,6 @@ dsp_deinit(GstDspVDec *self)
 static gboolean
 dsp_start(GstDspVDec *self)
 {
-	self->node = create_node(self, self->dsp_handle, self->proc);
-	if (!self->node) {
-		pr_err(self, "dsp node creation failed");
-		return FALSE;
-	}
-
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node run failed");
 		return FALSE;
@@ -749,6 +779,8 @@ dsp_start(GstDspVDec *self)
 
 	/* play */
 	dsp_send_message(self->dsp_handle, self->node, 0x0100, 0, 0);
+
+	setup_output_buffers(self);
 
 	return TRUE;
 }
@@ -942,36 +974,6 @@ leave:
 	return ret;
 }
 
-static inline void
-setup_output_buffers(GstDspVDec *self)
-{
-	dmm_buffer_t *b;
-	guint i;
-
-	for (i = 0; i < self->port[1]->buffer_count; i++) {
-		GstBuffer *buf = NULL;
-
-		gst_pad_alloc_buffer_and_set_caps(self->srcpad,
-						  GST_BUFFER_OFFSET_NONE,
-						  self->output_buffer_size,
-						  GST_PAD_CAPS(self->srcpad),
-						  &buf);
-
-		b = dmm_buffer_new(self->dsp_handle, self->proc);
-		b->used = TRUE;
-		self->array[i] = b;
-
-		if (G_LIKELY(buf))
-			map_buffer(self, buf, b);
-		else {
-			dmm_buffer_allocate(b, self->output_buffer_size);
-			b->need_copy = true;
-		}
-
-		send_buffer(self, b, 1, 0);
-	}
-}
-
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -1031,12 +1033,16 @@ sink_setcaps(GstPad *pad,
 
 	gst_pad_set_caps(self->srcpad, out_caps);
 
+	self->node = create_node(self);
+	if (!self->node) {
+		pr_err(self, "dsp node creation failed");
+		return FALSE;
+	}
+
 	if (!dsp_start(self)) {
 		pr_err(self, "dsp start failed");
 		return FALSE;
 	}
-
-	setup_output_buffers(self);
 
 	return gst_pad_set_caps(pad, caps);
 }
