@@ -9,13 +9,14 @@ GST_LIBS := $(shell pkg-config --libs gstreamer-0.10 gstreamer-base-0.10)
 all:
 
 version := $(shell ./get-version.sh)
+dspdir := /lib/dsp
 
 # plugin
 
 gst_plugin := libgstdsp.so
 
-$(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o gstdspvenc.o dsp_bridge.o log.o
-$(gst_plugin): CFLAGS := $(CFLAGS) $(UTIL_CFLAGS) $(GST_CFLAGS) -D VERSION='"$(version)"'
+$(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o gstdspvenc.o dsp_bridge.o util.o log.o
+$(gst_plugin): CFLAGS := $(CFLAGS) $(UTIL_CFLAGS) $(GST_CFLAGS) -D VERSION='"$(version)"' -D DSPDIR='"$(dspdir)"'
 $(gst_plugin): LIBS := $(UTIL_LIBS) $(GST_LIBS)
 
 targets += $(gst_plugin)

@@ -23,6 +23,7 @@
 
 #include "gstdspvdec.h"
 #include "plugin.h"
+#include "util.h"
 
 #include "dsp_bridge.h"
 
@@ -251,12 +252,12 @@ create_node(GstDspVDec *self)
 	base = GST_DSP_BASE(self);
 	dsp_handle = base->dsp_handle;
 
-	if (!dsp_register(dsp_handle, &ringio_uuid, DSP_DCD_LIBRARYTYPE, "/lib/dsp/ringio.dll64P")) {
+	if (!gstdsp_register(dsp_handle, &ringio_uuid, DSP_DCD_LIBRARYTYPE, "ringio.dll64P")) {
 		pr_err(self, "failed to register ringio node library");
 		return NULL;
 	}
 
-	if (!dsp_register(dsp_handle, &usn_uuid, DSP_DCD_LIBRARYTYPE, "/lib/dsp/usn.dll64P")) {
+	if (!gstdsp_register(dsp_handle, &usn_uuid, DSP_DCD_LIBRARYTYPE, "usn.dll64P")) {
 		pr_err(self, "failed to register usn node library");
 		return NULL;
 	}
@@ -264,23 +265,23 @@ create_node(GstDspVDec *self)
 	switch (base->alg) {
 		case GSTDSP_MPEG4VDEC:
 			alg_uuid = &mp4v_dec_uuid;
-			alg_fn = "/lib/dsp/mp4vdec_sn.dll64P";
+			alg_fn = "mp4vdec_sn.dll64P";
 			break;
 		case GSTDSP_H264DEC:
 			alg_uuid = &h264v_dec_uuid;
-			alg_fn = "/lib/dsp/h264vdec_sn.dll64P";
+			alg_fn = "h264vdec_sn.dll64P";
 			break;
 		default:
 			pr_err(self, "unknown algorithm");
 			return NULL;
 	}
 
-	if (!dsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
+	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
 		pr_err(self, "failed to register algo node library");
 		return NULL;
 	}
 
-	if (!dsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
+	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
 		pr_err(self, "failed to register algo node");
 		return NULL;
 	}
