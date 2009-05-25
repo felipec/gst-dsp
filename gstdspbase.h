@@ -61,7 +61,7 @@ struct GstDspBase
 	du_port_t *port[2];
 	dmm_buffer_t *out_buffer;
 	dmm_buffer_t *alg_ctrl;
-	GstClockTime ts_array[4];
+	GstClockTime ts_array[20];
 	guint ts_in_pos, ts_out_pos;
 	GMutex *ts_mutex;
 #ifdef TS_COUNT
