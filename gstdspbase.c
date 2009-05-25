@@ -268,6 +268,9 @@ output_loop(gpointer data)
 	pr_debug(self, "begin");
 	g_sem_down_status(self->port[1]->sem, &self->status);
 
+	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK)
+		goto leave;
+
 	b = self->out_buffer;
 
 	if (!b) {
