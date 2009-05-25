@@ -515,6 +515,11 @@ dsp_deinit(GstDspBase *self)
 		self->proc = NULL;
 	}
 
+	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
+		free(self->events[i]);
+		self->events[i] = NULL;
+	}
+
 leave:
 
 	if (self->dsp_handle >= 0) {
