@@ -68,7 +68,7 @@ struct GstDspBase
 	gulong ts_count;
 #endif
 	GSem *flush;
-	dmm_buffer_t *array[4];
+	dmm_buffer_t *array[10];
 	guint alg;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
