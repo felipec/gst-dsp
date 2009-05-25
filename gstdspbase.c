@@ -331,9 +331,8 @@ output_loop(gpointer data)
 	send_buffer(self, b, 1, 0);
 
 	g_mutex_lock(self->ts_mutex);
-	if (self->ts == GST_CLOCK_TIME_NONE)
-		pr_err(self, "dang!");
-	GST_BUFFER_TIMESTAMP(out_buf) = self->ts;
+	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
+	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 #ifdef TS_COUNT
 	self->ts_count--;
 	if (self->ts_count > 2 || self->ts_count < 1)
@@ -771,7 +770,8 @@ pad_chain(GstPad *pad,
 	dmm_buffer_flush(d_buffer, GST_BUFFER_SIZE(buf));
 
 	g_mutex_lock(self->ts_mutex);
-	self->ts = GST_BUFFER_TIMESTAMP(buf);
+	self->ts_array[self->ts_in_pos] = GST_BUFFER_TIMESTAMP(buf);
+	self->ts_in_pos = (self->ts_in_pos + 1) % ARRAY_SIZE(self->ts_array);
 #ifdef TS_COUNT
 	self->ts_count++;
 #endif
@@ -806,7 +806,7 @@ pad_event(GstPad *pad,
 			self->out_buffer = NULL;
 
 			g_mutex_lock(self->ts_mutex);
-			self->ts = GST_CLOCK_TIME_NONE;
+			self->ts_in_pos = self->ts_out_pos = 0;
 			g_mutex_unlock(self->ts_mutex);
 
 			g_sem_signal(self->port[0]->sem);
