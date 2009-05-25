@@ -363,7 +363,7 @@ dsp_thread(gpointer data)
 	while (!self->done) {
 		unsigned int index = 0;
 		pr_debug(self, "waiting for events");
-		if (!dsp_wait_for_events(self->dsp_handle, self->events, 1, &index, 10000)) {
+		if (!dsp_wait_for_events(self->dsp_handle, self->events, 3, &index, 10000)) {
 			pr_warning(self, "failed waiting for events");
 			continue;
 		}
@@ -377,6 +377,16 @@ dsp_thread(gpointer data)
 					 msg.cmd, msg.arg_1, msg.arg_2);
 				got_message(self, &msg);
 			}
+		}
+		if (index == 1) {
+			pr_err(self, "got DSP MMUFAULT");
+			g_atomic_int_set(&self->status, GST_FLOW_ERROR);
+			goto leave;
+		}
+		if (index == 2) {
+			pr_err(self, "got DSP SYSERROR");
+			g_atomic_int_set(&self->status, GST_FLOW_ERROR);
+			goto leave;
 		}
 		else {
 			pr_err(self, "wrong event index");
@@ -507,6 +517,24 @@ gstdsp_start(GstDspBase *self)
 				      self->events[0]))
 	{
 		pr_err(self, "failed to register for notifications");
+		return false;
+	}
+
+	self->events[1] = calloc(1, sizeof(struct dsp_notification));
+	if (!dsp_register_notify(self->dsp_handle, self->proc,
+				 DSP_MMUFAULT, 1,
+				 self->events[1]))
+	{
+		pr_err(self, "failed to register for DSP_MMUFAULT");
+		return false;
+	}
+
+	self->events[2] = calloc(1, sizeof(struct dsp_notification));
+	if (!dsp_register_notify(self->dsp_handle, self->proc,
+				 DSP_SYSERROR, 1,
+				 self->events[2]))
+	{
+		pr_err(self, "failed to register for DSP_SYSERROR");
 		return false;
 	}
 
