@@ -358,11 +358,21 @@ got_error(GstDspBase *self,
 	  guint id,
 	  const char *message)
 {
+	GError *gerror;
+	GstMessage *gst_msg;
+
 	pr_err(self, message);
+
+	gerror = g_error_new_literal(GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, message);
+	gst_msg = gst_message_new_error(GST_OBJECT(self), gerror, NULL);
+	gst_element_post_message(GST_ELEMENT(self), gst_msg);
+
 	g_atomic_int_set(&self->status, GST_FLOW_ERROR);
 	self->dsp_error = id;
 	g_sem_signal(self->port[0]->sem);
 	g_sem_signal(self->port[1]->sem);
+
+	g_error_free(gerror);
 }
 
 static gpointer
