@@ -71,6 +71,7 @@ struct GstDspBase
 	guint alg;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
+	guint dsp_error;
 };
 
 struct GstDspBaseClass

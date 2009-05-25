@@ -353,6 +353,18 @@ leave:
 	pr_debug(self, "end");
 }
 
+static inline void
+got_error(GstDspBase *self,
+	  guint id,
+	  const char *message)
+{
+	pr_err(self, message);
+	g_atomic_int_set(&self->status, GST_FLOW_ERROR);
+	self->dsp_error = id;
+	g_sem_signal(self->port[0]->sem);
+	g_sem_signal(self->port[1]->sem);
+}
+
 static gpointer
 dsp_thread(gpointer data)
 {
@@ -378,19 +390,16 @@ dsp_thread(gpointer data)
 				got_message(self, &msg);
 			}
 		}
-		if (index == 1) {
-			pr_err(self, "got DSP MMUFAULT");
-			g_atomic_int_set(&self->status, GST_FLOW_ERROR);
+		else if (index == 1) {
+			got_error(self, 1, "got DSP MMUFAULT");
 			goto leave;
 		}
-		if (index == 2) {
-			pr_err(self, "got DSP SYSERROR");
-			g_atomic_int_set(&self->status, GST_FLOW_ERROR);
+		else if (index == 2) {
+			got_error(self, 2, "got DSP SYSERROR");
 			goto leave;
 		}
 		else {
-			pr_err(self, "wrong event index");
-			g_atomic_int_set(&self->status, GST_FLOW_ERROR);
+			got_error(self, 3, "wrong event index");
 			goto leave;
 		}
 	}
@@ -468,6 +477,9 @@ dsp_deinit(GstDspBase *self)
 	gboolean ret = TRUE;
 	guint i;
 
+	if (self->dsp_error)
+		goto leave;
+
 	if (self->node) {
 		if (!destroy_node(self, self->dsp_handle, self->node)) {
 			pr_err(self, "dsp node destroy failed");
@@ -489,6 +501,8 @@ dsp_deinit(GstDspBase *self)
 		}
 		self->proc = NULL;
 	}
+
+leave:
 
 	if (self->dsp_handle >= 0) {
 		if (dsp_close(self->dsp_handle) < 0) {
@@ -559,11 +573,16 @@ dsp_stop(GstDspBase *self)
 	if (!self->node)
 		return TRUE;
 
-	/* stop */
-	dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0);
+	if (!self->dsp_error) {
+		/* stop */
+		dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0);
+	}
 
 	g_thread_join(self->dsp_thread);
 	gst_pad_pause_task(self->srcpad);
+
+	if (self->dsp_error)
+		goto leave;
 
 	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
 		dmm_buffer_t *cur = self->array[i];
@@ -578,6 +597,7 @@ dsp_stop(GstDspBase *self)
 		return FALSE;
 	}
 
+leave:
 	pr_info(self, "dsp node terminated");
 
 	return TRUE;
