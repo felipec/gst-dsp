@@ -199,6 +199,8 @@ dsp_start(GstDspDummy *self)
 	self->in_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
 	self->out_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
 
+	self->in_buffer->alignment = 0;
+
 	return TRUE;
 }
 
