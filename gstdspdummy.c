@@ -284,26 +284,29 @@ map_buffer(GstDspDummy *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf)
 {
-	if ((unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0) {
-		if (d_buf->data != GST_BUFFER_DATA(g_buf)) {
-			dmm_buffer_unmap(d_buf);
+	if (d_buf->alignment == 0 ||
+	    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0)
+	{
+		if (d_buf->data != GST_BUFFER_DATA(g_buf))
 			dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
-		}
+		d_buf->user_data = g_buf;
+		return;
 	}
-	else {
+
+	if (d_buf->alignment != 0) {
 		GST_WARNING("buffer not aligned: %p, %lu",
 			    GST_BUFFER_DATA(g_buf),
 			    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment);
-
-		/* reallocate? */
-		if (!d_buf->allocated_data ||
-		    d_buf->size > GST_BUFFER_SIZE(g_buf)) {
-			dmm_buffer_unmap(d_buf);
-			dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
-		}
-		d_buf->need_copy = true;
 	}
+
+	/* reallocate? */
+	if (!d_buf->allocated_data ||
+	    d_buf->size > GST_BUFFER_SIZE(g_buf)) {
+		dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
+	}
+	d_buf->need_copy = true;
 }
+
 
 static GstFlowReturn
 pad_chain(GstPad *pad,
