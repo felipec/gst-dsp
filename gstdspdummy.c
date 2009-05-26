@@ -309,7 +309,6 @@ map_buffer(GstDspDummy *self,
 	d_buf->need_copy = true;
 }
 
-
 static GstFlowReturn
 pad_chain(GstPad *pad,
 	  GstBuffer *buf)
@@ -326,7 +325,7 @@ pad_chain(GstPad *pad,
 						GST_BUFFER_CAPS(buf),
 						&out_buf);
 
-	if (G_UNLIKELY(!out_buf)) {
+	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 		GST_ERROR_OBJECT(self, "couldn't allocate buffer");
 		ret = GST_FLOW_ERROR;
 		goto leave;
