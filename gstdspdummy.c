@@ -286,6 +286,7 @@ map_buffer(GstDspDummy *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf)
 {
+#if 0
 	if (d_buf->alignment == 0 ||
 	    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0)
 	{
@@ -300,6 +301,7 @@ map_buffer(GstDspDummy *self,
 			    GST_BUFFER_DATA(g_buf),
 			    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment);
 	}
+#endif
 
 	/* reallocate? */
 	if (!d_buf->allocated_data ||
