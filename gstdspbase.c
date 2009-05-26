@@ -766,7 +766,12 @@ pad_chain(GstPad *pad,
 
 	d_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
 	d_buffer->alignment = 0;
-	map_buffer(self, buf, d_buffer);
+	if (self->input_buffer_size <= GST_BUFFER_SIZE(buf))
+		map_buffer(self, buf, d_buffer);
+	else {
+		dmm_buffer_allocate(d_buffer, self->input_buffer_size);
+		d_buffer->need_copy = true;
+	}
 
 	if (d_buffer->need_copy) {
 		pr_info(self, "copy");

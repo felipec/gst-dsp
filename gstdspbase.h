@@ -54,6 +54,7 @@ struct GstDspBase
 	struct dsp_notification *events[3];
 
 	GstFlowReturn status;
+	unsigned long input_buffer_size;
 	unsigned long output_buffer_size;
 	GThread *dsp_thread, *out_thread;
 	gboolean done;
