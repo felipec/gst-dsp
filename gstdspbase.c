@@ -393,7 +393,7 @@ dsp_thread(gpointer data)
 	while (!self->done) {
 		unsigned int index = 0;
 		pr_debug(self, "waiting for events");
-		if (!dsp_wait_for_events(self->dsp_handle, self->events, 3, &index, 10000)) {
+		if (!dsp_wait_for_events(self->dsp_handle, self->events, 3, &index, 1000)) {
 			pr_warning(self, "failed waiting for events");
 			continue;
 		}
