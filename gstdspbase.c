@@ -702,13 +702,16 @@ change_state(GstElement *element,
 
 	switch (transition) {
 		case GST_STATE_CHANGE_NULL_TO_READY:
-			self->status = GST_FLOW_OK;
-			self->done = FALSE;
 			if (!dsp_init(self)) {
 				pr_err(self, "dsp init failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
 
+			break;
+
+		case GST_STATE_CHANGE_READY_TO_PAUSED:
+			self->status = GST_FLOW_OK;
+			self->done = FALSE;
 			break;
 
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
