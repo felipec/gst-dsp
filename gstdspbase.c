@@ -169,6 +169,10 @@ got_message(GstDspBase *self,
 			self->alg_ctrl = NULL;
 			break;
 		case 0x0e00:
+			if (msg->arg_1 == 1 && msg->arg_2 == 0x0500) {
+				pr_debug(self, "playback completed");
+				break;
+			}
 			pr_err(self, "error: cmd=%u, arg1=%u, arg2=%u",
 			       msg->cmd, msg->arg_1, msg->arg_2);
 			break;
