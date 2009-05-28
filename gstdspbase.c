@@ -517,11 +517,6 @@ dsp_deinit(GstDspBase *self)
 		self->proc = NULL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
-		free(self->events[i]);
-		self->events[i] = NULL;
-	}
-
 leave:
 
 	if (self->dsp_handle >= 0) {
@@ -601,9 +596,6 @@ dsp_stop(GstDspBase *self)
 	g_thread_join(self->dsp_thread);
 	gst_pad_pause_task(self->srcpad);
 
-	if (self->dsp_error)
-		goto leave;
-
 	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
 		dmm_buffer_t *cur = self->array[i];
 		if (cur) {
@@ -611,6 +603,14 @@ dsp_stop(GstDspBase *self)
 			self->array[i] = NULL;
 		}
 	}
+
+	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
+		free(self->events[i]);
+		self->events[i] = NULL;
+	}
+
+	if (self->dsp_error)
+		goto leave;
 
 	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
 		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
@@ -823,7 +823,6 @@ pad_event(GstPad *pad,
 		case GST_EVENT_FLUSH_START:
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
-			self->out_buffer = NULL;
 
 			g_mutex_lock(self->ts_mutex);
 			self->ts_in_pos = self->ts_out_pos = 0;
@@ -847,6 +846,8 @@ pad_event(GstPad *pad,
 			g_atomic_int_set(&self->status, GST_FLOW_OK);
 
 			g_sem_reset(self->port[1]->sem, 0);
+			dmm_buffer_free(self->out_buffer);
+			self->out_buffer = NULL;
 			setup_output_buffers(self);
 
 			gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
