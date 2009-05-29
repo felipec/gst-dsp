@@ -37,6 +37,7 @@ enum {
 	GSTDSP_MPEG4VDEC,
 	GSTDSP_H264DEC,
 	GSTDSP_H263DEC,
+	GSTDSP_WMVDEC,
 };
 
 static GstElementClass *parent_class;
@@ -79,6 +80,12 @@ generate_sink_template(void)
 	gst_caps_append_structure(caps, struc);
 
 	struc = gst_structure_new("video/x-h264",
+				  NULL);
+
+	gst_caps_append_structure(caps, struc);
+	
+	struc = gst_structure_new("video/x-wmv",
+				  "wmvversion", G_TYPE_INT, 3,
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
@@ -237,6 +244,68 @@ get_h264_args(GstDspVDec *self)
 	return cb_data;
 }
 
+struct wmvdec_args
+{
+	uint16_t num_streams;
+
+	uint16_t in_id;
+	uint16_t in_type;
+	uint16_t in_count;
+
+	uint16_t out_id;
+	uint16_t out_type;
+	uint16_t out_count;
+
+	uint16_t reserved;
+
+	uint32_t max_width;
+	uint32_t max_height;
+	uint32_t color_format;
+	uint32_t max_framerate;
+	uint32_t max_bitrate;
+	uint32_t endianness;
+	uint32_t profile;
+	int32_t max_level;
+	uint32_t mode;
+	int32_t preroll;
+	uint32_t stream_format;
+};
+
+static inline void *
+get_wmv_args(GstDspVDec *self)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+
+	struct wmvdec_args args = {
+		.num_streams = 2,
+		.in_id = 0,
+		.in_type = 0,
+		.in_count = 1,
+		.out_id = 1,
+		.out_type = 0,
+		.out_count = 1,
+		.max_width = base->width,
+		.max_height = base->height,
+		.color_format = 1,
+		.max_framerate = 0,
+		.max_bitrate = -1,
+		.endianness = 1,
+		.profile = -1,
+		.max_level = -1,
+		.mode = 0,
+		.preroll = 0,
+		.stream_format = 2,
+	};
+
+	struct foo_data *cb_data;
+
+	cb_data = malloc(sizeof(*cb_data));
+	cb_data->size = sizeof(args);
+	memcpy(&cb_data->data, &args, sizeof(args));
+
+	return cb_data;
+}
+
 static inline void *
 create_node(GstDspVDec *self)
 {
@@ -256,6 +325,9 @@ create_node(GstDspVDec *self)
 
 	const dsp_uuid_t ringio_uuid = { 0x47698bfb, 0xa7ee, 0x417e, 0xa6, 0x7a,
 		{ 0x41, 0xc0, 0x27, 0x9e, 0xb8, 0x05 } };
+
+	const dsp_uuid_t wmv_dec_uuid = { 0x609DAB97, 0x3DFC, 0x471F, 0x8A, 0xB9,
+		{ 0x4E, 0x56, 0xE8, 0x34, 0x50, 0x1B } };
 
 	base = GST_DSP_BASE(self);
 	dsp_handle = base->dsp_handle;
@@ -279,6 +351,10 @@ create_node(GstDspVDec *self)
 		case GSTDSP_H264DEC:
 			alg_uuid = &h264v_dec_uuid;
 			alg_fn = "h264vdec_sn.dll64P";
+			break;
+		case GSTDSP_WMVDEC:
+			alg_uuid = &wmv_dec_uuid;
+			alg_fn = "wmv9dec_sn.dll64P";
 			break;
 		default:
 			pr_err(self, "unknown algorithm");
@@ -326,6 +402,17 @@ create_node(GstDspVDec *self)
 				else
 					attrs.profile_id = 1;
 				cb_data = get_h264_args(self);
+				break;
+			case GSTDSP_WMVDEC:
+				if (base->width * base->height > 640 * 480)
+					attrs.profile_id = 4;
+				else if (base->width * base->height > 352 * 288)
+					attrs.profile_id = 3;
+				else if (base->width * base->height > 176 * 144)
+					attrs.profile_id = 2;
+				else
+					attrs.profile_id = 1;
+				cb_data = get_wmv_args(self);
 				break;
 			default:
 				cb_data = NULL;
@@ -393,6 +480,8 @@ sink_setcaps(GstPad *pad,
 		base->alg = GSTDSP_H264DEC;
 	else if (strcmp(name, "video/x-h263") == 0)
 		base->alg = GSTDSP_H263DEC;
+	else if (strcmp(name, "video/x-wmv") == 0)
+		base->alg = GSTDSP_WMVDEC;
 	else
 		base->alg = GSTDSP_MPEG4VDEC;
 
