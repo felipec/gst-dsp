@@ -269,7 +269,7 @@ output_loop(gpointer data)
 	g_sem_down_status(self->port[1]->sem, &self->status);
 
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
-		pr_err(self, "status: %s", gst_flow_get_name(self->status));
+		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		goto leave;
 	}
 
@@ -767,7 +767,7 @@ pad_chain(GstPad *pad,
 	pr_debug(self, "begin");
 
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
-		pr_err(self, "status: %s", gst_flow_get_name(self->status));
+		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		goto leave;
 	}
 
