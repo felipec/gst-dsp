@@ -36,6 +36,7 @@
 enum {
 	GSTDSP_MPEG4VDEC,
 	GSTDSP_H264DEC,
+	GSTDSP_H263DEC,
 };
 
 static GstElementClass *parent_class;
@@ -160,6 +161,9 @@ get_mp4v_args(GstDspVDec *self)
 		.display_width = 0,
 	};
 
+	if (base->alg == GSTDSP_H263DEC)
+		args.profile = 8;
+
 	struct foo_data *cb_data;
 
 	cb_data = malloc(sizeof(*cb_data));
@@ -268,6 +272,7 @@ create_node(GstDspVDec *self)
 
 	switch (base->alg) {
 		case GSTDSP_MPEG4VDEC:
+		case GSTDSP_H263DEC:
 			alg_uuid = &mp4v_dec_uuid;
 			alg_fn = "mp4vdec_sn.dll64P";
 			break;
@@ -302,6 +307,7 @@ create_node(GstDspVDec *self)
 
 		switch (base->alg) {
 			case GSTDSP_MPEG4VDEC:
+			case GSTDSP_H263DEC:
 				if (base->width * base->height > 640 * 480)
 					attrs.profile_id = 4;
 				else if (base->width * base->height > 352 * 288)
@@ -385,6 +391,8 @@ sink_setcaps(GstPad *pad,
 	name = gst_structure_get_name(in_struc);
 	if (strcmp(name, "video/x-h264") == 0)
 		base->alg = GSTDSP_H264DEC;
+	else if (strcmp(name, "video/x-h263") == 0)
+		base->alg = GSTDSP_H263DEC;
 	else
 		base->alg = GSTDSP_MPEG4VDEC;
 
