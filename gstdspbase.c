@@ -500,15 +500,6 @@ dsp_deinit(GstDspBase *self)
 	if (self->dsp_error)
 		goto leave;
 
-	if (self->node) {
-		if (!destroy_node(self, self->dsp_handle, self->node)) {
-			pr_err(self, "dsp node destroy failed");
-			ret = FALSE;
-		}
-
-		self->node = NULL;
-	}
-
 	for (i = 0; i < 2; i++) {
 		du_port_t *p = self->port[i];
 		dmm_buffer_free(p->buffer);
@@ -622,8 +613,15 @@ dsp_stop(GstDspBase *self)
 		return FALSE;
 	}
 
-leave:
+	if (!destroy_node(self, self->dsp_handle, self->node)) {
+		pr_err(self, "dsp node destroy failed");
+		return FALSE;
+	}
+
+	self->node = NULL;
+
 	pr_info(self, "dsp node terminated");
+leave:
 
 	return TRUE;
 }
