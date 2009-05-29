@@ -71,6 +71,7 @@ struct GstDspBase
 	GSem *flush;
 	dmm_buffer_t *array[10];
 	guint alg;
+	gint width, height;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
 	guint dsp_error;

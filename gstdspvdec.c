@@ -137,6 +137,8 @@ struct mp4vdec_args
 static inline void *
 get_mp4v_args(GstDspVDec *self)
 {
+	GstDspBase *base = GST_DSP_BASE(self);
+
 	struct mp4vdec_args args = {
 		.num_streams = 2,
 		.in_id = 0,
@@ -145,8 +147,8 @@ get_mp4v_args(GstDspVDec *self)
 		.out_id = 1,
 		.out_type = 0,
 		.out_count = 1,
-		.max_width = 848,
-		.max_height = 480,
+		.max_width = base->width,
+		.max_height = base->height,
 		.color_format = 4,
 		.max_framerate = 0,
 		.max_bitrate = -1,
@@ -198,6 +200,8 @@ struct h264vdec_args
 static inline void *
 get_h264_args(GstDspVDec *self)
 {
+	GstDspBase *base = GST_DSP_BASE(self);
+
 	struct h264vdec_args args = {
 		.num_streams = 2,
 		.in_id = 0,
@@ -206,8 +210,8 @@ get_h264_args(GstDspVDec *self)
 		.out_id = 1,
 		.out_type = 0,
 		.out_count = 1,
-		.max_width = 848,
-		.max_height = 480,
+		.max_width = base->width,
+		.max_height = base->height,
 		.color_format = 1,
 		.max_framerate = 0,
 		.max_bitrate = -1,
@@ -298,11 +302,23 @@ create_node(GstDspVDec *self)
 
 		switch (base->alg) {
 			case GSTDSP_MPEG4VDEC:
-				attrs.profile_id = 4;
+				if (base->width * base->height > 640 * 480)
+					attrs.profile_id = 4;
+				else if (base->width * base->height > 352 * 288)
+					attrs.profile_id = 3;
+				else if (base->width * base->height > 176 * 144)
+					attrs.profile_id = 2;
+				else
+					attrs.profile_id = 1;
 				cb_data = get_mp4v_args(self);
 				break;
 			case GSTDSP_H264DEC:
-				attrs.profile_id = 3;
+				if (base->width * base->height > 352 * 288)
+					attrs.profile_id = 3;
+				else if (base->width * base->height > 176 * 144)
+					attrs.profile_id = 2;
+				else
+					attrs.profile_id = 1;
 				cb_data = get_h264_args(self);
 				break;
 			default:
@@ -378,15 +394,12 @@ sink_setcaps(GstPad *pad,
 				      "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'),
 				      NULL);
 
-	{
-		gint width = 0, height = 0;
-		if (gst_structure_get_int(in_struc, "width", &width))
-			gst_structure_set(out_struc, "width", G_TYPE_INT, width, NULL);
-		if (gst_structure_get_int(in_struc, "height", &height))
-			gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
+	if (gst_structure_get_int(in_struc, "width", &base->width))
+		gst_structure_set(out_struc, "width", G_TYPE_INT, base->width, NULL);
+	if (gst_structure_get_int(in_struc, "height", &base->height))
+		gst_structure_set(out_struc, "height", G_TYPE_INT, base->height, NULL);
 
-		base->output_buffer_size = width * height * 2;
-	}
+	base->output_buffer_size = base->width * base->height * 2;
 
 	{
 		const GValue *framerate = NULL;
