@@ -257,6 +257,22 @@ setup_output_buffers(GstDspBase *self)
 	send_buffer(self, b, 1, 0);
 }
 
+void
+gstdsp_send_buffer(GstDspBase *self,
+		   GstBuffer *buf)
+{
+	dmm_buffer_t *b;
+	b = dmm_buffer_new(self->dsp_handle, self->proc);
+	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
+
+	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
+
+	dmm_buffer_flush(b, GST_BUFFER_SIZE(buf));
+
+	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
+	g_sem_down_status(self->port[0]->sem, &self->status);
+}
+
 static void
 output_loop(gpointer data)
 {
