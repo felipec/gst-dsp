@@ -34,13 +34,13 @@ plugin_init(GstPlugin *plugin)
 	gstdsp_debug = _gst_debug_category_new("dsp", 0, "DSP stuff");
 #endif
 
-	if (!gst_element_register(plugin, "dspdummy", GST_RANK_PRIMARY, GST_DSP_DUMMY_TYPE))
+	if (!gst_element_register(plugin, "dspdummy", GST_RANK_NONE, GST_DSP_DUMMY_TYPE))
 		return FALSE;
 
-	if (!gst_element_register(plugin, "dspvdec", GST_RANK_PRIMARY, GST_DSP_VDEC_TYPE))
+	if (!gst_element_register(plugin, "dspvdec", GST_RANK_SECONDARY, GST_DSP_VDEC_TYPE))
 		return FALSE;
 
-	if (!gst_element_register(plugin, "dspvenc", GST_RANK_PRIMARY, GST_DSP_VENC_TYPE))
+	if (!gst_element_register(plugin, "dspvenc", GST_RANK_SECONDARY, GST_DSP_VENC_TYPE))
 		return FALSE;
 
 	return TRUE;
