@@ -74,6 +74,7 @@ struct GstDspBase
 	gint width, height;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
+	gboolean use_map_cache;
 	guint dsp_error;
 };
 

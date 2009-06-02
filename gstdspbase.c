@@ -323,11 +323,16 @@ output_loop(gpointer data)
 			dmm_buffer_t *tmp;
 			out_buf = b->user_data;
 			b->user_data = NULL;
-			tmp = get_slot(self, new_buf);
-			if (tmp)
-				b = tmp;
-			else
+			if (self->use_map_cache) {
+				tmp = get_slot(self, new_buf);
+				if (tmp)
+					b = tmp;
+				else
+					map_buffer(self, new_buf, b);
+			}
+			else {
 				map_buffer(self, new_buf, b);
+			}
 			b->used = TRUE;
 		}
 		else {
