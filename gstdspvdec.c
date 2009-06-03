@@ -22,6 +22,7 @@
  */
 
 #include "gstdspvdec.h"
+#include "gstdspparse.h"
 #include "plugin.h"
 #include "util.h"
 
@@ -478,8 +479,10 @@ sink_setcaps(GstPad *pad,
 	name = gst_structure_get_name(in_struc);
 	if (strcmp(name, "video/x-h264") == 0)
 		base->alg = GSTDSP_H264DEC;
-	else if (strcmp(name, "video/x-h263") == 0)
+	else if (strcmp(name, "video/x-h263") == 0) {
 		base->alg = GSTDSP_H263DEC;
+		base->parse_func = gst_dsp_h263_parse;
+	}
 	else if (strcmp(name, "video/x-wmv") == 0)
 		base->alg = GSTDSP_WMVDEC;
 	else

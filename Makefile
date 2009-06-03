@@ -15,7 +15,7 @@ dspdir := /lib/dsp
 
 gst_plugin := libgstdsp.so
 
-$(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o gstdspvenc.o dsp_bridge.o util.o log.o
+$(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o gstdspvenc.o dsp_bridge.o util.o log.o gstdspparse.o
 $(gst_plugin): CFLAGS := $(CFLAGS) $(UTIL_CFLAGS) $(GST_CFLAGS) -D VERSION='"$(version)"' -D DSPDIR='"$(dspdir)"'
 $(gst_plugin): LIBS := $(UTIL_LIBS) $(GST_LIBS)
 
