@@ -306,10 +306,10 @@ get_wmv_args(GstDspVDec *self)
 	return cb_data;
 }
 
-static inline void *
-create_node(GstDspVDec *self)
+static void *
+create_node(GstDspBase *base)
 {
-	GstDspBase *base;
+	GstDspVDec *self;
 	int dsp_handle;
 	void *node;
 	const dsp_uuid_t *alg_uuid;
@@ -329,7 +329,7 @@ create_node(GstDspVDec *self)
 	const dsp_uuid_t wmv_dec_uuid = { 0x609DAB97, 0x3DFC, 0x471F, 0x8A, 0xB9,
 		{ 0x4E, 0x56, 0xE8, 0x34, 0x50, 0x1B } };
 
-	base = GST_DSP_BASE(self);
+	self = GST_DSP_VDEC(base);
 	dsp_handle = base->dsp_handle;
 
 	if (!gstdsp_register(dsp_handle, &ringio_uuid, DSP_DCD_LIBRARYTYPE, "ringio.dll64P")) {
@@ -520,7 +520,7 @@ sink_setcaps(GstPad *pad,
 
 	gst_pad_set_caps(base->srcpad, out_caps);
 
-	base->node = create_node(self);
+	base->node = base->create_node(base);
 	if (!base->node) {
 		pr_err(self, "dsp node creation failed");
 		return FALSE;
@@ -554,6 +554,7 @@ instance_init(GTypeInstance *instance,
 	base = GST_DSP_BASE(instance);
 
 	base->use_pad_alloc = TRUE;
+	base->create_node = create_node;
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 }

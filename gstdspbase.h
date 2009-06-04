@@ -76,6 +76,8 @@ struct GstDspBase
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
 	gboolean use_map_cache;
 	guint dsp_error;
+
+	void *(*create_node)(GstDspBase *base);
 };
 
 struct GstDspBaseClass
