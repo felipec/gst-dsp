@@ -324,6 +324,7 @@ sink_setcaps(GstPad *pad,
 	if (strcmp(name, "video/x-h264") == 0) {
 		base->alg = GSTDSP_H264DEC;
 		self->priv.h264.lol = 0;
+		base->parse_func = gst_dsp_h264_parse;
 	}
 	else if (strcmp(name, "video/x-h263") == 0) {
 		base->alg = GSTDSP_H263DEC;

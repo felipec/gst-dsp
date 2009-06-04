@@ -35,6 +35,7 @@ enum {
 union vdec_priv_data {
 	struct {
 		gint lol;
+		gboolean is_avc;
 	} h264;
 	struct {
 		gboolean is_divx;

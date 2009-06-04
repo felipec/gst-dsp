@@ -449,3 +449,324 @@ VOS:
 failed:
 	return false;
 }
+
+static unsigned read_bits(struct get_bit_context *s, int n)
+{
+	n = MIN(n, get_bits_left(s));
+	if (n == 0)
+		return 0;
+	return get_bits(s, n);
+}
+
+/* read unsigned Exp-Golomb code */
+static unsigned get_ue_golomb(struct get_bit_context *s)
+{
+	unsigned i;
+
+	for (i = 0; i < 32; i++) {
+		if (read_bits(s, 1) != 0)
+			break;
+		if (get_bits_left(s) <= 0)
+			break;
+	}
+
+	return (1 << i) - 1 + read_bits(s, i);
+}
+
+/* read signed Exp-Golomb code */
+static int get_se_golomb(struct get_bit_context *s)
+{
+	int i = 0;
+
+	i = get_ue_golomb(s);
+	/* (-1)^(i+1) Ceil (i / 2) */
+	i = (i + 1) / 2 * (i & 1 ? 1 : -1);
+
+	return i;
+}
+
+#define CHECK_EOS(s) \
+	do { \
+		if (get_bits_left(s) <= 0) \
+			goto not_enough_data; \
+	} while (0)
+
+/* remove emulation prevention bytes (if needed) */
+static bool rbsp_unescape(uint8_t *b, unsigned len, uint8_t **ret, unsigned *ret_len)
+{
+	unsigned i, si, di;
+	uint8_t *dst;
+
+	for (i = 0; i + 3 < len; i++) {
+		if (b[i] == 0 && b[i + 1] == 0 && b[i + 2] <= 3) {
+			if (b[i + 2] != 3)
+				/* startcode */
+				len = i;
+			break;
+		}
+	}
+
+	if (i >= len - 3)
+		return false;
+
+	/* escaped */
+
+	dst = malloc(len);
+
+	memcpy(dst, b, i);
+	si = di = i;
+	while (si + 2 < len) {
+		if (b[si] == 0 && b[si + 1] == 0 && b[si + 2] == 3) {
+			dst[di++] = 0;
+			dst[di++] = 0;
+			si += 3;
+		} else {
+			dst[di++] = b[si++];
+		}
+	}
+	while (si < len)
+		dst[di++] = b[si++];
+
+	*ret = dst;
+	*ret_len = di;
+
+	return true;
+}
+
+bool gst_dsp_h264_parse(GstDspBase *base, GstBuffer *buf)
+{
+	GstDspVDec *vdec = GST_DSP_VDEC(base);
+	struct get_bit_context s;
+	guint8 b, profile, chroma, frame;
+	guint fc_top, fc_bottom, fc_left, fc_right;
+	gint width, height;
+	guint subwc[] = { 1, 2, 2, 1 }, subhc[] = { 1, 2, 1, 1 };
+	guint32 d;
+	bool avc;
+	uint8_t *rbsp_buffer = NULL;
+	unsigned rbsp_len;
+
+	init_get_bits(&s, buf->data, buf->size * 8);
+
+	/* auto-detect whether avc or byte-stream;
+	 * as unconvential codec-data cases contain bytestream NALs */
+	if (get_bits_left(&s) < 32)
+		goto not_enough_data;
+	d = get_bits(&s, 32);
+	avc = (d != 1 && (d >> 8) != 1);
+
+try_again:
+	pr_debug(base, "avc codec_data: %d", avc);
+	vdec->priv.h264.is_avc = avc;
+
+	if (avc) {
+		unsigned tsize;
+
+		/* provided buffer is then codec_data */
+		if (get_bits_left(&s) < 32)
+			goto not_enough_data;
+		skip_bits(&s, 8);
+		/* number of SPS */
+		if ((get_bits(&s, 8) & 0x1F) == 0) {
+			pr_debug(base, "invalid parameters in codec_data");
+			return false;
+		}
+		tsize = get_bits(&s, 16);
+	} else {
+		/* frame size is recorded in Sequence Parameter Set (SPS) */
+		/* locate SPS NAL unit in bytestream */
+		while (get_bits_left(&s) >= 32) {
+			uint32_t d = AV_RB32(s.buffer + (s.index >> 3));
+			if ((d >> 8 == 0x1) && ((d & 0x1F) == 0x07))
+				break;
+			skip_bits(&s, 8);
+		}
+		if (get_bits_left(&s) < 32)
+			goto bail;
+		skip_bits(&s, 24);
+	}
+
+	/* pointing at NAL SPS, now analyze it */
+	if (get_bits_left(&s) < 40) {
+		if (avc) {
+			avc = false;
+			init_get_bits(&s, buf->data, buf->size * 8);
+			goto try_again;
+		} else {
+			goto not_enough_data;
+		}
+	}
+
+	if (rbsp_unescape(buf->data + (get_bits_count(&s) >> 3),
+				get_bits_left(&s) >> 3,
+				&rbsp_buffer, &rbsp_len))
+	{
+		/* reinitialize bitreader */
+		init_get_bits(&s, rbsp_buffer, rbsp_len << 3);
+	}
+
+	/* need SPS NAL unit */
+	b = get_bits(&s, 8) & 0x1f;
+	if (b != 0x07)
+		goto bail;
+
+	profile = get_bits(&s, 8);
+
+	if (get_bits_left(&s) < 16)
+		goto not_enough_data;
+	skip_bits(&s, 16);
+
+	/* seq_parameter_set_id */
+	get_ue_golomb(&s);
+	CHECK_EOS(&s);
+	if (profile == 100 || profile == 110 || profile == 122 || profile == 244 ||
+			profile == 44 || profile == 83 || profile == 86)
+	{
+		int scp_flag = 0;
+
+		/* chroma_format_idc */
+		chroma = get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		if (chroma == 3) {
+			/* separate_colour_plane_flag */
+			if (get_bits_left(&s) < 1)
+				goto not_enough_data;
+			scp_flag = get_bits1(&s);
+		}
+		/* bit_depth_luma_minus8 */
+		get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		/* bit_depth_chroma_minus8 */
+		get_ue_golomb(&s);
+		CHECK_EOS(&s);
+
+		if (get_bits_left(&s) < 2)
+			goto not_enough_data;
+		/* qpprime_y_zero_transform_bypass_flag */
+		skip_bits(&s, 1);
+		/* seq_scaling_matrix_present_flag */
+		if (get_bits1(&s)) {
+			int i, j, m;
+
+			m = (chroma != 3) ? 8 : 12;
+			for (i = 0; i < m; i++) {
+				if (get_bits_left(&s) < 1)
+					goto not_enough_data;
+				/* seq_scaling_list_present_flag[i] */
+				if (get_bits1(&s)) {
+					int last_scale = 8, next_scale = 8, delta_scale;
+
+					j = (i < 6) ? 16 : 64;
+					for (; j > 0; j--) {
+						if (next_scale) {
+							delta_scale = get_se_golomb(&s);
+							CHECK_EOS(&s);
+							next_scale = (last_scale + delta_scale + 256) % 256;
+						}
+						if (next_scale)
+							last_scale = next_scale;
+					}
+				}
+			}
+		}
+		if (scp_flag)
+			chroma = 0;
+	} else {
+		/* inferred value */
+		chroma = 1;
+	}
+	/* log2_max_frame_num_minus4 */
+	get_ue_golomb(&s);
+	CHECK_EOS(&s);
+	/* pic_order_cnt_type */
+	b = get_ue_golomb(&s);
+	CHECK_EOS(&s);
+	if (b == 0) {
+		/* log2_max_pic_order_cnt_lsb_minus4 */
+		get_ue_golomb(&s);
+		CHECK_EOS(&s);
+	} else if (b == 1) {
+		if (get_bits_left(&s) < 1)
+			goto not_enough_data;
+		/* delta_pic_order_always_zero_flag */
+		skip_bits(&s, 1);
+		/* offset_for_non_ref_pic */
+		get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		/* offset_for_top_to_bottom_field */
+		get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		/* num_ref_frames_in_pic_order_cnt_cycle */
+		d = get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		for (; d > 0;  d--) {
+			/* offset_for_ref_frame[i] */
+			get_ue_golomb(&s);
+			CHECK_EOS(&s);
+		}
+	}
+	/* num_ref_frames */
+	get_ue_golomb(&s);
+	CHECK_EOS(&s);
+	/* gaps_in_frame_num_value_allowed_flag */
+	read_bits(&s, 1);
+	CHECK_EOS(&s);
+	/* pic_width_in_mbs_minus1 */
+	width = get_ue_golomb(&s) + 1;
+	width *= 16;
+	/* pic_height_in_map_units_minus1 */
+	height = get_ue_golomb(&s) + 1;
+	CHECK_EOS(&s);
+	/* frame_mbs_only_flag */
+	frame = read_bits(&s, 1);
+	CHECK_EOS(&s);
+	height *= 16 * (2 - frame);
+	if (!frame) {
+		/* mb_adaptive_frame_field_flag */
+		read_bits(&s, 1);
+		CHECK_EOS(&s);
+	}
+	/* direct_8x8_inference_flag */
+	read_bits(&s, 1);
+	CHECK_EOS(&s);
+	/* frame_cropping_flag */
+	b = read_bits(&s, 1);
+	CHECK_EOS(&s);
+	if (b) {
+		fc_left = get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		fc_right = get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		fc_top = get_ue_golomb(&s);
+		CHECK_EOS(&s);
+		fc_bottom = get_ue_golomb(&s);
+		CHECK_EOS(&s);
+	} else
+		fc_left = fc_right = fc_top = fc_bottom = 0;
+
+	pr_debug(base, "initial width=%d, height=%d", width, height);
+	pr_debug(base, "crop (%d,%d)(%d,%d)",
+			fc_left, fc_top, fc_right, fc_bottom);
+	if (chroma > 3) {
+		pr_err(base, "invalid SPS");
+		goto bail;
+	}
+	width -= (fc_left + fc_right) * subwc[chroma];
+	height -= (fc_top + fc_bottom) * subhc[chroma] * (2 - frame);
+	if (width < 0 || height < 0) {
+		pr_err(base, "invalid SPS");
+		goto bail;
+	}
+
+	pr_debug(base, "final width=%u, height=%u", width, height);
+
+	set_framesize(base, width, height, 0, 0);
+	free(rbsp_buffer);
+	return true;
+
+not_enough_data:
+	pr_err(base, "not enough data");
+bail:
+	free(rbsp_buffer);
+	return false;
+}
