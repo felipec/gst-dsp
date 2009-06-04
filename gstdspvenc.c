@@ -285,20 +285,24 @@ sink_setcaps(GstPad *pad,
 
 	out_caps = gst_caps_new_empty();
 
-	out_struc = gst_structure_new("image/jpeg",
-				      NULL);
-
-	{
-		if (gst_structure_get_int(in_struc, "width", &width))
-			gst_structure_set(out_struc, "width", G_TYPE_INT, width, NULL);
-		if (gst_structure_get_int(in_struc, "height", &height))
-			gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
-
-		/** @todo calculate a smaller output buffer size */
-		base->output_buffer_size = width * height * 2;
-		if (base->alg == GSTDSP_JPEGENC)
-			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
+	switch (base->alg) {
+		case GSTDSP_JPEGENC:
+			out_struc = gst_structure_new("image/jpeg",
+						      NULL);
+			break;
+		default:
+			return FALSE;
 	}
+
+	if (gst_structure_get_int(in_struc, "width", &width))
+		gst_structure_set(out_struc, "width", G_TYPE_INT, width, NULL);
+	if (gst_structure_get_int(in_struc, "height", &height))
+		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
+
+	/** @todo calculate a smaller output buffer size */
+	base->output_buffer_size = width * height * 2;
+	if (base->alg == GSTDSP_JPEGENC)
+		base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 
 	{
 		const GValue *framerate = NULL;
@@ -328,7 +332,13 @@ sink_setcaps(GstPad *pad,
 		return FALSE;
 	}
 
-	jpegenc_send_params(GST_DSP_BASE(self), width, height);
+	switch (base->alg) {
+		case GSTDSP_JPEGENC:
+			jpegenc_send_params(base, width, height);
+			break;
+		default:
+			return FALSE;
+	}
 
 	return gst_pad_set_caps(pad, caps);
 }

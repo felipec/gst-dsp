@@ -25,15 +25,15 @@
 #include <gst/gst.h>
 #include "gstdspbase.h"
 #include "gstdspvdec.h"
-#include "string.h"
 
 static inline void
 set_framesize(GstDspBase *base,
 	      gint width,
 	      gint height)
 {
+	GstDspVDec *vdec = GST_DSP_VDEC(base);
 	/* update the framesize only if it hasn't been set yet. */
-	if (base->width == 0 || base->height == 0) {
+	if (vdec->width == 0 || vdec->height == 0) {
 		GstCaps *out_caps;
 		GstStructure *struc;
 
@@ -45,8 +45,8 @@ set_framesize(GstDspBase *base,
 	}
 
 	base->output_buffer_size = width * height * 2;
-	base->width = width;
-	base->height = height;
+	vdec->width = width;
+	vdec->height = height;
 }
 
 gboolean gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)

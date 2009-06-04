@@ -38,6 +38,7 @@ typedef struct GstDspVDecClass GstDspVDecClass;
 struct GstDspVDec
 {
 	GstDspBase element;
+	gint width, height;
 };
 
 struct GstDspVDecClass

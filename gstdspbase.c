@@ -135,7 +135,7 @@ got_message(GstDspBase *self,
 		case 0x0600:
 			{
 				dmm_buffer_t *b;
-				dmm_buffer_t *cur = self->port[id]->buffer;
+				dmm_buffer_t *cur = self->ports[id]->buffer;
 				dsp_comm_t *msg_data = cur->data;
 
 				pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
@@ -145,11 +145,11 @@ got_message(GstDspBase *self,
 				if (id == 1) {
 					self->out_buffer = b;
 					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
-						g_sem_up(self->port[1]->sem);
+						g_sem_up(self->ports[1]->sem);
 				}
 				else {
 					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
-						g_sem_up(self->port[0]->sem);
+						g_sem_up(self->ports[0]->sem);
 					if (b->user_data)
 						gst_buffer_unref(b->user_data);
 					dmm_buffer_free(b);
@@ -270,7 +270,7 @@ output_loop(gpointer data)
 	self = GST_DSP_BASE(gst_pad_get_parent(pad));
 
 	pr_debug(self, "begin");
-	g_sem_down_status(self->port[1]->sem, &self->status);
+	g_sem_down_status(self->ports[1]->sem, &self->status);
 
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
@@ -390,8 +390,8 @@ got_error(GstDspBase *self,
 
 	g_atomic_int_set(&self->status, GST_FLOW_ERROR);
 	self->dsp_error = id;
-	g_sem_signal(self->port[0]->sem);
-	g_sem_signal(self->port[1]->sem);
+	g_sem_signal(self->ports[0]->sem);
+	g_sem_signal(self->ports[1]->sem);
 }
 
 static gpointer
@@ -475,7 +475,7 @@ dsp_init(GstDspBase *self)
 	}
 
 	for (i = 0; i < 2; i++) {
-		du_port_t *p = self->port[i];
+		du_port_t *p = self->ports[i];
 		p->buffer = dmm_buffer_new(self->dsp_handle, self->proc);
 		dmm_buffer_allocate(p->buffer, sizeof(dsp_comm_t));
 	}
@@ -510,7 +510,7 @@ dsp_deinit(GstDspBase *self)
 		goto leave;
 
 	for (i = 0; i < 2; i++) {
-		du_port_t *p = self->port[i];
+		du_port_t *p = self->ports[i];
 		dmm_buffer_free(p->buffer);
 	}
 
@@ -671,10 +671,12 @@ send_buffer(GstDspBase *self,
 {
 	dsp_comm_t *msg_data;
 	dmm_buffer_t *tmp;
+	du_port_t *port;
 
 	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
 
-	tmp = self->port[id]->buffer;
+	port = self->ports[id];
+	tmp = port->buffer;
 	msg_data = tmp->data;
 
 	memset(msg_data, 0, sizeof(*msg_data));
@@ -724,8 +726,8 @@ change_state(GstElement *element,
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
 			self->done = TRUE;
 			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
-			g_sem_signal(self->port[0]->sem);
-			g_sem_signal(self->port[1]->sem);
+			g_sem_signal(self->ports[0]->sem);
+			g_sem_signal(self->ports[1]->sem);
 			break;
 
 		default:
@@ -851,7 +853,7 @@ pad_chain(GstPad *pad,
 
 	send_buffer(self, d_buffer, 0, GST_BUFFER_SIZE(buf));
 
-	g_sem_down_status(self->port[0]->sem, &self->status);
+	g_sem_down_status(self->ports[0]->sem, &self->status);
 
 leave:
 
@@ -880,8 +882,8 @@ pad_event(GstPad *pad,
 			self->ts_in_pos = self->ts_out_pos = 0;
 			g_mutex_unlock(self->ts_mutex);
 
-			g_sem_signal(self->port[0]->sem);
-			g_sem_signal(self->port[1]->sem);
+			g_sem_signal(self->ports[0]->sem);
+			g_sem_signal(self->ports[1]->sem);
 
 			gst_pad_pause_task(self->srcpad);
 
@@ -897,7 +899,7 @@ pad_event(GstPad *pad,
 			g_sem_down(self->flush); /* output */
 			g_atomic_int_set(&self->status, GST_FLOW_OK);
 
-			g_sem_reset(self->port[1]->sem, 0);
+			g_sem_reset(self->ports[1]->sem, 0);
 			dmm_buffer_free(self->out_buffer);
 			self->out_buffer = NULL;
 			setup_output_buffers(self);
@@ -937,8 +939,8 @@ instance_init(GTypeInstance *instance,
 	gst_element_add_pad(GST_ELEMENT(self), self->sinkpad);
 	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);
 
-	self->port[0] = du_port_new();
-	self->port[1] = du_port_new();
+	self->ports[0] = du_port_new();
+	self->ports[1] = du_port_new();
 
 	self->ts_mutex = g_mutex_new();
 
@@ -956,8 +958,8 @@ finalize(GObject *obj)
 
 	g_mutex_free(self->ts_mutex);
 
-	du_port_free(self->port[1]);
-	du_port_free(self->port[0]);
+	du_port_free(self->ports[1]);
+	du_port_free(self->ports[0]);
 
 	G_OBJECT_CLASS(parent_class)->finalize (obj);
 }

@@ -35,13 +35,15 @@ G_BEGIN_DECLS
 typedef struct GstDspBase GstDspBase;
 typedef struct GstDspBaseClass GstDspBaseClass;
 
+typedef struct du_port_t du_port_t;
+
 #include "dmm_buffer.h"
 #include "sem.h"
 
-typedef struct {
+struct du_port_t {
 	dmm_buffer_t *buffer;
 	GSem *sem;
-} du_port_t;
+};
 
 struct GstDspBase
 {
@@ -59,7 +61,7 @@ struct GstDspBase
 	GThread *dsp_thread, *out_thread;
 	gboolean done;
 
-	du_port_t *port[2];
+	du_port_t *ports[2];
 	dmm_buffer_t *out_buffer;
 	dmm_buffer_t *alg_ctrl;
 	GstClockTime ts_array[20];
@@ -71,7 +73,6 @@ struct GstDspBase
 	GSem *flush;
 	dmm_buffer_t *array[10];
 	guint alg;
-	gint width, height;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
 	gboolean use_map_cache;
