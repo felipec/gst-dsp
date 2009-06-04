@@ -503,6 +503,11 @@ sink_setcaps(GstPad *pad,
 		framerate = gst_structure_get_value(in_struc, "framerate");
 		if (framerate)
 			gst_structure_set_value(out_struc, "framerate", framerate);
+		else
+			/* FIXME this is a workaround for xvimagesink */
+			gst_structure_set(out_struc, "framerate",
+					  GST_TYPE_FRACTION, 0, 1, NULL);
+
 	}
 
 	gst_caps_append_structure(out_caps, out_struc);
