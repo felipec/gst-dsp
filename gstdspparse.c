@@ -32,14 +32,17 @@ set_framesize(GstDspBase *base,
 	      gint width,
 	      gint height)
 {
-	GstCaps *out_caps;
-	GstStructure *struc;
+	/* update the framesize only if it hasn't been set yet. */
+	if (base->width == 0 || base->height == 0) {
+		GstCaps *out_caps;
+		GstStructure *struc;
 
-	out_caps = base->tmp_caps;
-	struc = gst_caps_get_structure(out_caps, 0);
-	gst_structure_set(struc,
-			  "width", G_TYPE_INT, width,
-			  "height", G_TYPE_INT, height, NULL);
+		out_caps = base->tmp_caps;
+		struc = gst_caps_get_structure(out_caps, 0);
+		gst_structure_set(struc,
+				  "width", G_TYPE_INT, width,
+				  "height", G_TYPE_INT, height, NULL);
+	}
 
 	base->output_buffer_size = width * height * 2;
 	base->width = width;
