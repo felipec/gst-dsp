@@ -601,6 +601,11 @@ dsp_stop(GstDspBase *self)
 	g_thread_join(self->dsp_thread);
 	gst_pad_pause_task(self->srcpad);
 
+	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
+		dmm_buffer_free(self->ports[i]->param);
+		self->ports[i]->param = NULL;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
 		dmm_buffer_t *cur = self->array[i];
 		if (cur) {
@@ -687,6 +692,14 @@ send_buffer(GstDspBase *self,
 	msg_data->buffer_len = len;
 
 	msg_data->user_data = (uint32_t) buffer;
+
+	if (port->param) {
+		msg_data->param_data = (uint32_t) port->param->map;
+		msg_data->param_size = port->param->size;
+	}
+
+	if (port->send_cb)
+		port->send_cb(self, port);
 
 	dmm_buffer_flush(tmp, sizeof(*msg_data));
 

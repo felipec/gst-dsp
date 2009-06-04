@@ -41,8 +41,9 @@ typedef struct du_port_t du_port_t;
 #include "sem.h"
 
 struct du_port_t {
-	dmm_buffer_t *buffer;
+	dmm_buffer_t *buffer, *param;
 	GSem *sem;
+	void (*send_cb)(GstDspBase *base, du_port_t *port);
 };
 
 struct GstDspBase
