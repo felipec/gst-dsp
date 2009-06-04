@@ -512,25 +512,6 @@ sink_setcaps(GstPad *pad,
 
 	gst_caps_append_structure(out_caps, out_struc);
 
-	{
-		gchar *str = gst_caps_to_string(out_caps);
-		pr_info(self, "src caps: %s", str);
-		g_free(str);
-	}
-
-	gst_pad_set_caps(base->srcpad, out_caps);
-
-	base->node = base->create_node(base);
-	if (!base->node) {
-		pr_err(self, "dsp node creation failed");
-		return FALSE;
-	}
-
-	if (!gstdsp_start(base)) {
-		pr_err(self, "dsp start failed");
-		return FALSE;
-	}
-
 	if (base->alg == GSTDSP_MPEG4VDEC) {
 		const GValue *codec_data;
 
@@ -541,6 +522,8 @@ sink_setcaps(GstPad *pad,
 			gst_pad_chain(base->sinkpad, buf);
 		}
 	}
+
+	base->tmp_caps = out_caps;
 
 	return gst_pad_set_caps(pad, caps);
 }

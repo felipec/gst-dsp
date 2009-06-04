@@ -78,6 +78,8 @@ struct GstDspBase
 	guint dsp_error;
 
 	void *(*create_node)(GstDspBase *base);
+	gboolean (*parse_func)(GstDspBase *base, GstBuffer *buf);
+	GstCaps *tmp_caps;
 };
 
 struct GstDspBaseClass

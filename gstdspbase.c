@@ -761,6 +761,45 @@ change_state(GstElement *element,
 	return ret;
 }
 
+static inline gboolean
+init_node(GstDspBase *self,
+	  GstBuffer *buf)
+{
+	if (self->parse_func) {
+		if (!self->parse_func(self, buf)) {
+			pr_err(self, "error while parsing");
+			return FALSE;
+		}
+	}
+
+	{
+		gchar *str = gst_caps_to_string(self->tmp_caps);
+		pr_info(self, "src caps: %s", str);
+		g_free(str);
+	}
+
+	if (!gst_pad_set_caps(self->srcpad, self->tmp_caps)) {
+		pr_err(self, "couldn't setup output caps");
+		return FALSE;
+	}
+
+	if (!self->output_buffer_size)
+		return FALSE;
+
+	self->node = self->create_node(self);
+	if (!self->node) {
+		pr_err(self, "dsp node creation failed");
+		return FALSE;
+	}
+
+	if (!gstdsp_start(self)) {
+		pr_err(self, "dsp start failed");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static GstFlowReturn
 pad_chain(GstPad *pad,
 	  GstBuffer *buf)
@@ -776,6 +815,14 @@ pad_chain(GstPad *pad,
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		goto leave;
+	}
+
+	if (G_UNLIKELY(!self->node)) {
+		if (!init_node(self, buf)) {
+			pr_err(self, "couldn't start node");
+			ret = GST_FLOW_ERROR;
+			goto leave;
+		}
 	}
 
 	d_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
