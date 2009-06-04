@@ -463,7 +463,7 @@ sink_setcaps(GstPad *pad,
 	in_struc = gst_caps_get_structure(caps, 0);
 
 	name = gst_structure_get_name(in_struc);
-	base->alg = GSTDSP_JPEGENC;
+	base->alg = GSTDSP_H263ENC;
 
 	out_caps = gst_caps_new_empty();
 
