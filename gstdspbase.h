@@ -87,7 +87,6 @@ GType gst_dsp_base_get_type(void);
 
 gboolean gstdsp_start(GstDspBase *self);
 void gstdsp_post_error(GstDspBase *self, const char *message);
-void gstdsp_send_buffer(GstDspBase *self, GstBuffer *buf);
 
 G_END_DECLS
 

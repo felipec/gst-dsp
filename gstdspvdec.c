@@ -538,7 +538,7 @@ sink_setcaps(GstPad *pad,
 		if (codec_data) {
 			GstBuffer *buf;
 			buf = gst_value_get_buffer(codec_data);
-			gstdsp_send_buffer(base, buf);
+			gst_pad_chain(base->sinkpad, buf);
 		}
 	}
 
