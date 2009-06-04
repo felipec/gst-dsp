@@ -38,6 +38,9 @@ typedef struct GstDspVEncClass GstDspVEncClass;
 struct GstDspVEnc
 {
 	GstDspBase element;
+	gint width, height;
+	gint bitrate;
+	gint framerate;
 };
 
 struct GstDspVEncClass

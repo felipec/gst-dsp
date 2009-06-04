@@ -33,6 +33,7 @@
 
 enum {
 	GSTDSP_JPEGENC,
+	GSTDSP_H263ENC,
 };
 
 static GstElementClass *parent_class;
@@ -63,6 +64,12 @@ generate_src_template(void)
 	caps = gst_caps_new_empty();
 
 	struc = gst_structure_new("image/jpeg",
+				  NULL);
+
+	gst_caps_append_structure(caps, struc);
+
+	struc = gst_structure_new("video/x-h263",
+				  "variant", G_TYPE_STRING, "itu",
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
@@ -131,6 +138,96 @@ get_jpegenc_args(GstDspVEnc *self)
 	return cb_data;
 }
 
+struct mp4venc_args {
+	uint16_t num_streams;
+
+	uint16_t in_id;
+	uint16_t in_type;
+	uint16_t in_count;
+
+	uint16_t out_id;
+	uint16_t out_type;
+	uint16_t out_count;
+	uint16_t reserved;
+
+	uint32_t width;
+	uint32_t height;
+	uint32_t bitrate;
+	uint32_t vbv_size;
+	uint32_t gob_interval;
+
+	uint8_t is_mpeg4;
+	uint8_t color_format;
+	uint8_t hec;
+	uint8_t resync_marker;
+	uint8_t data_part;
+	uint8_t reversible_vlc;
+	uint8_t unrestricted_mv;
+	uint8_t framerate;
+	uint8_t rate_control;
+	uint8_t qp_first;
+	uint8_t profile;
+	uint8_t level;
+	uint32_t max_delay;
+
+	uint32_t vbv_enable;
+	uint32_t h263_slice_mode;
+
+	uint32_t use_gov;
+	uint32_t use_vos;
+	uint32_t h263_annex_i;
+	uint32_t h263_annex_j;
+	uint32_t h263_annex_t;
+};
+
+static inline void *
+get_mp4venc_args(GstDspVEnc *self)
+{
+	struct mp4venc_args args = {
+		.num_streams = 2,
+		.in_id = 0,
+		.in_type = 0,
+		.in_count = 1,
+		.out_id = 1,
+		.out_type = 0,
+		.out_count = 1,
+		.unrestricted_mv = 0,
+		.reserved = 0,
+		.profile = 1,
+		.width = self->width,
+		.height = self->height,
+		.bitrate = self->bitrate,
+		.vbv_size = 120,
+		.gob_interval = 1,
+		.is_mpeg4 = 0,
+		.color_format = 2,
+		.hec = 1,
+		.resync_marker = 1,
+		.data_part = 0,
+		.reversible_vlc = 0,
+		.framerate = self->framerate,
+		.rate_control = 1, /* low delay */
+		.qp_first = 12,
+		.level = 20,
+		.h263_annex_i = 0,
+		.h263_annex_j = 0,
+		.h263_annex_t = 0,
+		.max_delay = 300,
+		.vbv_enable = 0,
+		.h263_slice_mode = 0,
+		.use_gov = 0,
+		.use_vos = 0,
+	};
+
+	struct foo_data *cb_data;
+
+	cb_data = malloc(sizeof(*cb_data));
+	cb_data->size = sizeof(args);
+	memcpy(&cb_data->data, &args, sizeof(args));
+
+	return cb_data;
+}
+
 static inline void *
 create_node(GstDspVEnc *self)
 {
@@ -146,6 +243,9 @@ create_node(GstDspVEnc *self)
 	const dsp_uuid_t jpeg_enc_uuid = { 0xcb70c0c1, 0x4c85, 0x11d6, 0xb1, 0x05,
 		{ 0x00, 0xc0, 0x4f, 0x32, 0x90, 0x31 } };
 
+	const dsp_uuid_t mp4v_enc_uuid = { 0x98c2e8d8, 0x4644, 0x11d6, 0x81, 0x18,
+		{ 0x00, 0xb0, 0xd0, 0x8d, 0x72, 0x9f } };
+
 	base = GST_DSP_BASE(self);
 	dsp_handle = base->dsp_handle;
 
@@ -158,6 +258,10 @@ create_node(GstDspVEnc *self)
 		case GSTDSP_JPEGENC:
 			alg_uuid = &jpeg_enc_uuid;
 			alg_fn = "jpegenc_sn.dll64P";
+			break;
+		case GSTDSP_H263ENC:
+			alg_uuid = &mp4v_enc_uuid;
+			alg_fn = "m4venc_sn.dll64P";
 			break;
 		default:
 			pr_err(self, "unknown algorithm");
@@ -188,6 +292,10 @@ create_node(GstDspVEnc *self)
 			case GSTDSP_JPEGENC:
 				attrs.profile_id = 10;
 				cb_data = get_jpegenc_args(self);
+				break;
+			case GSTDSP_H263ENC:
+				attrs.profile_id = 2;
+				cb_data = get_mp4venc_args(self);
 				break;
 			default:
 				cb_data = NULL;
@@ -257,6 +365,80 @@ jpegenc_send_params(GstDspBase *base,
 	dsp_send_message(base->dsp_handle, base->node, 0x0400, 3, (uint32_t) b->map);
 }
 
+struct mp4venc_stream_params {
+	uint32_t frame_index;
+	uint32_t framerate;
+	uint32_t bitrate;
+	uint32_t i_frame_interval;
+	uint32_t generate_header;
+	uint32_t force_i_frame;
+
+	uint32_t resync_interval;
+	uint32_t hec_interval;
+	uint32_t air_rate;
+	uint32_t mir_rate;
+	uint32_t qp_intra;
+	uint32_t f_code;
+	uint32_t half_pel;
+	uint32_t ac_pred;
+	uint32_t mv;
+	uint32_t use_umv;
+	uint32_t mv_data_enable;
+	uint32_t resync_data_enable;
+
+	uint32_t qp_inter;
+	uint32_t last_frame;
+	uint32_t width;
+};
+
+static void mp4venc_send_cb(GstDspBase *base,
+			    du_port_t *port)
+{
+	struct mp4venc_stream_params *param;
+	param = port->param->data;
+	param->frame_index++;
+	dmm_buffer_flush(port->param, sizeof(*param));
+}
+
+static inline void
+setup_mp4params(GstDspBase *base)
+{
+	struct mp4venc_stream_params *param;
+	GstDspVEnc *self = GST_DSP_VENC(base);
+	dmm_buffer_t *tmp;
+
+	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+	dmm_buffer_allocate(tmp, sizeof(*param));
+
+	param = tmp->data;
+	param->frame_index = 0;
+	param->framerate = self->framerate;
+	param->bitrate = self->bitrate;
+	param->i_frame_interval = 15;
+	param->generate_header = 0;
+	param->force_i_frame = 0;
+	param->resync_interval = 1024;
+	param->hec_interval = 3;
+	param->air_rate = 10;
+	param->mir_rate = 0;
+	param->qp_intra = 0;
+	param->f_code = 5;
+	param->half_pel = 1;
+	param->ac_pred = 0;
+	param->mv = 0;
+	param->use_umv = 0;
+	param->mv_data_enable = 0;
+	param->resync_data_enable = 0;
+	param->qp_inter = 8;
+	param->last_frame = 0;
+	param->width = 0;
+
+	dmm_buffer_flush(tmp, sizeof(*param));
+
+	base->ports[0]->param = tmp;
+	base->ports[0]->send_cb = mp4venc_send_cb;
+}
+
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -290,6 +472,11 @@ sink_setcaps(GstPad *pad,
 			out_struc = gst_structure_new("image/jpeg",
 						      NULL);
 			break;
+		case GSTDSP_H263ENC:
+			out_struc = gst_structure_new("video/x-h263",
+						      "variant", G_TYPE_STRING, "itu",
+						      NULL);
+			break;
 		default:
 			return FALSE;
 	}
@@ -304,11 +491,18 @@ sink_setcaps(GstPad *pad,
 	if (base->alg == GSTDSP_JPEGENC)
 		base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 
+	self->width = width;
+	self->height = height;
+	self->bitrate = 500000;
+
 	{
 		const GValue *framerate = NULL;
 		framerate = gst_structure_get_value(in_struc, "framerate");
-		if (framerate)
+		if (framerate) {
 			gst_structure_set_value(out_struc, "framerate", framerate);
+			self->framerate = gst_value_get_fraction_numerator(framerate) /
+				gst_value_get_fraction_denominator(framerate);
+		}
 	}
 
 	gst_caps_append_structure(out_caps, out_struc);
@@ -335,6 +529,9 @@ sink_setcaps(GstPad *pad,
 	switch (base->alg) {
 		case GSTDSP_JPEGENC:
 			jpegenc_send_params(base, width, height);
+			break;
+		case GSTDSP_H263ENC:
+			setup_mp4params(base);
 			break;
 		default:
 			return FALSE;
