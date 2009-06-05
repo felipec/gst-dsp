@@ -460,6 +460,7 @@ sink_setcaps(GstPad *pad,
 	GstCaps *out_caps;
 	GstStructure *out_struc;
 	const char *name;
+	gboolean ret;
 
 	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -510,6 +511,9 @@ sink_setcaps(GstPad *pad,
 	}
 
 	gst_caps_append_structure(out_caps, out_struc);
+	base->tmp_caps = out_caps;
+
+	ret = gst_pad_set_caps(pad, caps);
 
 	if (base->alg == GSTDSP_MPEG4VDEC) {
 		const GValue *codec_data;
@@ -522,9 +526,7 @@ sink_setcaps(GstPad *pad,
 		}
 	}
 
-	base->tmp_caps = out_caps;
-
-	return gst_pad_set_caps(pad, caps);
+	return ret;
 }
 
 static void
