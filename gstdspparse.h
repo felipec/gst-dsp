@@ -14,5 +14,6 @@
 #define GST_DSP_PARSE_H
 
 bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf);
+bool gst_dsp_mpeg4_parse(GstDspBase *base, GstBuffer *buf);
 
 #endif

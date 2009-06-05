@@ -347,8 +347,10 @@ sink_setcaps(GstPad *pad,
 		gst_structure_get_boolean(in_struc, "interlaced",
 					  &self->jpeg_is_interlaced);
 	}
-	else
+	else {
 		base->alg = GSTDSP_MPEG4VDEC;
+		base->parse_func = gst_dsp_mpeg4_parse;
+	}
 
 	switch (base->alg) {
 	case GSTDSP_MPEG4VDEC:

@@ -36,6 +36,9 @@ union vdec_priv_data {
 	struct {
 		gint lol;
 	} h264;
+	struct {
+		gboolean is_divx;
+	} mpeg4;
 };
 
 struct _GstDspVDec {

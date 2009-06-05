@@ -3,7 +3,8 @@
  * Copyright (C) 2009 Marco Ballesio
  *
  * Authors:
- * Marco Ballesio <marco.ballesio@gmail.com>
+ * Juha Alanen <juha.m.alanen@nokia.com>
+ * Marco Ballesio <marco.ballesio@nokia.com>
  * Felipe Contreras <felipe.contreras@nokia.com>
  *
  * This file may be used under the terms of the GNU Lesser General Public
@@ -15,6 +16,8 @@
 #include "gstdspbase.h"
 #include "gstdspvdec.h"
 #include "gstdspparse.h"
+
+#include "get_bits.h"
 
 static inline void
 set_framesize(GstDspBase *base,
@@ -197,5 +200,252 @@ exit:
 not_enough:
 	pr_err(base, "not enough data");
 bail:
+	return false;
+}
+
+static inline bool mpeg4_next_start_code(struct get_bit_context *s)
+{
+	if (get_bits_left(s) < 8 - (int) s->index % 8)
+		goto failed;
+	if (get_bits1(s))
+		goto failed;
+
+	while (s->index % 8 != 0) {
+		if (!get_bits1(s))
+			goto failed;
+	}
+
+	return true;
+
+failed:
+	return false;
+}
+
+static inline bool mpeg4_skip_user_data(struct get_bit_context *s, unsigned *bits)
+{
+	while (*bits == 0x1B2) {
+		do {
+			unsigned b;
+			if (get_bits_left(s) < 8)
+				goto failed;
+			b = get_bits(s, 8);
+			*bits = (*bits << 8) | b;
+		} while ((*bits >> 8) != 0x1);
+	}
+
+	return true;
+
+failed:
+	return false;
+}
+
+bool gst_dsp_mpeg4_parse(GstDspBase *base, GstBuffer *buf)
+{
+	struct get_bit_context s;
+	unsigned bits;
+	int time_increment_resolution;
+	int width, height;
+	unsigned ar;
+
+	init_get_bits(&s, buf->data, buf->size * 8);
+
+	if (get_bits_left(&s) < 32)
+		goto failed;
+
+	/* Expect Visual Object Sequence startcode (0x000001B0) */
+	bits = get_bits(&s, 32);
+	if (bits != 0x1B0) {
+		unsigned i;
+
+		pr_debug(base, "MPEG4 data does not start with VOSH, locating VOS");
+		/* find Video Object startcode and take it from there */
+		for (i = 4; i < buf->size; i++) {
+			if (G_UNLIKELY(bits <= 0x11F)) {
+				pr_debug(base, "VOS start code at offset %d", i - 4);
+				init_get_bits(&s, buf->data + i - 4, (buf->size - i + 4) * 8);
+				goto VOS;
+			}
+			bits = (bits << 8) | buf->data[i];
+		}
+		goto failed;
+	}
+
+	if (get_bits_left(&s) < 40)
+		goto failed;
+
+	/* profile and level indication */
+	bits = get_bits(&s, 8);
+	pr_debug(base, "profile id: %d", bits);
+	if (!bits)
+		pr_debug(base, "invalid profile id; carrying on nevertheless");
+
+	/* Expect Visual Object startcode (0x000001B5) */
+	bits = get_bits(&s, 32);
+	/* but skip optional user data */
+	if (!mpeg4_skip_user_data(&s, &bits))
+		goto failed;
+	if (bits != 0x1B5)
+		goto failed;
+
+	if (get_bits_left(&s) < 6)
+		goto failed;
+	if (get_bits1(&s)) {
+		if (get_bits_left(&s) < 12)
+			goto failed;
+		/* Skip visual_object_verid and priority */
+		skip_bits(&s, 7);
+	}
+
+	/* Only support video ID */
+	if (get_bits(&s, 4) != 1)
+		goto failed;
+
+	/* video signal type */
+	if (get_bits1(&s)) {
+		if (get_bits_left(&s) < 5)
+			goto failed;
+
+		/* video signal type, ignore format and range */
+		skip_bits(&s, 4);
+
+		if (get_bits1(&s)) {
+			if (get_bits_left(&s) < 24)
+				goto failed;
+			/* ignore color description */
+			skip_bits(&s, 24);
+		}
+	}
+
+	if (!mpeg4_next_start_code(&s))
+		goto failed;
+
+VOS:
+	if (get_bits_left(&s) < 32)
+		goto failed;
+
+	/* expecting a video object startcode */
+	bits = get_bits(&s, 32);
+	/* skip optional user data */
+	if (!mpeg4_skip_user_data(&s, &bits))
+		goto failed;
+	if (bits > 0x11F)
+		goto failed;
+
+	if (get_bits_left(&s) < 47)
+		goto failed;
+	/* expecting a video object layer startcode */
+	bits = get_bits(&s, 32);
+	if (bits < 0x120 || bits > 0x12F)
+		goto failed;
+
+	/* ignore random accessible vol and video object type indication */
+	skip_bits(&s, 9);
+
+	if (get_bits1(&s)) {
+		if (get_bits_left(&s) < 12)
+			goto failed;
+		/* skip video object layer verid and priority */
+		skip_bits(&s, 7);
+	}
+
+	/* aspect ratio */
+	ar = get_bits(&s, 4);
+	if (ar == 0) {
+		goto failed;
+	} else if (ar == 0xf) {
+		/* info is extended par */
+		if (get_bits_left(&s) < 17)
+			goto failed;
+		/* aspect_ratio_width */
+		skip_bits(&s, 8);
+		/* aspect_ratio_height */
+		skip_bits(&s, 8);
+	} else if (ar < 0x6) {
+		/* TODO get aspect ratio width and height from aspect ratio table */
+	}
+
+	if (get_bits1(&s)) {
+		if (get_bits_left(&s) < 4)
+			goto failed;
+		/* vol control parameters, skip chroma and low delay */
+		skip_bits(&s, 3);
+		if (get_bits1(&s)) {
+			if (get_bits_left(&s) < 79)
+				goto failed;
+			/* skip vbv_parameters */
+			skip_bits(&s, 79);
+		}
+	}
+
+	if (get_bits_left(&s) < 21)
+		goto failed;
+
+	/* layer shape */
+	if (get_bits(&s, 2))
+		/* only support rectangular */
+		goto failed;
+
+	if (!get_bits1(&s)) /* marker bit */
+		goto failed;
+
+	time_increment_resolution = get_bits(&s, 16);
+
+	if (!get_bits1(&s)) /* marker bit */
+		goto failed;
+
+	if (get_bits1(&s)) {
+		/* fixed time increment */
+		int n;
+
+		/*
+		 * Length of the time increment is the minimal number of bits
+		 * needed to represent time_increment_resolution.
+		 */
+		for (n = 0; time_increment_resolution >> n; n++)
+			;
+		if (get_bits_left(&s) < n)
+			goto failed;
+		skip_bits(&s, n);
+	}
+
+	/* assuming rectangular shape */
+
+	if (get_bits_left(&s) < 29)
+		goto failed;
+
+	if (!get_bits1(&s)) /* marker bit */
+		goto failed;
+	width = get_bits(&s, 13);
+	if (!width)
+		goto failed;
+	if (!get_bits1(&s)) /* marker bit */
+		goto failed;
+	height = get_bits(&s, 13);
+	if (!height)
+		goto failed;
+	if (!get_bits1(&s)) /* marker bit */
+		goto failed;
+
+	pr_debug(base, "width=%u, height=%u", width, height);
+
+	{
+		/* scan for user_data DivX marker */
+		GstDspVDec *vdec = GST_DSP_VDEC(base);
+
+		if (memmem(buf->data, buf->size, "\0\0\1\262DivX", 8)) {
+			pr_debug(base, "DivX marker found");
+			vdec->priv.mpeg4.is_divx = TRUE;
+		}
+		/* but maybe it is XviD, and perhaps we don't mind that */
+		if (memmem(buf->data, buf->size, "\0\0\1\262XviD", 8)) {
+			pr_debug(base, "also XviD marker found");
+			vdec->priv.mpeg4.is_divx = FALSE;
+		}
+	}
+
+	set_framesize(base, width, height, 0, 0);
+	return true;
+
+failed:
 	return false;
 }
