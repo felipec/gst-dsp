@@ -31,11 +31,6 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
-enum {
-	GSTDSP_JPEGENC,
-	GSTDSP_H263ENC,
-};
-
 static GstElementClass *parent_class;
 
 static inline GstCaps *
@@ -48,28 +43,6 @@ generate_sink_template(void)
 
 	struc = gst_structure_new("video/x-raw-yuv",
 				  "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'),
-				  NULL);
-
-	gst_caps_append_structure(caps, struc);
-
-	return caps;
-}
-
-static inline GstCaps *
-generate_src_template(void)
-{
-	GstCaps *caps;
-	GstStructure *struc;
-
-	caps = gst_caps_new_empty();
-
-	struc = gst_structure_new("image/jpeg",
-				  NULL);
-
-	gst_caps_append_structure(caps, struc);
-
-	struc = gst_structure_new("video/x-h263",
-				  "variant", G_TYPE_STRING, "itu",
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
@@ -556,22 +529,8 @@ base_init(gpointer g_class)
 {
 	GstElementClass *element_class;
 	GstPadTemplate *template;
-	GstElementDetails details;
 
 	element_class = GST_ELEMENT_CLASS(g_class);
-
-	details.longname = "DSP video encoder";
-	details.klass = "Codec/Encoder/Video";
-	details.description = "Encodes image with TI's DSP algorithms";
-	details.author = "Felipe Contreras";
-
-	gst_element_class_set_details(element_class, &details);
-
-	template = gst_pad_template_new("src", GST_PAD_SRC,
-					GST_PAD_ALWAYS,
-					generate_src_template());
-
-	gst_element_class_add_pad_template(element_class, template);
 
 	template = gst_pad_template_new("sink", GST_PAD_SINK,
 					GST_PAD_ALWAYS,

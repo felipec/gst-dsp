@@ -19,43 +19,34 @@
  *
  */
 
-#ifndef GST_DSP_VENC_H
-#define GST_DSP_VENC_H
+#ifndef GST_DSP_JPEGENC_H
+#define GST_DSP_JPEGENC_H
 
 #include <gst/gst.h>
 
 G_BEGIN_DECLS
 
-#define GST_DSP_VENC(obj) (GstDspVEnc *)(obj)
-#define GST_DSP_VENC_TYPE (gst_dsp_venc_get_type())
-#define GST_DSP_VENC_CLASS(obj) (GstDspVEncClass *)(obj)
+#define GST_DSP_JPEGENC(obj) (GstDspJpegEnc *)(obj)
+#define GST_DSP_JPEGENC_TYPE (gst_dsp_jpegenc_get_type())
+#define GST_DSP_JPEGENC_CLASS(obj) (GstDspJpegEncClass *)(obj)
 
-typedef struct GstDspVEnc GstDspVEnc;
-typedef struct GstDspVEncClass GstDspVEncClass;
+typedef struct GstDspJpegEnc GstDspJpegEnc;
+typedef struct GstDspJpegEncClass GstDspJpegEncClass;
 
-#include "gstdspbase.h"
+#include "gstdspvenc.h"
 
-enum
+struct GstDspJpegEnc
 {
-	GSTDSP_JPEGENC,
-	GSTDSP_H263ENC,
+	GstDspVEnc element;
 };
 
-struct GstDspVEnc
+struct GstDspJpegEncClass
 {
-	GstDspBase element;
-	gint width, height;
-	gint bitrate;
-	gint framerate;
+	GstDspVEncClass parent_class;
 };
 
-struct GstDspVEncClass
-{
-	GstDspBaseClass parent_class;
-};
-
-GType gst_dsp_venc_get_type(void);
+GType gst_dsp_jpegenc_get_type(void);
 
 G_END_DECLS
 
-#endif /* GST_DSP_VENC_H */
+#endif /* GST_DSP_JPEGENC_H */
