@@ -474,7 +474,7 @@ dsp_init(GstDspBase *self)
 		goto fail;
 	}
 
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		du_port_t *p = self->ports[i];
 		p->buffer = dmm_buffer_new(self->dsp_handle, self->proc);
 		dmm_buffer_allocate(p->buffer, sizeof(dsp_comm_t));
@@ -509,7 +509,7 @@ dsp_deinit(GstDspBase *self)
 	if (self->dsp_error)
 		goto leave;
 
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		du_port_t *p = self->ports[i];
 		dmm_buffer_free(p->buffer);
 	}
