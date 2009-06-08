@@ -780,12 +780,8 @@ static inline gboolean
 init_node(GstDspBase *self,
 	  GstBuffer *buf)
 {
-	if (self->parse_func) {
-		if (!self->parse_func(self, buf)) {
-			pr_err(self, "error while parsing");
-			return FALSE;
-		}
-	}
+	if (self->parse_func && !self->parse_func(self, buf))
+		pr_err(self, "error while parsing");
 
 	{
 		gchar *str = gst_caps_to_string(self->tmp_caps);
