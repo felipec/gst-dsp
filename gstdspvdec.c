@@ -515,7 +515,7 @@ sink_setcaps(GstPad *pad,
 
 	ret = gst_pad_set_caps(pad, caps);
 
-	if (base->alg == GSTDSP_MPEG4VDEC) {
+	{
 		const GValue *codec_data;
 
 		codec_data = gst_structure_get_value(in_struc, "codec_data");
