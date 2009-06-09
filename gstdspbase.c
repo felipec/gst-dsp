@@ -314,9 +314,8 @@ output_loop(gpointer data)
 				else
 					map_buffer(self, new_buf, b);
 			}
-			else {
+			else
 				map_buffer(self, new_buf, b);
-			}
 			b->used = TRUE;
 		}
 		else {
@@ -728,7 +727,6 @@ change_state(GstElement *element,
 				pr_err(self, "dsp init failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
-
 			break;
 
 		case GST_STATE_CHANGE_READY_TO_PAUSED:
@@ -758,7 +756,6 @@ change_state(GstElement *element,
 				pr_err(self, "dsp stop failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
-
 			break;
 
 		case GST_STATE_CHANGE_READY_TO_NULL:
@@ -766,7 +763,6 @@ change_state(GstElement *element,
 				pr_err(self, "dsp deinit failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
-
 			break;
 
 		default:
@@ -816,7 +812,7 @@ pad_chain(GstPad *pad,
 	  GstBuffer *buf)
 {
 	GstDspBase *self;
-	dmm_buffer_t *d_buffer;
+	dmm_buffer_t *b;
 	GstFlowReturn ret = GST_FLOW_OK;
 
 	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
@@ -836,21 +832,21 @@ pad_chain(GstPad *pad,
 		}
 	}
 
-	d_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
-	d_buffer->alignment = 0;
+	b = dmm_buffer_new(self->dsp_handle, self->proc);
+	b->alignment = 0;
 	if (self->input_buffer_size <= GST_BUFFER_SIZE(buf))
-		map_buffer(self, buf, d_buffer);
+		map_buffer(self, buf, b);
 	else {
-		dmm_buffer_allocate(d_buffer, self->input_buffer_size);
-		d_buffer->need_copy = true;
+		dmm_buffer_allocate(b, self->input_buffer_size);
+		b->need_copy = true;
 	}
 
-	if (d_buffer->need_copy) {
+	if (b->need_copy) {
 		pr_info(self, "copy");
-		memcpy(d_buffer->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
+		memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 	}
 
-	dmm_buffer_flush(d_buffer, GST_BUFFER_SIZE(buf));
+	dmm_buffer_flush(b, GST_BUFFER_SIZE(buf));
 
 	g_mutex_lock(self->ts_mutex);
 	self->ts_array[self->ts_in_pos] = GST_BUFFER_TIMESTAMP(buf);
@@ -860,7 +856,7 @@ pad_chain(GstPad *pad,
 #endif
 	g_mutex_unlock(self->ts_mutex);
 
-	send_buffer(self, d_buffer, 0, GST_BUFFER_SIZE(buf));
+	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
 
 	g_sem_down_status(self->ports[0]->sem, &self->status);
 
