@@ -188,8 +188,8 @@ get_slot(GstDspBase *self,
 	guint i;
 	dmm_buffer_t *b = NULL;
 
-	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
-		dmm_buffer_t *cur = self->array[i];
+	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
+		dmm_buffer_t *cur = self->cache[i];
 		if (cur && !cur->used) {
 			if (cur->data == GST_BUFFER_DATA(new_buf)) {
 				b = cur;
@@ -201,17 +201,17 @@ get_slot(GstDspBase *self,
 
 	pr_debug(self, "couldn't reuse mapping");
 
-	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
-		dmm_buffer_t *cur = self->array[i];
+	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
+		dmm_buffer_t *cur = self->cache[i];
 		if (!cur) {
 			b = dmm_buffer_new(self->dsp_handle, self->proc);
-			self->array[i] = b;
+			self->cache[i] = b;
 			goto found;
 		}
 	}
 
-	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
-		dmm_buffer_t *cur = self->array[i];
+	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
+		dmm_buffer_t *cur = self->cache[i];
 		if (cur && !cur->used) {
 			b = cur;
 			goto found;
@@ -234,7 +234,7 @@ setup_output_buffers(GstDspBase *self)
 
 	b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->used = TRUE;
-	self->array[0] = b;
+	self->cache[0] = b;
 
 	if (self->use_pad_alloc) {
 		GstFlowReturn ret;
@@ -605,11 +605,11 @@ dsp_stop(GstDspBase *self)
 		self->ports[i]->param = NULL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(self->array); i++) {
-		dmm_buffer_t *cur = self->array[i];
+	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
+		dmm_buffer_t *cur = self->cache[i];
 		if (cur) {
 			dmm_buffer_free(cur);
-			self->array[i] = NULL;
+			self->cache[i] = NULL;
 		}
 	}
 
