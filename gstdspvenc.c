@@ -383,6 +383,9 @@ static void mp4venc_send_cb(GstDspBase *base,
 	struct mp4venc_in_stream_params *param;
 	param = port->param->data;
 	param->frame_index++;
+	/* Key frames aren't set correctly from TI decoder, so forcing */
+	param->force_i_frame = 
+		((param->frame_index - 1) % param->i_frame_interval) == 0;
 	dmm_buffer_flush(port->param, sizeof(*param));
 }
 
