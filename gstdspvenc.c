@@ -168,9 +168,7 @@ get_mp4venc_args(GstDspVEnc *self)
 		.out_id = 1,
 		.out_type = 0,
 		.out_count = base->ports[1]->num_buffers,
-		.unrestricted_mv = 0,
 		.reserved = 0,
-		.profile = 1,
 		.width = self->width,
 		.height = self->height,
 		.bitrate = self->bitrate,
@@ -181,17 +179,19 @@ get_mp4venc_args(GstDspVEnc *self)
 		.resync_marker = 1,
 		.data_part = 0,
 		.reversible_vlc = 0,
+		.unrestricted_mv = 0,
 		.framerate = self->framerate,
 		.rate_control = 1, /* low delay */
 		.qp_first = 12,
-		.h263_annex_i = 0,
-		.h263_annex_j = 0,
-		.h263_annex_t = 0,
+		.profile = 1,
 		.max_delay = 300,
 		.vbv_enable = 0,
 		.h263_slice_mode = 0,
 		.use_gov = 0,
 		.use_vos = 0,
+		.h263_annex_i = 0,
+		.h263_annex_j = 0,
+		.h263_annex_t = 0,
 	};
 
 	args.is_mpeg4 = base->alg == GSTDSP_MP4VENC ? 1 : 0;
