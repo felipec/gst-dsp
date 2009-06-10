@@ -883,10 +883,6 @@ pad_event(GstPad *pad,
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
 
-			g_mutex_lock(self->ts_mutex);
-			self->ts_in_pos = self->ts_out_pos = 0;
-			g_mutex_unlock(self->ts_mutex);
-
 			g_sem_signal(self->ports[0]->sem);
 			g_sem_signal(self->ports[1]->sem);
 
@@ -902,12 +898,17 @@ pad_event(GstPad *pad,
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_sem_down(self->flush); /* input */
 			g_sem_down(self->flush); /* output */
-			g_atomic_int_set(&self->status, GST_FLOW_OK);
+
+			g_mutex_lock(self->ts_mutex);
+			self->ts_in_pos = self->ts_out_pos = 0;
+			g_mutex_unlock(self->ts_mutex);
 
 			g_sem_reset(self->ports[1]->sem, 0);
 			dmm_buffer_free(self->out_buffer);
 			self->out_buffer = NULL;
 			setup_output_buffers(self);
+
+			g_atomic_int_set(&self->status, GST_FLOW_OK);
 
 			gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
 			break;
