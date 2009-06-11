@@ -162,6 +162,7 @@ got_message(GstDspBase *self,
 					if (b->user_data)
 						gst_buffer_unref(b->user_data);
 					dmm_buffer_free(b);
+					p->buffer = NULL;
 				}
 			}
 			break;
@@ -817,8 +818,10 @@ pad_chain(GstPad *pad,
 	GstDspBase *self;
 	dmm_buffer_t *b;
 	GstFlowReturn ret = GST_FLOW_OK;
+	du_port_t *p;
 
 	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
+	p = self->ports[0];
 
 	pr_debug(self, "begin");
 
@@ -835,7 +838,7 @@ pad_chain(GstPad *pad,
 		}
 	}
 
-	b = dmm_buffer_new(self->dsp_handle, self->proc);
+	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->alignment = 0;
 	if (self->input_buffer_size <= GST_BUFFER_SIZE(buf))
 		map_buffer(self, buf, b);
@@ -906,8 +909,10 @@ pad_event(GstPad *pad,
 			self->ts_in_pos = self->ts_out_pos = 0;
 			g_mutex_unlock(self->ts_mutex);
 
+			g_sem_reset(self->ports[0]->sem, 0);
 			g_sem_reset(self->ports[1]->sem, 0);
 
+			du_port_flush(self->ports[0]);
 			du_port_flush(self->ports[1]);
 
 			setup_buffers(self);
