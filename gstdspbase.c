@@ -242,7 +242,8 @@ setup_buffers(GstDspBase *self)
 	p = self->ports[1];
 	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->used = TRUE;
-	self->cache[0] = b;
+	if (self->use_map_cache)
+		self->cache[0] = b;
 
 	if (self->use_pad_alloc) {
 		GstFlowReturn ret;
@@ -601,6 +602,9 @@ dsp_stop(GstDspBase *self)
 
 	g_thread_join(self->dsp_thread);
 	gst_pad_pause_task(self->srcpad);
+
+	for (i = 0; i < ARRAY_SIZE(self->ports); i++)
+		du_port_flush(self->ports[i]);
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		dmm_buffer_free(self->ports[i]->param);
