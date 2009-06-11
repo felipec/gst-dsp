@@ -43,13 +43,17 @@ map_buffer(GstDspBase *self,
 	   dmm_buffer_t *d_buf);
 
 static inline du_port_t *
-du_port_new(guint index)
+du_port_new(guint index,
+	    guint num_buffers)
 {
 	du_port_t *p;
 	p = calloc(1, sizeof(*p));
 
 	p->index = index;
-	p->sem = g_sem_new(0);
+	p->queue = async_queue_new();
+	p->num_buffers = num_buffers;
+	p->comm = calloc(num_buffers, sizeof(**p->comm));
+	p->buffers = calloc(num_buffers, sizeof(**p->comm));
 
 	return p;
 }
@@ -60,7 +64,9 @@ du_port_free(du_port_t *p)
 	if (!p)
 		return;
 
-	g_sem_free(p->sem);
+	free(p->buffers);
+	free(p->comm);
+	async_queue_free(p->queue);
 
 	free(p);
 }
@@ -68,12 +74,17 @@ du_port_free(du_port_t *p)
 static inline void
 du_port_flush(du_port_t *p)
 {
-	if (p->buffer) {
-		if (p->buffer->user_data)
-			gst_buffer_unref(p->buffer->user_data);
-		dmm_buffer_free(p->buffer);
-		p->buffer = NULL;
+	guint i;
+	for (i = 0; i < p->num_buffers; i++)
+		p->comm[i]->used = FALSE;
+	for (i = 0; i < p->num_buffers; i++) {
+		dmm_buffer_t *b = p->buffers[i];
+		if (b->user_data)
+			gst_buffer_unref(b->user_data);
+		dmm_buffer_free(b);
+		p->buffers[i] = NULL;
 	}
+	async_queue_flush(p->queue);
 }
 
 static inline void
@@ -148,12 +159,21 @@ got_message(GstDspBase *self,
 			{
 				dmm_buffer_t *b;
 				du_port_t *p = self->ports[id];
-				dmm_buffer_t *cur = p->comm;
-				dsp_comm_t *msg_data = cur->data;
+				dmm_buffer_t *cur = NULL;
+				dsp_comm_t *msg_data;
+				guint i;
 
 				pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 
+				for (i = 0; i < p->num_buffers; i++) {
+					if (msg->arg_1 == (uint32_t) p->comm[i]->map) {
+						cur = p->comm[i];
+						break;
+					}
+				}
+				msg_data = cur->data;
 				b = (void *) msg_data->user_data;
+				cur->used = FALSE;
 
 				if (id == 0) {
 					if (b->user_data) {
@@ -162,8 +182,7 @@ got_message(GstDspBase *self,
 					}
 				}
 
-				if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
-					g_sem_up(p->sem);
+				async_queue_push(p->queue, b);
 			}
 			break;
 		case 0x0500:
@@ -242,37 +261,44 @@ setup_buffers(GstDspBase *self)
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
 	du_port_t *p;
+	guint i;
 
 	p = self->ports[0];
-	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
-	b->alignment = 0;
+	for (i = 0; i < p->num_buffers; i++) {
+		p->buffers[i] = b = dmm_buffer_new(self->dsp_handle, self->proc);
+		b->alignment = 0;
+		async_queue_push(p->queue, b);
+	}
 
 	p = self->ports[1];
-	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
-	b->used = TRUE;
-	if (self->use_map_cache)
-		self->cache[0] = b;
+	for (i = 0; i < p->num_buffers; i++) {
+		b = dmm_buffer_new(self->dsp_handle, self->proc);
+		p->buffers[i] = b;
+		b->used = TRUE;
+		if (self->use_map_cache)
+			self->cache[i] = b;
 
-	if (self->use_pad_alloc) {
-		GstFlowReturn ret;
-		ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
-							GST_BUFFER_OFFSET_NONE,
-							self->output_buffer_size,
-							GST_PAD_CAPS(self->srcpad),
-							&buf);
+		if (self->use_pad_alloc) {
+			GstFlowReturn ret;
+			ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
+								GST_BUFFER_OFFSET_NONE,
+								self->output_buffer_size,
+								GST_PAD_CAPS(self->srcpad),
+								&buf);
 
-		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
-			return;
+			if (G_UNLIKELY(ret != GST_FLOW_OK)) {
+				pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+				return;
+			}
+
+			map_buffer(self, buf, b);
+			gst_buffer_unref(buf);
 		}
+		else
+			dmm_buffer_allocate(b, self->output_buffer_size);
 
-		map_buffer(self, buf, b);
-		gst_buffer_unref(buf);
+		send_buffer(self, b, 1, 0);
 	}
-	else
-		dmm_buffer_allocate(b, self->output_buffer_size);
-
-	send_buffer(self, b, 1, 0);
 }
 
 static void
@@ -288,14 +314,12 @@ output_loop(gpointer data)
 	self = GST_DSP_BASE(gst_pad_get_parent(pad));
 
 	pr_debug(self, "begin");
-	g_sem_down_status(self->ports[1]->sem, &self->status);
+	b = async_queue_pop(self->ports[1]->queue);
 
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		goto leave;
 	}
-
-	b = self->ports[1]->buffer;
 
 	b->used = FALSE;
 
@@ -402,8 +426,8 @@ got_error(GstDspBase *self,
 
 	g_atomic_int_set(&self->status, GST_FLOW_ERROR);
 	self->dsp_error = id;
-	g_sem_signal(self->ports[0]->sem);
-	g_sem_signal(self->ports[1]->sem);
+	async_queue_disable(self->ports[0]->queue);
+	async_queue_disable(self->ports[1]->queue);
 }
 
 static gpointer
@@ -488,8 +512,11 @@ dsp_init(GstDspBase *self)
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		du_port_t *p = self->ports[i];
-		p->comm = dmm_buffer_new(self->dsp_handle, self->proc);
-		dmm_buffer_allocate(p->comm, sizeof(dsp_comm_t));
+		guint j;
+		for (j = 0; j < p->num_buffers; j++) {
+			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc);
+			dmm_buffer_allocate(p->comm[j], sizeof(dsp_comm_t));
+		}
 	}
 
 	return TRUE;
@@ -523,7 +550,11 @@ dsp_deinit(GstDspBase *self)
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		du_port_t *p = self->ports[i];
-		dmm_buffer_free(p->comm);
+		guint j;
+		for (j = 0; j < p->num_buffers; j++) {
+			dmm_buffer_free(p->comm[j]);
+			p->comm[j] = NULL;
+		}
 	}
 
 	if (self->proc) {
@@ -688,11 +719,20 @@ send_buffer(GstDspBase *self,
 	dsp_comm_t *msg_data;
 	dmm_buffer_t *tmp;
 	du_port_t *port;
+	guint i;
 
 	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
 
 	port = self->ports[id];
-	tmp = port->comm;
+
+	for (i = 0; i < port->num_buffers; i++) {
+		if (!port->comm[i]->used) {
+			tmp = port->comm[i];
+			tmp->used = TRUE;
+			break;
+		}
+	}
+
 	msg_data = tmp->data;
 
 	memset(msg_data, 0, sizeof(*msg_data));
@@ -749,8 +789,8 @@ change_state(GstElement *element,
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
 			self->done = TRUE;
 			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
-			g_sem_signal(self->ports[0]->sem);
-			g_sem_signal(self->ports[1]->sem);
+			async_queue_disable(self->ports[0]->queue);
+			async_queue_disable(self->ports[1]->queue);
 			break;
 
 		default:
@@ -833,11 +873,6 @@ pad_chain(GstPad *pad,
 
 	pr_debug(self, "begin");
 
-	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
-		pr_info(self, "status: %s", gst_flow_get_name(self->status));
-		goto leave;
-	}
-
 	if (G_UNLIKELY(!self->node)) {
 		if (!init_node(self, buf)) {
 			pr_err(self, "couldn't start node");
@@ -846,7 +881,12 @@ pad_chain(GstPad *pad,
 		}
 	}
 
-	b = p->buffer;
+	b = async_queue_pop(self->ports[0]->queue);
+
+	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
+		pr_info(self, "status: %s", gst_flow_get_name(self->status));
+		goto leave;
+	}
 
 	if (self->input_buffer_size <= GST_BUFFER_SIZE(buf))
 		map_buffer(self, buf, b);
@@ -874,8 +914,6 @@ pad_chain(GstPad *pad,
 
 	gst_buffer_unref(buf);
 
-	g_sem_down_status(self->ports[0]->sem, &self->status);
-
 leave:
 
 	pr_debug(self, "end");
@@ -899,8 +937,8 @@ pad_event(GstPad *pad,
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
 
-			g_sem_signal(self->ports[0]->sem);
-			g_sem_signal(self->ports[1]->sem);
+			async_queue_disable(self->ports[0]->queue);
+			async_queue_disable(self->ports[1]->queue);
 
 			gst_pad_pause_task(self->srcpad);
 
@@ -919,15 +957,14 @@ pad_event(GstPad *pad,
 			self->ts_in_pos = self->ts_out_pos = 0;
 			g_mutex_unlock(self->ts_mutex);
 
-			g_sem_reset(self->ports[0]->sem, 0);
-			g_sem_reset(self->ports[1]->sem, 0);
-
 			du_port_flush(self->ports[0]);
 			du_port_flush(self->ports[1]);
 
-			setup_buffers(self);
-
 			g_atomic_int_set(&self->status, GST_FLOW_OK);
+			async_queue_enable(self->ports[0]->queue);
+			async_queue_enable(self->ports[1]->queue);
+
+			setup_buffers(self);
 
 			gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
 			break;
@@ -964,8 +1001,8 @@ instance_init(GTypeInstance *instance,
 	gst_element_add_pad(GST_ELEMENT(self), self->sinkpad);
 	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);
 
-	self->ports[0] = du_port_new(0);
-	self->ports[1] = du_port_new(1);
+	self->ports[0] = du_port_new(0, 1);
+	self->ports[1] = du_port_new(1, 1);
 
 	self->ts_mutex = g_mutex_new();
 

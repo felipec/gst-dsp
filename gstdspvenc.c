@@ -82,14 +82,16 @@ struct jpegenc_args
 static inline void *
 get_jpegenc_args(GstDspVEnc *self)
 {
+	GstDspBase *base = GST_DSP_BASE(self);
+
 	struct jpegenc_args args = {
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = 1,
+		.in_count = base->ports[0]->num_buffers,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = 1,
+		.out_count = base->ports[1]->num_buffers,
 		.max_width = 2592 + 32,
 		.max_height = 1968 + 32,
 		.color_format = 1,
@@ -156,14 +158,16 @@ struct mp4venc_args {
 static inline void *
 get_mp4venc_args(GstDspVEnc *self)
 {
+	GstDspBase *base = GST_DSP_BASE(self);
+
 	struct mp4venc_args args = {
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = 1,
+		.in_count = base->ports[0]->num_buffers,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = 1,
+		.out_count = base->ports[1]->num_buffers,
 		.unrestricted_mv = 0,
 		.reserved = 0,
 		.profile = 1,

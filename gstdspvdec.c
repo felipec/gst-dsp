@@ -152,10 +152,10 @@ get_mp4v_args(GstDspVDec *self)
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = 1,
+		.in_count = base->ports[0]->num_buffers,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = 1,
+		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
 		.color_format = 4,
@@ -212,14 +212,16 @@ struct h264vdec_args
 static inline void *
 get_h264_args(GstDspVDec *self)
 {
+	GstDspBase *base = GST_DSP_BASE(self);
+
 	struct h264vdec_args args = {
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = 1,
+		.in_count = base->ports[0]->num_buffers,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = 1,
+		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
 		.color_format = 1,
@@ -273,14 +275,16 @@ struct wmvdec_args
 static inline void *
 get_wmv_args(GstDspVDec *self)
 {
+	GstDspBase *base = GST_DSP_BASE(self);
+
 	struct wmvdec_args args = {
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
-		.in_count = 1,
+		.in_count = base->ports[0]->num_buffers,
 		.out_id = 1,
 		.out_type = 0,
-		.out_count = 1,
+		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
 		.color_format = 1,

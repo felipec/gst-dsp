@@ -39,12 +39,15 @@ typedef struct du_port_t du_port_t;
 
 #include "dmm_buffer.h"
 #include "sem.h"
+#include "async_queue.h"
 
 struct du_port_t {
 	guint index;
-	dmm_buffer_t *comm, *param;
-	GSem *sem;
-	dmm_buffer_t *buffer;
+	dmm_buffer_t **buffers;
+	dmm_buffer_t **comm; /**< arm-dsp communication structure */
+	dmm_buffer_t *param;
+	guint num_buffers;
+	AsyncQueue *queue;
 	void (*send_cb)(GstDspBase *base, du_port_t *port);
 };
 
