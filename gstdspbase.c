@@ -135,7 +135,8 @@ got_message(GstDspBase *self,
 		case 0x0600:
 			{
 				dmm_buffer_t *b;
-				dmm_buffer_t *cur = self->ports[id]->comm;
+				du_port_t *p = self->ports[id];
+				dmm_buffer_t *cur = p->comm;
 				dsp_comm_t *msg_data = cur->data;
 
 				pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
@@ -145,11 +146,11 @@ got_message(GstDspBase *self,
 				if (id == 1) {
 					self->out_buffer = b;
 					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
-						g_sem_up(self->ports[1]->sem);
+						g_sem_up(p->sem);
 				}
 				else {
 					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
-						g_sem_up(self->ports[0]->sem);
+						g_sem_up(p->sem);
 					if (b->user_data)
 						gst_buffer_unref(b->user_data);
 					dmm_buffer_free(b);
@@ -227,7 +228,7 @@ found:
 }
 
 static inline void
-setup_output_buffers(GstDspBase *self)
+setup_buffers(GstDspBase *self)
 {
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
@@ -578,7 +579,7 @@ gstdsp_start(GstDspBase *self)
 	/* play */
 	dsp_send_message(self->dsp_handle, self->node, 0x0100, 0, 0);
 
-	setup_output_buffers(self);
+	setup_buffers(self);
 
 	return TRUE;
 }
@@ -904,9 +905,11 @@ pad_event(GstPad *pad,
 			g_mutex_unlock(self->ts_mutex);
 
 			g_sem_reset(self->ports[1]->sem, 0);
+
 			dmm_buffer_free(self->out_buffer);
 			self->out_buffer = NULL;
-			setup_output_buffers(self);
+
+			setup_buffers(self);
 
 			g_atomic_int_set(&self->status, GST_FLOW_OK);
 
