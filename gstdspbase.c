@@ -245,7 +245,7 @@ setup_output_buffers(GstDspBase *self)
 							&buf);
 
 		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-			pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
 			return;
 		}
 
@@ -299,7 +299,7 @@ output_loop(gpointer data)
 							&new_buf);
 
 		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-			pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
 			goto leave;
 		}
 
