@@ -144,7 +144,6 @@ got_message(GstDspBase *self,
 				b = (void *) msg_data->user_data;
 
 				if (id == 1) {
-					self->out_buffer = b;
 					if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
 						g_sem_up(p->sem);
 				}
@@ -233,7 +232,7 @@ setup_buffers(GstDspBase *self)
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
 
-	b = dmm_buffer_new(self->dsp_handle, self->proc);
+	self->out_buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->used = TRUE;
 	self->cache[0] = b;
 
@@ -279,12 +278,6 @@ output_loop(gpointer data)
 	}
 
 	b = self->out_buffer;
-
-	if (!b) {
-		pr_err(self, "out_buffer = NULL!");
-		ret = GST_FLOW_ERROR;
-		goto leave;
-	}
 
 	b->used = FALSE;
 
