@@ -135,7 +135,7 @@ got_message(GstDspBase *self,
 		case 0x0600:
 			{
 				dmm_buffer_t *b;
-				dmm_buffer_t *cur = self->ports[id]->buffer;
+				dmm_buffer_t *cur = self->ports[id]->comm;
 				dsp_comm_t *msg_data = cur->data;
 
 				pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
@@ -475,8 +475,8 @@ dsp_init(GstDspBase *self)
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		du_port_t *p = self->ports[i];
-		p->buffer = dmm_buffer_new(self->dsp_handle, self->proc);
-		dmm_buffer_allocate(p->buffer, sizeof(dsp_comm_t));
+		p->comm = dmm_buffer_new(self->dsp_handle, self->proc);
+		dmm_buffer_allocate(p->comm, sizeof(dsp_comm_t));
 	}
 
 	return TRUE;
@@ -510,7 +510,7 @@ dsp_deinit(GstDspBase *self)
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		du_port_t *p = self->ports[i];
-		dmm_buffer_free(p->buffer);
+		dmm_buffer_free(p->comm);
 	}
 
 	if (self->proc) {
@@ -680,7 +680,7 @@ send_buffer(GstDspBase *self,
 	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
 
 	port = self->ports[id];
-	tmp = port->buffer;
+	tmp = port->comm;
 	msg_data = tmp->data;
 
 	memset(msg_data, 0, sizeof(*msg_data));
