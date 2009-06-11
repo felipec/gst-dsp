@@ -43,6 +43,7 @@ typedef struct du_port_t du_port_t;
 struct du_port_t {
 	dmm_buffer_t *comm, *param;
 	GSem *sem;
+	dmm_buffer_t *buffer;
 	void (*send_cb)(GstDspBase *base, du_port_t *port);
 };
 
@@ -63,7 +64,6 @@ struct GstDspBase
 	gboolean done;
 
 	du_port_t *ports[2];
-	dmm_buffer_t *out_buffer;
 	dmm_buffer_t *alg_ctrl;
 	GstClockTime ts_array[20];
 	guint ts_in_pos, ts_out_pos;

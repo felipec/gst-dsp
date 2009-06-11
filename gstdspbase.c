@@ -65,6 +65,15 @@ du_port_free(du_port_t *p)
 }
 
 static inline void
+du_port_flush(du_port_t *p)
+{
+	if (p->buffer) {
+		dmm_buffer_free(p->buffer);
+		p->buffer = NULL;
+	}
+}
+
+static inline void
 g_sem_down_status(GSem *sem,
 		  const GstFlowReturn *status)
 {
@@ -232,7 +241,7 @@ setup_buffers(GstDspBase *self)
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
 
-	self->out_buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
+	self->ports[1]->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
 	b->used = TRUE;
 	self->cache[0] = b;
 
@@ -277,7 +286,7 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
-	b = self->out_buffer;
+	b = self->ports[1]->buffer;
 
 	b->used = FALSE;
 
@@ -899,8 +908,7 @@ pad_event(GstPad *pad,
 
 			g_sem_reset(self->ports[1]->sem, 0);
 
-			dmm_buffer_free(self->out_buffer);
-			self->out_buffer = NULL;
+			du_port_flush(self->ports[1]);
 
 			setup_buffers(self);
 
