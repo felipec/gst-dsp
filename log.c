@@ -86,8 +86,10 @@ pr_helper(unsigned int level,
 #endif
 		g_print("%s: %s\n", function, tmp);
 	}
+#ifdef DEVEL
 	else if (level == 2)
 		g_print("%s: %s\n", function, tmp);
+#endif
 	else if (level == 3)
 		g_print("%s:%s(%u): %s\n", file, function, line, tmp);
 
