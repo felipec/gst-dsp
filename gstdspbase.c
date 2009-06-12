@@ -68,6 +68,8 @@ static inline void
 du_port_flush(du_port_t *p)
 {
 	if (p->buffer) {
+		if (p->buffer->user_data)
+			gst_buffer_unref(p->buffer->user_data);
 		dmm_buffer_free(p->buffer);
 		p->buffer = NULL;
 	}
@@ -155,8 +157,10 @@ got_message(GstDspBase *self,
 				if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
 					g_sem_up(p->sem);
 				if (id == 0) {
-					if (b->user_data)
+					if (b->user_data) {
 						gst_buffer_unref(b->user_data);
+						b->user_data = NULL;
+					}
 					dmm_buffer_free(b);
 					p->buffer = NULL;
 				}
@@ -259,6 +263,7 @@ setup_buffers(GstDspBase *self)
 		}
 
 		map_buffer(self, buf, b);
+		gst_buffer_unref(buf);
 	}
 	else
 		dmm_buffer_allocate(b, self->output_buffer_size);
@@ -319,6 +324,7 @@ output_loop(gpointer data)
 			}
 			else
 				map_buffer(self, new_buf, b);
+			gst_buffer_unref(new_buf);
 			b->used = TRUE;
 		}
 		else {
@@ -655,6 +661,7 @@ map_buffer(GstDspBase *self,
 	{
 		if (d_buf->data != GST_BUFFER_DATA(g_buf))
 			dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
+		gst_buffer_ref(g_buf);
 		d_buf->user_data = g_buf;
 		return;
 	}
@@ -865,6 +872,8 @@ pad_chain(GstPad *pad,
 	g_mutex_unlock(self->ts_mutex);
 
 	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
+
+	gst_buffer_unref(buf);
 
 	g_sem_down_status(self->ports[0]->sem, &self->status);
 
