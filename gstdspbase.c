@@ -159,8 +159,6 @@ got_message(GstDspBase *self,
 						gst_buffer_unref(b->user_data);
 						b->user_data = NULL;
 					}
-					dmm_buffer_free(b);
-					p->buffer = NULL;
 				}
 
 				if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
@@ -243,6 +241,10 @@ setup_buffers(GstDspBase *self)
 	GstBuffer *buf = NULL;
 	dmm_buffer_t *b;
 	du_port_t *p;
+
+	p = self->ports[0];
+	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
+	b->alignment = 0;
 
 	p = self->ports[1];
 	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
@@ -843,8 +845,8 @@ pad_chain(GstPad *pad,
 		}
 	}
 
-	p->buffer = b = dmm_buffer_new(self->dsp_handle, self->proc);
-	b->alignment = 0;
+	b = p->buffer;
+
 	if (self->input_buffer_size <= GST_BUFFER_SIZE(buf))
 		map_buffer(self, buf, b);
 	else {
