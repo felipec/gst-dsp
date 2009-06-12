@@ -659,8 +659,7 @@ map_buffer(GstDspBase *self,
 	if (d_buf->alignment == 0 ||
 	    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0)
 	{
-		if (d_buf->data != GST_BUFFER_DATA(g_buf))
-			dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
+		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
 		gst_buffer_ref(g_buf);
 		d_buf->user_data = g_buf;
 		return;
@@ -672,11 +671,7 @@ map_buffer(GstDspBase *self,
 			   (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment);
 	}
 
-	/* reallocate? */
-	if (!d_buf->allocated_data ||
-	    d_buf->size > GST_BUFFER_SIZE(g_buf)) {
-		dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
-	}
+	dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
 	d_buf->need_copy = true;
 }
 
