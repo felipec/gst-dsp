@@ -154,8 +154,6 @@ got_message(GstDspBase *self,
 
 				b = (void *) msg_data->user_data;
 
-				if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
-					g_sem_up(p->sem);
 				if (id == 0) {
 					if (b->user_data) {
 						gst_buffer_unref(b->user_data);
@@ -164,6 +162,9 @@ got_message(GstDspBase *self,
 					dmm_buffer_free(b);
 					p->buffer = NULL;
 				}
+
+				if (g_atomic_int_get(&self->status) == GST_FLOW_OK)
+					g_sem_up(p->sem);
 			}
 			break;
 		case 0x0500:
