@@ -525,6 +525,9 @@ instance_init(GTypeInstance *instance,
 
 	base = GST_DSP_BASE(instance);
 
+	base->ports[0] = du_port_new(0, 1);
+	base->ports[1] = du_port_new(1, 1);
+
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 }
 

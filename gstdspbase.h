@@ -95,6 +95,9 @@ struct GstDspBaseClass
 
 GType gst_dsp_base_get_type(void);
 
+du_port_t *du_port_new(guint index, guint num_buffers);
+void du_port_free(du_port_t *p);
+
 gboolean gstdsp_start(GstDspBase *self);
 void gstdsp_post_error(GstDspBase *self, const char *message);
 
