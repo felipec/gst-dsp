@@ -176,7 +176,6 @@ get_mp4venc_args(GstDspVEnc *self)
 		.bitrate = self->bitrate,
 		.vbv_size = 120,
 		.gob_interval = 1,
-		.is_mpeg4 = 0,
 		.color_format = 2,
 		.hec = 1,
 		.resync_marker = 1,
@@ -185,7 +184,6 @@ get_mp4venc_args(GstDspVEnc *self)
 		.framerate = self->framerate,
 		.rate_control = 1, /* low delay */
 		.qp_first = 12,
-		.level = 20,
 		.h263_annex_i = 0,
 		.h263_annex_j = 0,
 		.h263_annex_t = 0,
@@ -195,6 +193,13 @@ get_mp4venc_args(GstDspVEnc *self)
 		.use_gov = 0,
 		.use_vos = 0,
 	};
+
+	args.is_mpeg4 = base->alg == GSTDSP_MP4VENC ? 1 : 0;
+
+	if (base->alg == GSTDSP_MP4VENC)
+		args.level = 5;
+	else
+		args.level = 20;
 
 	struct foo_data *cb_data;
 
@@ -237,6 +242,7 @@ create_node(GstDspVEnc *self)
 			alg_fn = "jpegenc_sn.dll64P";
 			break;
 		case GSTDSP_H263ENC:
+		case GSTDSP_MP4VENC:
 			alg_uuid = &mp4v_enc_uuid;
 			alg_fn = "m4venc_sn.dll64P";
 			break;
@@ -271,6 +277,17 @@ create_node(GstDspVEnc *self)
 				cb_data = get_jpegenc_args(self);
 				break;
 			case GSTDSP_H263ENC:
+			case GSTDSP_MP4VENC:
+				if (self->width * self->height > 720 * 480)
+					attrs.profile_id = 4;
+				if (self->width * self->height > 640 * 480)
+					attrs.profile_id = 3;
+				else if (self->width * self->height > 352 * 288)
+					attrs.profile_id = 2;
+				else if (self->width * self->height > 176 * 144)
+					attrs.profile_id = 1;
+				else
+					attrs.profile_id = 0;
 				attrs.profile_id = 2;
 				cb_data = get_mp4venc_args(self);
 				break;
@@ -424,6 +441,11 @@ setup_mp4params(GstDspBase *base)
 	in_param->last_frame = 0;
 	in_param->width = 0;
 
+	if (base->alg == GSTDSP_MP4VENC)
+		in_param->ac_pred = 1;
+	else
+		in_param->ac_pred = 0;
+
 	dmm_buffer_flush(tmp, sizeof(*in_param));
 
 	base->ports[0]->param = tmp;
@@ -468,6 +490,12 @@ sink_setcaps(GstPad *pad,
 		case GSTDSP_H263ENC:
 			out_struc = gst_structure_new("video/x-h263",
 						      "variant", G_TYPE_STRING, "itu",
+						      NULL);
+			break;
+		case GSTDSP_MP4VENC:
+			out_struc = gst_structure_new("video/mpeg",
+						      "mpegversion", G_TYPE_INT, 4,
+						      "systemstream", G_TYPE_BOOLEAN, FALSE,
 						      NULL);
 			break;
 		default:
@@ -524,6 +552,7 @@ sink_setcaps(GstPad *pad,
 			jpegenc_send_params(base, width, height);
 			break;
 		case GSTDSP_H263ENC:
+		case GSTDSP_MP4VENC:
 			setup_mp4params(base);
 			break;
 		default:

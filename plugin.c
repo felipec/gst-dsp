@@ -24,6 +24,7 @@
 #include "gstdspdummy.h"
 #include "gstdspvdec.h"
 #include "gstdsph263enc.h"
+#include "gstdspmp4venc.h"
 #include "gstdspjpegenc.h"
 
 GstDebugCategory *gstdsp_debug;
@@ -42,6 +43,9 @@ plugin_init(GstPlugin *plugin)
 		return FALSE;
 
 	if (!gst_element_register(plugin, "dsph263enc", GST_RANK_SECONDARY, GST_DSP_H263ENC_TYPE))
+		return FALSE;
+
+	if (!gst_element_register(plugin, "dspmp4venc", GST_RANK_SECONDARY, GST_DSP_MP4VENC_TYPE))
 		return FALSE;
 
 	if (!gst_element_register(plugin, "dspjpegenc", GST_RANK_SECONDARY, GST_DSP_JPEGENC_TYPE))
