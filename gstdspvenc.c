@@ -425,7 +425,6 @@ sink_setcaps(GstPad *pad,
 	GstStructure *in_struc;
 	GstCaps *out_caps;
 	GstStructure *out_struc;
-	const char *name;
 	gint width = 0, height = 0;
 
 	self = GST_DSP_VENC(GST_PAD_PARENT(pad));
@@ -438,9 +437,6 @@ sink_setcaps(GstPad *pad,
 	}
 
 	in_struc = gst_caps_get_structure(caps, 0);
-
-	name = gst_structure_get_name(in_struc);
-	base->alg = GSTDSP_H263ENC;
 
 	out_caps = gst_caps_new_empty();
 
