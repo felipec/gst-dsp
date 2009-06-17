@@ -368,6 +368,15 @@ struct mp4venc_in_stream_params {
 	uint32_t width;
 };
 
+struct mp4venc_out_stream_params {
+	uint32_t bitstream_size;
+	uint32_t frame_type;
+	uint32_t mv_data_size;
+	uint32_t num_packets;
+	uint8_t mv_data[12960];
+	uint8_t resync_data[6480];
+};
+
 static void mp4venc_send_cb(GstDspBase *base,
 			    du_port_t *port)
 {
@@ -381,6 +390,7 @@ static inline void
 setup_mp4params(GstDspBase *base)
 {
 	struct mp4venc_in_stream_params *in_param;
+	struct mp4venc_out_stream_params *out_param;
 
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	dmm_buffer_t *tmp;
@@ -415,6 +425,12 @@ setup_mp4params(GstDspBase *base)
 
 	base->ports[0]->param = tmp;
 	base->ports[0]->send_cb = mp4venc_send_cb;
+
+	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+	dmm_buffer_allocate(tmp, sizeof(*out_param));
+	dmm_buffer_flush(tmp, sizeof(*out_param));
+
+	base->ports[1]->param = tmp;
 }
 
 static gboolean
