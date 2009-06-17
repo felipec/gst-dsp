@@ -342,7 +342,7 @@ jpegenc_send_params(GstDspBase *base,
 	dsp_send_message(base->dsp_handle, base->node, 0x0400, 3, (uint32_t) b->map);
 }
 
-struct mp4venc_stream_params {
+struct mp4venc_in_stream_params {
 	uint32_t frame_index;
 	uint32_t framerate;
 	uint32_t bitrate;
@@ -371,7 +371,7 @@ struct mp4venc_stream_params {
 static void mp4venc_send_cb(GstDspBase *base,
 			    du_port_t *port)
 {
-	struct mp4venc_stream_params *param;
+	struct mp4venc_in_stream_params *param;
 	param = port->param->data;
 	param->frame_index++;
 	dmm_buffer_flush(port->param, sizeof(*param));
@@ -380,37 +380,38 @@ static void mp4venc_send_cb(GstDspBase *base,
 static inline void
 setup_mp4params(GstDspBase *base)
 {
-	struct mp4venc_stream_params *param;
+	struct mp4venc_in_stream_params *in_param;
+
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	dmm_buffer_t *tmp;
 
 	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-	dmm_buffer_allocate(tmp, sizeof(*param));
+	dmm_buffer_allocate(tmp, sizeof(*in_param));
 
-	param = tmp->data;
-	param->frame_index = 0;
-	param->framerate = self->framerate;
-	param->bitrate = self->bitrate;
-	param->i_frame_interval = 15;
-	param->generate_header = 0;
-	param->force_i_frame = 0;
-	param->resync_interval = 1024;
-	param->hec_interval = 3;
-	param->air_rate = 10;
-	param->mir_rate = 0;
-	param->qp_intra = 0;
-	param->f_code = 5;
-	param->half_pel = 1;
-	param->ac_pred = 0;
-	param->mv = 0;
-	param->use_umv = 0;
-	param->mv_data_enable = 0;
-	param->resync_data_enable = 0;
-	param->qp_inter = 8;
-	param->last_frame = 0;
-	param->width = 0;
+	in_param = tmp->data;
+	in_param->frame_index = 0;
+	in_param->framerate = self->framerate;
+	in_param->bitrate = self->bitrate;
+	in_param->i_frame_interval = 15;
+	in_param->generate_header = 0;
+	in_param->force_i_frame = 0;
+	in_param->resync_interval = 1024;
+	in_param->hec_interval = 3;
+	in_param->air_rate = 10;
+	in_param->mir_rate = 0;
+	in_param->qp_intra = 0;
+	in_param->f_code = 5;
+	in_param->half_pel = 1;
+	in_param->ac_pred = 0;
+	in_param->mv = 0;
+	in_param->use_umv = 0;
+	in_param->mv_data_enable = 0;
+	in_param->resync_data_enable = 0;
+	in_param->qp_inter = 8;
+	in_param->last_frame = 0;
+	in_param->width = 0;
 
-	dmm_buffer_flush(tmp, sizeof(*param));
+	dmm_buffer_flush(tmp, sizeof(*in_param));
 
 	base->ports[0]->param = tmp;
 	base->ports[0]->send_cb = mp4venc_send_cb;
