@@ -40,6 +40,7 @@ typedef struct
 	void *data;
 	void *allocated_data;
 	size_t size;
+	size_t len;
 	void *reserve;
 	void *map;
 	bool need_copy;

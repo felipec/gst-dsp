@@ -173,6 +173,7 @@ got_message(GstDspBase *self,
 				}
 				msg_data = cur->data;
 				b = (void *) msg_data->user_data;
+				b->len = msg_data->buffer_len;
 				cur->used = FALSE;
 
 				if (id == 0) {
@@ -323,7 +324,14 @@ output_loop(gpointer data)
 
 	b->used = FALSE;
 
-	dmm_buffer_invalidate(b, b->size);
+	if (!b->len) {
+		/* no need to process this buffer */
+		pr_warning(self, "empty buffer");
+		send_buffer(self, b, 1, 0);
+		goto leave;
+	}
+
+	dmm_buffer_invalidate(b, b->len);
 
 	if (self->use_pad_alloc) {
 		GstBuffer *new_buf;
@@ -360,7 +368,7 @@ output_loop(gpointer data)
 
 			if (b->need_copy) {
 				pr_info(self, "copy");
-				memcpy(GST_BUFFER_DATA(out_buf), b->data, b->size);
+				memcpy(GST_BUFFER_DATA(out_buf), b->data, b->len);
 			}
 		}
 	}
@@ -368,7 +376,7 @@ output_loop(gpointer data)
 		out_buf = gst_buffer_new();
 		GST_BUFFER_DATA(out_buf) = b->data;
 		GST_BUFFER_MALLOCDATA(out_buf) = b->allocated_data;
-		GST_BUFFER_SIZE(out_buf) = b->size;
+		GST_BUFFER_SIZE(out_buf) = b->len;
 		gst_buffer_set_caps(out_buf, GST_PAD_CAPS(self->srcpad));
 
 		b->allocated_data = NULL;
