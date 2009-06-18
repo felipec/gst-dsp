@@ -310,6 +310,7 @@ output_loop(gpointer data)
 	GstFlowReturn ret = GST_FLOW_OK;
 	GstBuffer *out_buf;
 	dmm_buffer_t *b;
+	gboolean got_eos = FALSE;
 
 	pad = data;
 	self = GST_DSP_BASE(gst_pad_get_parent(pad));
@@ -388,6 +389,8 @@ output_loop(gpointer data)
 	g_mutex_lock(self->ts_mutex);
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
+	if (G_UNLIKELY(self->eos) && self->ts_in_pos == self->ts_out_pos)
+		got_eos = TRUE;
 #ifdef TS_COUNT
 	self->ts_count--;
 	if (self->ts_count > 2 || self->ts_count < 1)
@@ -402,6 +405,12 @@ output_loop(gpointer data)
 	}
 
 leave:
+	if (got_eos) {
+		pr_info(self, "got eos");
+		gst_pad_push_event(self->srcpad, gst_event_new_eos());
+		ret = GST_FLOW_UNEXPECTED;
+	}
+
 	if (ret != GST_FLOW_OK) {
 		g_atomic_int_set(&self->status, ret);
 		gst_pad_pause_task(self->srcpad);
@@ -794,6 +803,7 @@ change_state(GstElement *element,
 			self->done = FALSE;
 			async_queue_enable(self->ports[0]->queue);
 			async_queue_enable(self->ports[1]->queue);
+			self->eos = FALSE;
 			break;
 
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
@@ -943,6 +953,23 @@ pad_event(GstPad *pad,
 	pr_info(self, "event: %s", GST_EVENT_TYPE_NAME(event));
 
 	switch (GST_EVENT_TYPE(event)) {
+		case GST_EVENT_EOS:
+			if (g_atomic_int_get(&self->status) != GST_FLOW_OK) {
+				ret = gst_pad_push_event(self->srcpad, event);
+				break;
+			}
+
+			g_mutex_lock(self->ts_mutex);
+			if (self->ts_in_pos == self->ts_out_pos) {
+				ret = gst_pad_push_event(self->srcpad, event);
+			}
+			else {
+				self->eos = TRUE;
+				gst_event_unref(event);
+			}
+			g_mutex_unlock(self->ts_mutex);
+			break;
+
 		case GST_EVENT_FLUSH_START:
 			ret = gst_pad_push_event(self->srcpad, event);
 			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
@@ -965,6 +992,7 @@ pad_event(GstPad *pad,
 
 			g_mutex_lock(self->ts_mutex);
 			self->ts_in_pos = self->ts_out_pos = 0;
+			self->eos = FALSE;
 			g_mutex_unlock(self->ts_mutex);
 
 			du_port_flush(self->ports[0]);
