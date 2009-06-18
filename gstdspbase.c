@@ -792,6 +792,8 @@ change_state(GstElement *element,
 		case GST_STATE_CHANGE_READY_TO_PAUSED:
 			self->status = GST_FLOW_OK;
 			self->done = FALSE;
+			async_queue_enable(self->ports[0]->queue);
+			async_queue_enable(self->ports[1]->queue);
 			break;
 
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
