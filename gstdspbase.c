@@ -699,11 +699,13 @@ dsp_stop(GstDspBase *self)
 
 	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
 		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
+		self->node = NULL;
 		return FALSE;
 	}
 
 	if (!destroy_node(self, self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node destroy failed");
+		self->node = NULL;
 		return FALSE;
 	}
 
