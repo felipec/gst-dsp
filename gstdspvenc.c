@@ -477,7 +477,7 @@ sink_setcaps(GstPad *pad,
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
 
 	/** @todo calculate a smaller output buffer size */
-	base->output_buffer_size = width * height * 2;
+	base->output_buffer_size = width * height;
 	if (base->alg == GSTDSP_JPEGENC)
 		base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 
