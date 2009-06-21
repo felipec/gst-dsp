@@ -174,7 +174,6 @@ got_message(GstDspBase *self,
 				msg_data = cur->data;
 				b = (void *) msg_data->user_data;
 				b->len = msg_data->buffer_len;
-				cur->used = FALSE;
 
 				if (id == 0) {
 					if (b->user_data) {
@@ -183,6 +182,7 @@ got_message(GstDspBase *self,
 					}
 				}
 
+				cur->used = FALSE;
 				async_queue_push(p->queue, b);
 			}
 			break;
