@@ -280,7 +280,7 @@ create_node(GstDspVEnc *self)
 			case GSTDSP_MP4VENC:
 				if (self->width * self->height > 720 * 480)
 					attrs.profile_id = 4;
-				if (self->width * self->height > 640 * 480)
+				else if (self->width * self->height > 640 * 480)
 					attrs.profile_id = 3;
 				else if (self->width * self->height > 352 * 288)
 					attrs.profile_id = 2;
@@ -288,7 +288,6 @@ create_node(GstDspVEnc *self)
 					attrs.profile_id = 1;
 				else
 					attrs.profile_id = 0;
-				attrs.profile_id = 2;
 				cb_data = get_mp4venc_args(self);
 				break;
 			default:
