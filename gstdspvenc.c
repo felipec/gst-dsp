@@ -393,6 +393,18 @@ struct mp4venc_out_stream_params {
 	uint8_t resync_data[6480];
 };
 
+static void mp4venc_recv_cb(GstDspBase *base,
+			    du_port_t *port,
+			    dmm_buffer_t *p,
+			    dmm_buffer_t *b)
+{
+	struct mp4venc_out_stream_params *param;
+	param = p->data;
+
+	dmm_buffer_invalidate(p, sizeof(*param));
+	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
+}
+
 static void mp4venc_send_cb(GstDspBase *base,
 			    du_port_t *port,
 			    dmm_buffer_t *p,
@@ -454,6 +466,7 @@ setup_mp4params(GstDspBase *base)
 	dmm_buffer_flush(tmp, sizeof(*out_param));
 
 	base->ports[1]->param = tmp;
+	base->ports[1]->recv_cb = mp4venc_recv_cb;
 }
 
 static inline int calculate_bitrate(GstDspVEnc* self)

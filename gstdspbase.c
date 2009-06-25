@@ -394,6 +394,9 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
+	if (!g_atomic_int_get(&self->keyframe))
+		GST_BUFFER_FLAGS(out_buf) |= GST_BUFFER_FLAG_DELTA_UNIT;
+
 	g_mutex_lock(self->ts_mutex);
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
