@@ -35,6 +35,12 @@ typedef struct GstDspVEncClass GstDspVEncClass;
 
 #include "gstdspbase.h"
 
+union venc_priv_data {
+	struct {
+		gboolean bytestream;
+	} h264;
+};
+
 enum {
 	GSTDSP_JPEGENC,
 	GSTDSP_H263ENC,
@@ -48,6 +54,7 @@ struct GstDspVEnc {
 	gint bitrate;
 	gint framerate;
 	gint quality;
+	union venc_priv_data priv;
 };
 
 struct GstDspVEncClass {
