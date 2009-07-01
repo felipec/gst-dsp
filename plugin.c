@@ -26,6 +26,7 @@
 #include "gstdsph263enc.h"
 #include "gstdspmp4venc.h"
 #include "gstdspjpegenc.h"
+#include "gstdsph264enc.h"
 
 GstDebugCategory *gstdsp_debug;
 
@@ -49,6 +50,9 @@ plugin_init(GstPlugin *plugin)
 		return FALSE;
 
 	if (!gst_element_register(plugin, "dspjpegenc", GST_RANK_SECONDARY, GST_DSP_JPEGENC_TYPE))
+		return FALSE;
+
+	if (!gst_element_register(plugin, "dsph264enc", GST_RANK_SECONDARY, GST_DSP_H264ENC_TYPE))
 		return FALSE;
 
 	return TRUE;

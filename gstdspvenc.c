@@ -1,7 +1,9 @@
 /*
  * Copyright (C) 2009 Felipe Contreras
  *
- * Author: Felipe Contreras <felipe.contreras@gmail.com>
+ * Authors:
+ * Felipe Contreras <felipe.contreras@gmail.com>
+ * Juha Alanen <juha.m.alanen@nokia.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -209,6 +211,86 @@ get_mp4venc_args(GstDspVEnc *self)
 	return cb_data;
 }
 
+struct h264venc_args {
+	uint16_t num_streams;
+
+	uint16_t in_id;
+	uint16_t in_type;
+	uint16_t in_count;
+
+	uint16_t out_id;
+	uint16_t out_type;
+	uint16_t out_count;
+	uint16_t reserved;
+
+	uint32_t width;
+	uint32_t height;
+	uint32_t bitrate;
+	uint32_t bitstream_buf_size;
+	uint32_t intra_frame_period;
+	uint32_t framerate;
+
+	uint8_t  yuv_format;
+	uint8_t  unrestricted_mv; /* not supported */
+	uint8_t  num_ref_frames; /* not supported */
+	uint8_t  rc_algorithm;
+	uint8_t  idr_enable; /* not used */
+	uint8_t  deblocking_enable;
+	uint8_t  mv_range;
+	uint8_t  qpi_frame;
+	uint8_t  profile;
+	uint8_t  level;
+
+	uint16_t nal_mode;
+
+	uint32_t encoding_preset;
+	uint32_t rc_algo;
+};
+
+static inline void *
+get_h264venc_args(GstDspVEnc *self)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+
+	struct h264venc_args args = {
+		.num_streams = 2,
+		.in_id = 0,
+		.in_type = 0,
+		.in_count = base->ports[0]->num_buffers,
+		.out_id = 1,
+		.out_type = 0,
+		.out_count = base->ports[1]->num_buffers,
+		.reserved = 0,
+		.width = self->width,
+		.height = self->height,
+		.bitrate = self->bitrate,
+		.bitstream_buf_size = base->output_buffer_size,
+		.intra_frame_period = (self->framerate > 15) ? 29 : 14,
+		.framerate = self->framerate * 1000,
+		.yuv_format = 2,
+		.unrestricted_mv = 0, /* not supported */
+		.num_ref_frames = 1, /* not supported */
+		.rc_algorithm = 1, /* 0 = var, 1 == constant, 2 == none */
+		.idr_enable = 0, /* not used */
+		.deblocking_enable = 1,
+		.mv_range = 64,
+		.qpi_frame = 28,
+		.profile = 66, /* Baseline profile */
+		.level = 13,
+		.nal_mode = 0, /* 0 == bytestream, 1 == NALU */
+		.encoding_preset = 3,
+		.rc_algo = 0,
+	};
+
+	struct foo_data *cb_data;
+
+	cb_data = malloc(sizeof(*cb_data));
+	cb_data->size = sizeof(args);
+	memcpy(&cb_data->data, &args, sizeof(args));
+
+	return cb_data;
+}
+
 static inline void *
 create_node(GstDspVEnc *self)
 {
@@ -227,6 +309,9 @@ create_node(GstDspVEnc *self)
 	const dsp_uuid_t mp4v_enc_uuid = { 0x98c2e8d8, 0x4644, 0x11d6, 0x81, 0x18,
 		{ 0x00, 0xb0, 0xd0, 0x8d, 0x72, 0x9f } };
 
+	const dsp_uuid_t h264_enc_uuid = { 0x63A3581A, 0x09D7, 0x4AD0, 0x80, 0xB8,
+		{ 0x5F, 0x2C, 0x4D, 0x4D, 0x59, 0xC9 } };
+
 	base = GST_DSP_BASE(self);
 	dsp_handle = base->dsp_handle;
 
@@ -244,6 +329,10 @@ create_node(GstDspVEnc *self)
 		case GSTDSP_MP4VENC:
 			alg_uuid = &mp4v_enc_uuid;
 			alg_fn = "m4venc_sn.dll64P";
+			break;
+		case GSTDSP_H264ENC:
+			alg_uuid = &h264_enc_uuid;
+			alg_fn = "h264venc_sn.dll64P";
 			break;
 		default:
 			pr_err(self, "unknown algorithm");
@@ -288,6 +377,15 @@ create_node(GstDspVEnc *self)
 				else
 					attrs.profile_id = 0;
 				cb_data = get_mp4venc_args(self);
+				break;
+			case GSTDSP_H264ENC:
+				if (self->width * self->height > 352 * 288)
+					attrs.profile_id = 2;
+				else if (self->width * self->height > 176 * 144)
+					attrs.profile_id = 1;
+				else
+					attrs.profile_id = 0;
+				cb_data = get_h264venc_args(self);
 				break;
 			default:
 				cb_data = NULL;
@@ -353,6 +451,163 @@ jpegenc_send_params(GstDspBase *base)
 	base->alg_ctrl = b;
 
 	dsp_send_message(base->dsp_handle, base->node, 0x0400, 3, (uint32_t) b->map);
+}
+
+struct h264venc_in_stream_params {
+	uint32_t params_size;
+	uint32_t input_height;
+	uint32_t input_width;
+	uint32_t ref_framerate;
+	uint32_t target_framerate;
+	uint32_t target_bitrate;
+	uint32_t intra_frame_interval;
+	uint32_t generate_header;
+	uint32_t capture_width;
+	uint32_t force_i_frame;
+
+	uint32_t qp_intra;
+	uint32_t qp_inter;
+	uint32_t qp_max;
+	uint32_t qp_min;
+	uint32_t lf_disable_idc;
+	uint32_t quarter_pel_disable;
+	uint32_t air_mb_period;
+	uint32_t max_mbs_per_slice;
+	uint32_t max_bytes_per_slice;
+	uint32_t slice_refresh_row_start_number;
+	uint32_t slice_refresh_row_number;
+	uint32_t filter_offset_a;
+	uint32_t filter_offset_b;
+	uint32_t log2MaxFNumMinus4;
+	uint32_t chroma_qpi_index_offset;
+	uint32_t constrained_intra_pred_enable;
+	uint32_t pic_order_count_type;
+	uint32_t max_mv_per_mb;
+	uint32_t intra_4x4_enable_idc;
+	uint32_t mv_data_enable;
+	uint32_t hier_coding_enable;
+	uint32_t stream_format;
+	uint32_t intra_refresh_method;
+	uint32_t perceptual_quant;
+	uint32_t scene_change_det;
+
+	void (*nal_callback_func)(uint32_t *buf, uint32_t *buf_size, void *context);
+	void *context;
+
+	uint32_t num_slice_aso;
+	uint32_t aso_slice_order[8]; /* MAXNUMSLCGPS = 8 */
+	uint32_t num_slice_groups;
+	uint32_t slice_group_map_type;
+	uint32_t slice_group_change_direction_flag;
+	uint32_t slice_group_change_rate;
+	uint32_t slice_group_change_cycle;
+	uint32_t slice_group_params[8]; /* MAXNUMSLCGPS = 8 */
+
+	uint32_t frame_index;
+};
+
+struct h264venc_out_stream_params {
+	uint32_t bitstream_size;
+	int32_t frame_type;
+	uint32_t nalus_per_frame;
+	uint32_t nalu_sizes[1618];
+	uint32_t frame_index; /* Gives the number of the input frame which NAL unit belongs */
+	uint32_t nalu_index; /* Number of current NAL unit inside the frame */
+};
+
+static inline void
+h264venc_send_cb(GstDspBase *base,
+		 du_port_t *port,
+		 dmm_buffer_t *p,
+		 dmm_buffer_t *b)
+{
+	struct h264venc_in_stream_params *param;
+	param = p->data;
+	param->frame_index++;
+	dmm_buffer_flush(p, sizeof(*param));
+}
+
+static inline void
+setup_h264params(GstDspBase *base)
+{
+	struct h264venc_in_stream_params *in_param;
+	struct h264venc_out_stream_params *out_param;
+
+	GstDspVEnc *self = GST_DSP_VENC(base);
+	dmm_buffer_t *tmp;
+
+	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+	dmm_buffer_allocate(tmp, sizeof(*in_param));
+
+	in_param = tmp->data;
+	in_param->params_size = sizeof(*in_param);
+	in_param->input_height = self->height;
+	in_param->input_width = self->width;
+	in_param->ref_framerate = self->framerate * 1000;
+	in_param->target_framerate = self->framerate * 1000;
+	in_param->target_bitrate = self->bitrate;
+	in_param->intra_frame_interval = (self->framerate > 15) ? 29 : 14;
+	in_param->generate_header = 0;
+	in_param->capture_width = 0;
+	in_param->force_i_frame = 0;
+
+	in_param->qp_intra = 0x1c;
+	in_param->qp_inter = 0x1c;
+	in_param->qp_max = 0x33;
+	in_param->qp_min = 0;
+	in_param->lf_disable_idc = 0;
+	in_param->quarter_pel_disable = 0;
+	in_param->air_mb_period = 0;
+	in_param->max_mbs_per_slice = 3620;
+	in_param->max_bytes_per_slice = 327680;
+	in_param->slice_refresh_row_start_number = 0;
+	in_param->slice_refresh_row_number = 0;
+	in_param->filter_offset_a = 0;
+	in_param->filter_offset_b = 0;
+	in_param->log2MaxFNumMinus4 = 0;
+	in_param->chroma_qpi_index_offset= 0;
+	in_param->constrained_intra_pred_enable = 0;
+	in_param->pic_order_count_type = 0;
+	in_param->max_mv_per_mb = 4;
+	in_param->intra_4x4_enable_idc = 2;
+	in_param->mv_data_enable = 0;
+	in_param->hier_coding_enable = 0;
+	in_param->stream_format = 0; /* byte stream */
+	in_param->intra_refresh_method = 0;
+	in_param->perceptual_quant = 0;
+	in_param->scene_change_det = 0;
+
+	in_param->nal_callback_func = NULL;
+	in_param->context = NULL;
+	in_param->num_slice_aso = 0;
+	{
+		int i;
+		for (i = 0; i < 8; i++)
+			in_param->aso_slice_order[i] = 0; /* MAXNUMSLCGPS = 8 */
+	}
+	in_param->num_slice_groups = 0;
+	in_param->slice_group_map_type = 0;
+	in_param->slice_group_change_direction_flag = 0;
+	in_param->slice_group_change_rate = 0;
+	in_param->slice_group_change_cycle = 0;
+	{
+		int i;
+		for (i = 0; i < 8; i++)
+			in_param->slice_group_params[i] = 0; /* MAXNUMSLCGPS = 8 */
+	}
+
+	in_param->frame_index = 0;
+
+	dmm_buffer_flush(tmp, sizeof(*in_param));
+
+	base->ports[0]->param = tmp;
+	base->ports[0]->send_cb = h264venc_send_cb;
+
+	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+	dmm_buffer_allocate(tmp, sizeof(*out_param));
+	dmm_buffer_flush(tmp, sizeof(*out_param));
+
+	base->ports[1]->param = tmp;
 }
 
 struct mp4venc_in_stream_params {
@@ -539,6 +794,10 @@ sink_setcaps(GstPad *pad,
 						      "systemstream", G_TYPE_BOOLEAN, FALSE,
 						      NULL);
 			break;
+		case GSTDSP_H264ENC:
+			out_struc = gst_structure_new("video/x-h264",
+						      NULL);
+			break;
 		default:
 			return FALSE;
 	}
@@ -551,6 +810,7 @@ sink_setcaps(GstPad *pad,
 	switch (base->alg) {
 		case GSTDSP_H263ENC:
 		case GSTDSP_MP4VENC:
+		case GSTDSP_H264ENC:
 			base->output_buffer_size = width * height / 2;
 			break;
 		case GSTDSP_JPEGENC:
@@ -603,6 +863,9 @@ sink_setcaps(GstPad *pad,
 		case GSTDSP_H263ENC:
 		case GSTDSP_MP4VENC:
 			setup_mp4params(base);
+			break;
+		case GSTDSP_H264ENC:
+			setup_h264params(base);
 			break;
 		default:
 			break;
