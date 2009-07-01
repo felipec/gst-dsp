@@ -527,6 +527,111 @@ h264venc_send_cb(GstDspBase *base,
 	dmm_buffer_flush(p, sizeof(*param));
 }
 
+static inline gboolean
+gst_dsp_set_codec_data_caps(GstDspBase *base,
+			    GstBuffer *buf)
+{
+	GstCaps *caps = NULL;
+	GstStructure *structure;
+	GValue value = { .g_type = 0 };
+
+	caps = gst_pad_get_negotiated_caps(base->srcpad);
+	caps = gst_caps_make_writable(caps);
+	structure = gst_caps_get_structure(caps, 0);
+
+	g_value_init(&value, GST_TYPE_BUFFER);
+
+	gst_value_set_buffer(&value, buf);
+	gst_structure_set_value(structure, "codec_data", &value);
+	g_value_unset(&value);
+
+	return gst_pad_set_caps(base->srcpad, caps);
+}
+
+static inline void
+gst_dsp_h264venc_create_codec_data(GstDspBase *base)
+{
+	GstDspVEnc *self;
+	guint8 *sps, *pps, *codec_data;
+	guint16 sps_size, pps_size, offset;
+
+	self = GST_DSP_VENC(base);
+
+	sps = GST_BUFFER_DATA(self->priv.h264.sps);
+	pps = GST_BUFFER_DATA(self->priv.h264.pps);
+
+	sps_size = GST_BUFFER_SIZE(self->priv.h264.sps);
+	pps_size = GST_BUFFER_SIZE(self->priv.h264.pps);
+
+	offset = 0;
+
+	self->priv.h264.codec_data = gst_buffer_new_and_alloc(sps_size + pps_size + 11);
+	codec_data = GST_BUFFER_DATA(self->priv.h264.codec_data);
+
+	codec_data[offset++] = 0x01;
+	codec_data[offset++] = sps[1]; /* AVCProfileIndication*/
+	codec_data[offset++] = sps[2]; /* profile_compatibility*/
+	codec_data[offset++] = sps[3]; /* AVCLevelIndication */
+	codec_data[offset++] = 0xff;
+	codec_data[offset++] = 0xe1;
+	codec_data[offset++] = (sps_size >> 8) & 0xff;
+	codec_data[offset++] = sps_size & 0xff;
+
+	memcpy(codec_data + offset, sps, sps_size);
+	offset += sps_size;
+
+	codec_data[offset++] = 0x1;
+	codec_data[offset++] = (pps_size >> 8) & 0xff;
+	codec_data[offset++] = pps_size & 0xff;
+
+	memcpy(codec_data + offset, pps, pps_size);
+}
+
+static inline void
+h264venc_recv_cb(GstDspBase *base,
+		 du_port_t *port,
+		 dmm_buffer_t *p,
+		 dmm_buffer_t *b)
+{
+	GstDspVEnc *self = GST_DSP_VENC(base);
+
+	if (b->len == 0 || self->priv.h264.bytestream)
+	       return;
+
+	if (G_LIKELY(self->priv.h264.codec_data_done)) {
+		/* prefix the NALU with a lenght field, don't count the start code */
+		uint32_t len = b->len - 4;
+		((uint8_t *)b->data)[3] = len & 0xff;
+		((uint8_t *)b->data)[2] = (len >> 8) & 0xff;
+		((uint8_t *)b->data)[1] = (len >> 16) & 0xff;
+		((uint8_t *)b->data)[0] = (len >> 24) & 0xff;
+	}
+	else {
+		if (!self->priv.h264.sps_received) {
+			/* skip the start code 0x00000001 when storing SPS */
+			self->priv.h264.sps = gst_buffer_new_and_alloc(b->len - 4);
+			memcpy(GST_BUFFER_DATA(self->priv.h264.sps), b->data + 4, b->len - 4);
+			self->priv.h264.sps_received = TRUE;
+		} else if (!self->priv.h264.pps_received) {
+			/* skip the start code 0x00000001 when storing PPS */
+			self->priv.h264.pps = gst_buffer_new_and_alloc(b->len - 4);
+			memcpy(GST_BUFFER_DATA(self->priv.h264.pps), b->data + 4, b->len - 4);
+			self->priv.h264.pps_received = TRUE;
+		}
+
+		if (self->priv.h264.pps_received && self->priv.h264.sps_received) {
+			gst_dsp_h264venc_create_codec_data(base);
+			if (gst_dsp_set_codec_data_caps(base, self->priv.h264.codec_data)) {
+				self->priv.h264.codec_data_done = TRUE;
+				gst_buffer_unref(self->priv.h264.sps);
+				gst_buffer_unref(self->priv.h264.pps);
+				gst_buffer_unref(self->priv.h264.codec_data);
+			}
+		}
+		b->len = 0;
+	}
+}
+
 static inline void
 setup_h264params(GstDspBase *base)
 {
@@ -608,6 +713,7 @@ setup_h264params(GstDspBase *base)
 	dmm_buffer_flush(tmp, sizeof(*out_param));
 
 	base->ports[1]->param = tmp;
+	base->ports[1]->recv_cb = h264venc_recv_cb;
 }
 
 struct mp4venc_in_stream_params {

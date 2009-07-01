@@ -38,6 +38,8 @@ typedef struct GstDspVEncClass GstDspVEncClass;
 union venc_priv_data {
 	struct {
 		gboolean bytestream;
+		gboolean sps_received, pps_received, codec_data_done;
+		GstBuffer *sps, *pps, *codec_data;
 	} h264;
 };
 
