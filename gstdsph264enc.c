@@ -32,6 +32,13 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
+#define DEFAULT_BYTESTREAM FALSE
+
+enum {
+    ARG_0,
+    ARG_BYTESTREAM,
+};
+
 static inline GstCaps *
 generate_src_template(void)
 {
@@ -79,6 +86,58 @@ base_init(gpointer g_class)
 	gst_element_class_add_pad_template(element_class, template);
 }
 
+static void
+set_property(GObject *obj,
+	     guint prop_id,
+	     const GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspVEnc *self = GST_DSP_VENC(obj);
+
+	switch (prop_id) {
+		case ARG_BYTESTREAM:
+			self->priv.h264.bytestream = g_value_get_boolean(value);
+			break;
+		default:
+			G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+			break;
+	}
+}
+
+static void
+get_property(GObject *obj,
+	     guint prop_id,
+	     GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspVEnc *self = GST_DSP_VENC(obj);
+
+	switch (prop_id) {
+		case ARG_BYTESTREAM:
+			g_value_set_boolean(value, self->priv.h264.bytestream);
+			break;
+		default:
+			G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+			break;
+	}
+}
+
+static void
+class_init(gpointer g_class,
+	   gpointer class_data)
+{
+	GObjectClass *gobject_class;
+	gobject_class = G_OBJECT_CLASS(g_class);
+
+	/* Properties stuff */
+	gobject_class->set_property = set_property;
+	gobject_class->get_property = get_property;
+
+	g_object_class_install_property(gobject_class, ARG_BYTESTREAM,
+					g_param_spec_boolean("bytestream", "BYTESTREAM", "bytestream",
+							     DEFAULT_BYTESTREAM, G_PARAM_READWRITE));
+}
+
 GType
 gst_dsp_h264enc_get_type(void)
 {
@@ -88,6 +147,7 @@ gst_dsp_h264enc_get_type(void)
 		GTypeInfo type_info = {
 			.class_size = sizeof(GstDspH264EncClass),
 			.base_init = base_init,
+			.class_init = class_init,
 			.instance_size = sizeof(GstDspH264Enc),
 			.instance_init = instance_init,
 		};
