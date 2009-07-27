@@ -457,6 +457,41 @@ setup_mp4params(GstDspBase *base)
 	base->ports[1]->param = tmp;
 }
 
+static inline int calculate_bitrate(GstDspVEnc* self)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+	float coeff, scale;
+	int ref_bitrate;
+	const int reference_fps = 15;
+	const int twiddle = 0.5;
+
+	switch (base->alg) {
+		case GSTDSP_JPEGENC:
+			/* TODO: verify if this value is ok for jpegenc */
+			coeff = 0.1;
+			break;
+		case GSTDSP_MP4VENC:
+			coeff = 0.2;
+			break;
+		case GSTDSP_H263ENC:
+			coeff = 0.3;
+			break;
+		case GSTDSP_H264ENC:
+			coeff = 0.35;
+			break;
+		default:
+			coeff = 0.1;
+			break;
+	}
+
+	ref_bitrate = (float) self->width * self->height / coeff;
+	scale = 1 + ((float) self->framerate / reference_fps - 1) * twiddle;
+
+	pr_info(self, "bitrate: %d", (int) ref_bitrate * scale);
+
+	return ref_bitrate * scale;
+}
+
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -513,7 +548,6 @@ sink_setcaps(GstPad *pad,
 
 	self->width = width;
 	self->height = height;
-	self->bitrate = 500000;
 
 	{
 		const GValue *framerate = NULL;
@@ -524,6 +558,8 @@ sink_setcaps(GstPad *pad,
 				gst_value_get_fraction_denominator(framerate);
 		}
 	}
+
+	self->bitrate = calculate_bitrate(self);
 
 	gst_caps_append_structure(out_caps, out_struc);
 
