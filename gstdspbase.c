@@ -386,6 +386,11 @@ output_loop(gpointer data)
 
 	send_buffer(self, b, 1, 0);
 
+	if (G_LIKELY(self->skip_hack > 0)) {
+		self->skip_hack--;
+		goto leave;
+	}
+
 	g_mutex_lock(self->ts_mutex);
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);

@@ -525,6 +525,10 @@ sink_setcaps(GstPad *pad,
 		if (codec_data) {
 			GstBuffer *buf;
 			buf = gst_value_get_buffer(codec_data);
+
+			if (base->alg == GSTDSP_MPEG4VDEC)
+				base->skip_hack++;
+
 			ret = gstdsp_send_codec_data(base, buf);
 			gst_buffer_unref(buf);
 		}

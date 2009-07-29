@@ -86,6 +86,9 @@ struct GstDspBase
 	void *(*create_node)(GstDspBase *base);
 	gboolean (*parse_func)(GstDspBase *base, GstBuffer *buf);
 	GstCaps *tmp_caps;
+
+	/* hacks */
+	guint skip_hack; /* don't push x number of buffers */
 };
 
 struct GstDspBaseClass
