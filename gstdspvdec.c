@@ -518,14 +518,14 @@ sink_setcaps(GstPad *pad,
 
 	ret = gst_pad_set_caps(pad, caps);
 
-	{
+	if (ret) {
 		const GValue *codec_data;
 
 		codec_data = gst_structure_get_value(in_struc, "codec_data");
 		if (codec_data) {
 			GstBuffer *buf;
 			buf = gst_value_get_buffer(codec_data);
-			gstdsp_send_codec_data(base, buf);
+			ret = gstdsp_send_codec_data(base, buf);
 			gst_buffer_unref(buf);
 		}
 	}
