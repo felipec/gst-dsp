@@ -879,6 +879,31 @@ init_node(GstDspBase *self,
 	return TRUE;
 }
 
+gboolean
+gstdsp_send_codec_data(GstDspBase *self,
+		       GstBuffer *buf)
+{
+	dmm_buffer_t *b;
+
+	if (G_UNLIKELY(!self->node)) {
+		if (!init_node(self, buf)) {
+			pr_err(self, "couldn't start node");
+			return FALSE;
+		}
+	}
+
+	b = async_queue_pop(self->ports[0]->queue);
+
+	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
+	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
+
+	dmm_buffer_flush(b, GST_BUFFER_SIZE(buf));
+
+	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
+
+	return TRUE;
+}
+
 static GstFlowReturn
 pad_chain(GstPad *pad,
 	  GstBuffer *buf)
