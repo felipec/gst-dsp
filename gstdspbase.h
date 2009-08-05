@@ -50,7 +50,7 @@ struct du_port_t {
 	guint index;
 	dmm_buffer_t **buffers;
 	dmm_buffer_t **comm; /**< arm-dsp communication structure */
-	dmm_buffer_t *param;
+	dmm_buffer_t **params;
 	guint num_buffers;
 	AsyncQueue *queue;
 	port_buffer_cb_t send_cb;

@@ -54,6 +54,7 @@ du_port_new(guint index,
 	p->num_buffers = num_buffers;
 	p->comm = calloc(num_buffers, sizeof(**p->comm));
 	p->buffers = calloc(num_buffers, sizeof(**p->comm));
+	p->params = calloc(num_buffers, sizeof(**p->params));
 
 	return p;
 }
@@ -655,8 +656,12 @@ dsp_stop(GstDspBase *self)
 		du_port_flush(self->ports[i]);
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
-		dmm_buffer_free(self->ports[i]->param);
-		self->ports[i]->param = NULL;
+		guint j;
+		du_port_t *port = self->ports[i];
+		for (j = 0; j < port->num_buffers; j++) {
+			dmm_buffer_free(port->params[j]);
+			port->params[j] = NULL;
+		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
@@ -726,7 +731,7 @@ send_buffer(GstDspBase *self,
 	    size_t len)
 {
 	dsp_comm_t *msg_data;
-	dmm_buffer_t *tmp = NULL;
+	dmm_buffer_t *tmp = NULL, *param = NULL;
 	du_port_t *port;
 	guint i;
 
@@ -737,6 +742,7 @@ send_buffer(GstDspBase *self,
 	for (i = 0; i < port->num_buffers; i++) {
 		if (!port->comm[i]->used) {
 			tmp = port->comm[i];
+			param = port->params[i];
 			tmp->used = TRUE;
 			break;
 		}
@@ -756,14 +762,14 @@ send_buffer(GstDspBase *self,
 
 	msg_data->user_data = (uint32_t) buffer;
 
-	if (port->param) {
-		msg_data->param_data = (uint32_t) port->param->map;
-		msg_data->param_size = port->param->size;
-		msg_data->param_virt = (uint32_t) port->param;
+	if (param) {
+		msg_data->param_data = (uint32_t) param->map;
+		msg_data->param_size = param->size;
+		msg_data->param_virt = (uint32_t) param;
 	}
 
 	if (port->send_cb)
-		port->send_cb(self, port, port->param, buffer);
+		port->send_cb(self, port, param, buffer);
 
 	dmm_buffer_flush(tmp, sizeof(*msg_data));
 

@@ -632,12 +632,10 @@ h264venc_recv_cb(GstDspBase *base,
 	}
 }
 
-static inline void
-setup_h264params(GstDspBase *base)
+static inline dmm_buffer_t *
+setup_h264params_in(GstDspBase *base)
 {
 	struct h264venc_in_stream_params *in_param;
-	struct h264venc_out_stream_params *out_param;
-
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	dmm_buffer_t *tmp;
 
@@ -705,13 +703,26 @@ setup_h264params(GstDspBase *base)
 
 	dmm_buffer_clean(tmp, sizeof(*in_param));
 
-	base->ports[0]->param = tmp;
+	return tmp;
+}
+
+static inline void
+setup_h264params(GstDspBase *base)
+{
+	struct h264venc_out_stream_params *out_param;
+	unsigned int i;
+
+	for (i = 0; i < base->ports[0]->num_buffers; i++)
+		base->ports[0]->params[i] = setup_h264params_in(base);
+
 	base->ports[0]->send_cb = h264venc_send_cb;
 
-	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-	dmm_buffer_allocate(tmp, sizeof(*out_param));
-
-	base->ports[1]->param = tmp;
+	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		base->ports[1]->params[i] = tmp;
+	}
 	base->ports[1]->recv_cb = h264venc_recv_cb;
 }
 
@@ -773,12 +784,10 @@ static void mp4venc_send_cb(GstDspBase *base,
 	dmm_buffer_clean(p, sizeof(*param));
 }
 
-static inline void
-setup_mp4params(GstDspBase *base)
+static inline dmm_buffer_t *
+setup_mp4param_in(GstDspBase *base)
 {
 	struct mp4venc_in_stream_params *in_param;
-	struct mp4venc_out_stream_params *out_param;
-
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	dmm_buffer_t *tmp;
 
@@ -815,13 +824,25 @@ setup_mp4params(GstDspBase *base)
 
 	dmm_buffer_clean(tmp, sizeof(*in_param));
 
-	base->ports[0]->param = tmp;
+	return tmp;
+}
+
+static inline void
+setup_mp4params(GstDspBase *base)
+{
+	struct mp4venc_out_stream_params *out_param;
+	unsigned int i;
+
+	for (i = 0; i < base->ports[0]->num_buffers; i++)
+		base->ports[0]->params[i] = setup_mp4param_in(base);
 	base->ports[0]->send_cb = mp4venc_send_cb;
 
-	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-	dmm_buffer_allocate(tmp, sizeof(*out_param));
-
-	base->ports[1]->param = tmp;
+	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		base->ports[1]->params[i] = tmp;
+	}
 	base->ports[1]->recv_cb = mp4venc_recv_cb;
 }
 
