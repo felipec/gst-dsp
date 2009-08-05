@@ -54,6 +54,7 @@ struct du_port_t {
 	guint num_buffers;
 	AsyncQueue *queue;
 	port_buffer_cb_t send_cb;
+	port_buffer_cb_t recv_cb;
 };
 
 struct GstDspBase

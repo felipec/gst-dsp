@@ -175,6 +175,9 @@ got_message(GstDspBase *self,
 				b = (void *) msg_data->user_data;
 				b->len = msg_data->buffer_len;
 
+				if (p->recv_cb)
+					p->recv_cb(self, p, (void *) msg_data->param_virt, b);
+
 				if (id == 0) {
 					if (b->user_data) {
 						gst_buffer_unref(b->user_data);
