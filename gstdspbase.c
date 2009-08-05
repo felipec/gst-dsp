@@ -133,9 +133,9 @@ typedef struct
 	uint32_t silly_buf_active;
 	uint32_t silly_buf_id;
 	uint32_t reserved;
-	uint32_t silly_arm_arg;
-	uint32_t silly_arm_buffer_arg;
-	uint32_t silly_arm_param_arg;
+	uint32_t msg_virt;
+	uint32_t buffer_virt;
+	uint32_t param_virt;
 	uint32_t silly_out_buffer_index;
 	uint32_t silly_in_buffer_index;
 	uint32_t user_data;
@@ -769,6 +769,7 @@ send_buffer(GstDspBase *self,
 	if (port->param) {
 		msg_data->param_data = (uint32_t) port->param->map;
 		msg_data->param_size = port->param->size;
+		msg_data->param_virt = (uint32_t) port->param;
 	}
 
 	if (port->send_cb)
