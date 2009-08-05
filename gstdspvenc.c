@@ -522,8 +522,9 @@ h264venc_send_cb(GstDspBase *base,
 		 dmm_buffer_t *b)
 {
 	struct h264venc_in_stream_params *param;
+	GstDspVEnc *self = GST_DSP_VENC(base);
 	param = p->data;
-	param->frame_index++;
+	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	dmm_buffer_clean(p, sizeof(*param));
 }
 
@@ -779,8 +780,9 @@ static void mp4venc_send_cb(GstDspBase *base,
 			    dmm_buffer_t *b)
 {
 	struct mp4venc_in_stream_params *param;
+	GstDspVEnc *self = GST_DSP_VENC(base);
 	param = p->data;
-	param->frame_index++;
+	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	dmm_buffer_clean(p, sizeof(*param));
 }
 

@@ -57,6 +57,7 @@ struct GstDspVEnc {
 	gint framerate;
 	gint quality;
 	union venc_priv_data priv;
+	gint frame_index;
 };
 
 struct GstDspVEncClass {
