@@ -574,21 +574,28 @@ sink_setcaps(GstPad *pad,
 		return FALSE;
 	}
 
-	if (!gstdsp_start(base)) {
-		pr_err(self, "dsp start failed");
-		return FALSE;
-	}
-
+	/* setup stream params */
 	switch (base->alg) {
-		case GSTDSP_JPEGENC:
-			jpegenc_send_params(base, width, height);
-			break;
 		case GSTDSP_H263ENC:
 		case GSTDSP_MP4VENC:
 			setup_mp4params(base);
 			break;
 		default:
-			return FALSE;
+			break;
+	}
+
+	if (!gstdsp_start(base)) {
+		pr_err(self, "dsp start failed");
+		return FALSE;
+	}
+
+	/* send dynamic params */
+	switch (base->alg) {
+		case GSTDSP_JPEGENC:
+			jpegenc_send_params(base, width, height);
+			break;
+		default:
+			break;
 	}
 
 	return gst_pad_set_caps(pad, caps);
