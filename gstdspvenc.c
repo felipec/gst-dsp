@@ -395,7 +395,8 @@ struct mp4venc_out_stream_params {
 
 static void mp4venc_send_cb(GstDspBase *base,
 			    du_port_t *port,
-			    dmm_buffer_t *p)
+			    dmm_buffer_t *p,
+			    dmm_buffer_t *b)
 {
 	struct mp4venc_in_stream_params *param;
 	param = p->data;

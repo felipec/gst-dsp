@@ -773,7 +773,7 @@ send_buffer(GstDspBase *self,
 	}
 
 	if (port->send_cb)
-		port->send_cb(self, port, port->param);
+		port->send_cb(self, port, port->param, buffer);
 
 	dmm_buffer_flush(tmp, sizeof(*msg_data));
 
