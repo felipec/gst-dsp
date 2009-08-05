@@ -180,7 +180,7 @@ get_mp4venc_args(GstDspVEnc *self)
 		.reversible_vlc = 0,
 		.unrestricted_mv = 0,
 		.framerate = self->framerate,
-		.rate_control = 1, /* low delay */
+		.rate_control = 2, /* low delay = 1, storage = 2, none = 4 */
 		.qp_first = 12,
 		.profile = 1,
 		.max_delay = 300,
