@@ -418,7 +418,7 @@ setup_mp4params(GstDspBase *base)
 	in_param->frame_index = 0;
 	in_param->framerate = self->framerate;
 	in_param->bitrate = self->bitrate;
-	in_param->i_frame_interval = 15;
+	in_param->i_frame_interval = 5;
 	in_param->generate_header = 0;
 	in_param->force_i_frame = 0;
 	in_param->resync_interval = 1024;
@@ -427,7 +427,7 @@ setup_mp4params(GstDspBase *base)
 	in_param->mir_rate = 0;
 	in_param->qp_intra = 0;
 	in_param->f_code = 5;
-	in_param->half_pel = 1;
+	in_param->half_pel = 0;
 	in_param->ac_pred = 0;
 	in_param->mv = 0;
 	in_param->use_umv = 0;
