@@ -41,7 +41,9 @@ typedef struct du_port_t du_port_t;
 #include "sem.h"
 #include "async_queue.h"
 
-typedef void (*port_buffer_cb_t) (GstDspBase *base, du_port_t *port);
+typedef void (*port_buffer_cb_t) (GstDspBase *base,
+				  du_port_t *port,
+				  dmm_buffer_t *p);
 
 struct du_port_t {
 	guint index;

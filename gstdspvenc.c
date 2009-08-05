@@ -394,12 +394,13 @@ struct mp4venc_out_stream_params {
 };
 
 static void mp4venc_send_cb(GstDspBase *base,
-			    du_port_t *port)
+			    du_port_t *port,
+			    dmm_buffer_t *p)
 {
 	struct mp4venc_in_stream_params *param;
-	param = port->param->data;
+	param = p->data;
 	param->frame_index++;
-	dmm_buffer_flush(port->param, sizeof(*param));
+	dmm_buffer_flush(p, sizeof(*param));
 }
 
 static inline void
