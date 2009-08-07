@@ -714,14 +714,22 @@ leave:
 	return TRUE;
 }
 
+static inline bool
+buffer_is_aligned(GstBuffer *buf, dmm_buffer_t *b)
+{
+	if ((unsigned long) GST_BUFFER_DATA(buf) % b->alignment != 0)
+		return false;
+	if (((unsigned long) GST_BUFFER_DATA(buf) + GST_BUFFER_SIZE(buf)) % b->alignment != 0)
+		return false;
+	return true;
+}
+
 static inline void
 map_buffer(GstDspBase *self,
 	   GstBuffer *g_buf,
 	   dmm_buffer_t *d_buf)
 {
-	if (d_buf->alignment == 0 ||
-	    (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment == 0)
-	{
+	if (d_buf->alignment == 0 || buffer_is_aligned(g_buf, d_buf)) {
 		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
 		gst_buffer_ref(g_buf);
 		d_buf->user_data = g_buf;
@@ -729,9 +737,9 @@ map_buffer(GstDspBase *self,
 	}
 
 	if (d_buf->alignment != 0) {
-		pr_warning(self, "buffer not aligned: %p, %lu",
+		pr_warning(self, "buffer not aligned: %p-%p",
 			   GST_BUFFER_DATA(g_buf),
-			   (unsigned long) GST_BUFFER_DATA(g_buf) % d_buf->alignment);
+			   GST_BUFFER_DATA(g_buf) + GST_BUFFER_SIZE(g_buf));
 	}
 
 	dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
