@@ -790,7 +790,7 @@ send_buffer(GstDspBase *self,
 	if (port->send_cb)
 		port->send_cb(self, port, port->param, buffer);
 
-	dmm_buffer_flush(tmp, sizeof(*msg_data));
+	dmm_buffer_clean(tmp, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
 			 0x0600 | id, (uint32_t) tmp->map, 0);
@@ -918,7 +918,7 @@ gstdsp_send_codec_data(GstDspBase *self,
 	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
 	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 
-	dmm_buffer_flush(b, GST_BUFFER_SIZE(buf));
+	dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 
 	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
 
@@ -966,7 +966,7 @@ pad_chain(GstPad *pad,
 		memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 	}
 
-	dmm_buffer_flush(b, GST_BUFFER_SIZE(buf));
+	dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 
 	g_mutex_lock(self->ts_mutex);
 	self->ts_array[self->ts_in_pos] = GST_BUFFER_TIMESTAMP(buf);

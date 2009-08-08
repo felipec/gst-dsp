@@ -98,7 +98,7 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 }
 
 static inline void
-dmm_buffer_flush(dmm_buffer_t *b,
+dmm_buffer_clean(dmm_buffer_t *b,
 		 size_t len)
 {
 	pr_debug(NULL, "%p", b);

@@ -413,7 +413,7 @@ static void mp4venc_send_cb(GstDspBase *base,
 	struct mp4venc_in_stream_params *param;
 	param = p->data;
 	param->frame_index++;
-	dmm_buffer_flush(p, sizeof(*param));
+	dmm_buffer_clean(p, sizeof(*param));
 }
 
 static inline void
@@ -456,14 +456,14 @@ setup_mp4params(GstDspBase *base)
 	else
 		in_param->ac_pred = 0;
 
-	dmm_buffer_flush(tmp, sizeof(*in_param));
+	dmm_buffer_clean(tmp, sizeof(*in_param));
 
 	base->ports[0]->param = tmp;
 	base->ports[0]->send_cb = mp4venc_send_cb;
 
 	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 	dmm_buffer_allocate(tmp, sizeof(*out_param));
-	dmm_buffer_flush(tmp, sizeof(*out_param));
+	dmm_buffer_clean(tmp, sizeof(*out_param));
 
 	base->ports[1]->param = tmp;
 	base->ports[1]->recv_cb = mp4venc_recv_cb;
