@@ -102,7 +102,7 @@ dmm_buffer_clean(dmm_buffer_t *b,
 		 size_t len)
 {
 	pr_debug(NULL, "%p", b);
-	dsp_flush(b->handle, b->node, b->data, len, 0);
+	dsp_flush(b->handle, b->node, b->data, len, 1);
 }
 
 static inline void
