@@ -226,7 +226,6 @@ get_slot(GstDspBase *self,
 		if (cur && !cur->used) {
 			if (cur->data == GST_BUFFER_DATA(new_buf)) {
 				b = cur;
-				b->user_data = new_buf;
 				return b;
 			}
 		}
@@ -357,8 +356,10 @@ output_loop(gpointer data)
 			b->user_data = NULL;
 			if (self->use_map_cache) {
 				tmp = get_slot(self, new_buf);
-				if (tmp)
+				if (tmp) {
 					b = tmp;
+					b->user_data = new_buf;
+				}
 				else
 					map_buffer(self, new_buf, b);
 			}
