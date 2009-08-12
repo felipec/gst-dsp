@@ -401,8 +401,10 @@ output_loop(gpointer data)
 	g_mutex_lock(self->ts_mutex);
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
-	if (G_UNLIKELY(self->eos) && self->ts_in_pos == self->ts_out_pos)
-		got_eos = TRUE;
+	if (self->use_eos_align) {
+		if (G_UNLIKELY(self->eos) && self->ts_in_pos == self->ts_out_pos)
+			got_eos = TRUE;
+	}
 #ifdef TS_COUNT
 	self->ts_count--;
 	if (self->ts_count > 2 || self->ts_count < 1)
@@ -1003,6 +1005,11 @@ pad_event(GstPad *pad,
 	switch (GST_EVENT_TYPE(event)) {
 		case GST_EVENT_EOS:
 			if (g_atomic_int_get(&self->status) != GST_FLOW_OK) {
+				ret = gst_pad_push_event(self->srcpad, event);
+				break;
+			}
+
+			if (!self->use_eos_align) {
 				ret = gst_pad_push_event(self->srcpad, event);
 				break;
 			}

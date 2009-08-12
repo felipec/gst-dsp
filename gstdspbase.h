@@ -87,6 +87,7 @@ struct GstDspBase
 	guint alg;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
+	gboolean use_eos_align; /**< Wait for all buffers before EOS. */
 	gboolean use_map_cache;
 	guint dsp_error;
 
