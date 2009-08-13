@@ -251,6 +251,7 @@ setup_buffers(GstDspBase *self)
 			if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 				pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
 				dmm_buffer_allocate(b, self->output_buffer_size);
+				b->need_copy = true;
 			} else {
 				map_buffer(self, buf, b);
 				gst_buffer_unref(buf);
@@ -313,10 +314,10 @@ output_loop(gpointer data)
 			map_buffer(self, new_buf, b);
 			gst_buffer_unref(new_buf);
 		}
-		else {
+		else
 			out_buf = new_buf;
 
-			/* we have to copy, or downstream sees no data */
+		if (b->need_copy) {
 			pr_info(self, "copy");
 			memcpy(GST_BUFFER_DATA(out_buf), b->data, b->len);
 		}
