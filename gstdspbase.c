@@ -197,7 +197,6 @@ got_message(GstDspBase *self,
 			break;
 		case 0x0500:
 			pr_debug(self, "got flush");
-			g_sem_up(self->flush);
 			break;
 		case 0x0200:
 			pr_debug(self, "got stop");
@@ -272,6 +271,7 @@ output_loop(gpointer data)
 	GstFlowReturn ret = GST_FLOW_OK;
 	GstBuffer *out_buf;
 	dmm_buffer_t *b;
+	gboolean flush_buffer;
 	gboolean got_eos = FALSE;
 
 	pad = data;
@@ -282,6 +282,8 @@ output_loop(gpointer data)
 
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
+		if (b)
+			async_queue_push(self->ports[1]->queue, b);
 		goto leave;
 	}
 
@@ -290,6 +292,23 @@ output_loop(gpointer data)
 		pr_warning(self, "empty buffer");
 		send_buffer(self, b, 1, 0);
 		g_mutex_lock(self->ts_mutex);
+		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
+		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
+		if (!flush_buffer)
+			self->ts_push_pos = self->ts_out_pos;
+		g_mutex_unlock(self->ts_mutex);
+		goto leave;
+	}
+
+	g_mutex_lock(self->ts_mutex);
+	flush_buffer = (self->ts_out_pos != self->ts_push_pos);
+	g_mutex_unlock(self->ts_mutex);
+
+	if (flush_buffer) {
+		send_buffer(self, b, 1, 0);
+		g_mutex_lock(self->ts_mutex);
+		GST_LOG_OBJECT(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
+			       GST_TIME_ARGS((self->ts_array[self->ts_out_pos])));
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 		g_mutex_unlock(self->ts_mutex);
 		goto leave;
@@ -306,6 +325,7 @@ output_loop(gpointer data)
 
 		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
+			async_queue_push(self->ports[1]->queue, b);
 			goto leave;
 		}
 
@@ -348,6 +368,7 @@ output_loop(gpointer data)
 	g_mutex_lock(self->ts_mutex);
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
+	self->ts_push_pos = self->ts_out_pos;
 	if (self->use_eos_align) {
 		if (G_UNLIKELY(self->eos) && self->ts_in_pos == self->ts_out_pos)
 			got_eos = TRUE;
@@ -359,6 +380,8 @@ output_loop(gpointer data)
 #endif
 	g_mutex_unlock(self->ts_mutex);
 
+	GST_LOG_OBJECT(self, "pushing buffer %" GST_TIME_FORMAT,
+		       GST_TIME_ARGS(GST_BUFFER_TIMESTAMP(out_buf)));
 	ret = gst_pad_push(self->srcpad, out_buf);
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 		pr_info(self, "pad push failed: %s", gst_flow_get_name(ret));
@@ -898,6 +921,8 @@ pad_chain(GstPad *pad,
 
 	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
+		if (b)
+			async_queue_push(self->ports[0]->queue, b);
 		goto leave;
 	}
 
@@ -976,30 +1001,21 @@ pad_event(GstPad *pad,
 
 			gst_pad_pause_task(self->srcpad);
 
-			/* flush */
-			dsp_send_message(self->dsp_handle, self->node, 0x0500 | 0, 5, 0);
-			dsp_send_message(self->dsp_handle, self->node, 0x0500 | 1, 5, 0);
-
 			break;
 
 		case GST_EVENT_FLUSH_STOP:
 			ret = gst_pad_push_event(self->srcpad, event);
-			g_sem_down(self->flush); /* input */
-			g_sem_down(self->flush); /* output */
 
 			g_mutex_lock(self->ts_mutex);
-			self->ts_in_pos = self->ts_out_pos = 0;
+			self->ts_push_pos = self->ts_in_pos;
+			pr_debug(self, "flushing next %u buffer(s)",
+				 (self->ts_push_pos - self->ts_out_pos) % ARRAY_SIZE(self->ts_array));
 			self->eos = FALSE;
 			g_mutex_unlock(self->ts_mutex);
-
-			du_port_flush(self->ports[0]);
-			du_port_flush(self->ports[1]);
 
 			g_atomic_int_set(&self->status, GST_FLOW_OK);
 			async_queue_enable(self->ports[0]->queue);
 			async_queue_enable(self->ports[1]->queue);
-
-			setup_buffers(self);
 
 			gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
 			break;
