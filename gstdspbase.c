@@ -760,7 +760,7 @@ change_state(GstElement *element,
 	switch (transition) {
 		case GST_STATE_CHANGE_NULL_TO_READY:
 			if (!dsp_init(self)) {
-				pr_err(self, "dsp init failed");
+				gstdsp_post_error(self, "dsp init failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
 			break;
@@ -792,14 +792,14 @@ change_state(GstElement *element,
 	switch (transition) {
 		case GST_STATE_CHANGE_PAUSED_TO_READY:
 			if (!dsp_stop(self)) {
-				pr_err(self, "dsp stop failed");
+				gstdsp_post_error(self, "dsp stop failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
 			break;
 
 		case GST_STATE_CHANGE_READY_TO_NULL:
 			if (!dsp_deinit(self)) {
-				pr_err(self, "dsp deinit failed");
+				gstdsp_post_error(self, "dsp deinit failed");
 				return GST_STATE_CHANGE_FAILURE;
 			}
 			break;
@@ -888,7 +888,7 @@ pad_chain(GstPad *pad,
 
 	if (G_UNLIKELY(!self->node)) {
 		if (!init_node(self, buf)) {
-			pr_err(self, "couldn't start node");
+			gstdsp_post_error(self, "couldn't start node");
 			ret = GST_FLOW_ERROR;
 			goto leave;
 		}
