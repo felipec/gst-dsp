@@ -530,7 +530,6 @@ sink_setcaps(GstPad *pad,
 				base->skip_hack++;
 
 			ret = gstdsp_send_codec_data(base, buf);
-			gst_buffer_unref(buf);
 		}
 	}
 
