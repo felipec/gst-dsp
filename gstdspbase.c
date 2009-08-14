@@ -641,6 +641,7 @@ dsp_stop(GstDspBase *self)
 		return FALSE;
 	}
 
+leave:
 	if (!destroy_node(self, self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node destroy failed");
 		self->node = NULL;
@@ -650,7 +651,6 @@ dsp_stop(GstDspBase *self)
 	self->node = NULL;
 
 	pr_info(self, "dsp node terminated");
-leave:
 
 	return TRUE;
 }
