@@ -101,7 +101,7 @@ get_jpegenc_args(GstDspVEnc *self)
 		.max_app1_height = 0,
 		.max_app13_width = 0,
 		.max_app13_height = 0,
-		.scans = 1,
+		.scans = 0,
 	};
 
 	struct foo_data *cb_data;
