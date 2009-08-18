@@ -473,7 +473,7 @@ static inline int calculate_bitrate(GstDspVEnc* self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	float coeff, scale;
-	int ref_bitrate;
+	int bitrate, ref_bitrate;
 	const int reference_fps = 15;
 	const float twiddle = 0.5;
 
@@ -496,12 +496,14 @@ static inline int calculate_bitrate(GstDspVEnc* self)
 			break;
 	}
 
-	ref_bitrate = (float) self->width * self->height / coeff;
+	ref_bitrate = (self->width * self->height) / coeff;
 	scale = 1 + ((float) self->framerate / reference_fps - 1) * twiddle;
 
-	pr_info(self, "bitrate: %d", (int) ref_bitrate * scale);
+	bitrate = ref_bitrate * scale;
 
-	return ref_bitrate * scale;
+	pr_info(self, "bitrate: %d", bitrate);
+
+	return bitrate;
 }
 
 static gboolean
