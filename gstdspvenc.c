@@ -566,8 +566,9 @@ sink_setcaps(GstPad *pad,
 		framerate = gst_structure_get_value(in_struc, "framerate");
 		if (framerate) {
 			gst_structure_set_value(out_struc, "framerate", framerate);
-			self->framerate = gst_value_get_fraction_numerator(framerate) /
-				gst_value_get_fraction_denominator(framerate);
+			/* calculate nearest integer */
+			self->framerate = (gst_value_get_fraction_numerator(framerate) * 2 /
+				gst_value_get_fraction_denominator(framerate) + 1) / 2;
 		}
 	}
 
