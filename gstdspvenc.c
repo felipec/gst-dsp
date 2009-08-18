@@ -178,7 +178,7 @@ get_mp4venc_args(GstDspVEnc *self)
 		.resync_marker = 0,
 		.data_part = 0,
 		.reversible_vlc = 0,
-		.unrestricted_mv = 0,
+		.unrestricted_mv = 1,
 		.framerate = self->framerate,
 		.rate_control = 2, /* low delay = 1, storage = 2, none = 4 */
 		.qp_first = 12,
@@ -437,11 +437,11 @@ setup_mp4params(GstDspBase *base)
 	in_param->air_rate = 10;
 	in_param->mir_rate = 0;
 	in_param->qp_intra = 8;
-	in_param->f_code = 5;
-	in_param->half_pel = 0;
+	in_param->f_code = 6;
+	in_param->half_pel = 1;
 	in_param->ac_pred = 0;
 	in_param->mv = 0;
-	in_param->use_umv = 0;
+	in_param->use_umv = 1;
 	in_param->mv_data_enable = 0;
 	in_param->resync_data_enable = 0;
 	in_param->qp_inter = 8;
