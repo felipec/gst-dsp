@@ -478,10 +478,6 @@ static inline int calculate_bitrate(GstDspVEnc* self)
 	const float twiddle = 0.5;
 
 	switch (base->alg) {
-		case GSTDSP_JPEGENC:
-			/* TODO: verify if this value is ok for jpegenc */
-			coeff = 0.1;
-			break;
 		case GSTDSP_MP4VENC:
 			coeff = 0.2;
 			break;
