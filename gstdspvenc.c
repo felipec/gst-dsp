@@ -475,7 +475,7 @@ static inline int calculate_bitrate(GstDspVEnc* self)
 	float coeff, scale;
 	int bitrate, ref_bitrate;
 	const int reference_fps = 15;
-	const float twiddle = 0.5;
+	const float twiddle = 1.2;
 
 	switch (base->alg) {
 		case GSTDSP_MP4VENC:
