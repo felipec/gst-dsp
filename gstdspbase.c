@@ -292,8 +292,6 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
-	dmm_buffer_invalidate(b, b->len);
-
 	if (self->use_pad_alloc) {
 		GstBuffer *new_buf;
 
@@ -864,7 +862,6 @@ gstdsp_send_codec_data(GstDspBase *self,
 
 	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
 	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
-
 	dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 
 	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
@@ -911,9 +908,8 @@ pad_chain(GstPad *pad,
 	if (b->need_copy) {
 		pr_info(self, "copy");
 		memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
+		dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 	}
-
-	dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 
 	g_mutex_lock(self->ts_mutex);
 	self->ts_array[self->ts_in_pos] = GST_BUFFER_TIMESTAMP(buf);
