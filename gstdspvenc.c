@@ -550,16 +550,19 @@ sink_setcaps(GstPad *pad,
 	if (gst_structure_get_int(in_struc, "height", &height))
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
 
-	/** @todo calculate a smaller output buffer size */
 	switch (base->alg) {
 		case GSTDSP_H263ENC:
 		case GSTDSP_MP4VENC:
-			base->output_buffer_size = width * height;
+			base->output_buffer_size = width * height / 2;
 			break;
 		case GSTDSP_JPEGENC:
 			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 			base->output_buffer_size = width * height;
 			self->quality = 90;
+			if (self->quality < 10)
+				base->output_buffer_size /= 10;
+			else if (self->quality < 100)
+				base->output_buffer_size /= (100 / self->quality);
 			break;
 		default:
 			break;
