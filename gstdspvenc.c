@@ -329,13 +329,12 @@ struct jpegenc_dyn_params
 };
 
 static inline void
-jpegenc_send_params(GstDspBase *base,
-		    guint width,
-		    guint height)
+jpegenc_send_params(GstDspBase *base)
 {
 	struct jpegenc_dyn_params *params;
 	dmm_buffer_t *b;
 
+	GstDspVEnc *self = GST_DSP_VENC(base);
 	b = dmm_buffer_new(base->dsp_handle, base->proc);
 	dmm_buffer_allocate(b, sizeof(*params));
 
@@ -343,10 +342,10 @@ jpegenc_send_params(GstDspBase *base,
 	params->num_au = 0;
 	params->size = sizeof(*params);
 	params->color_format = 4;
-	params->width = width;
-	params->height = height;
-	params->capture_width = width;
-	params->capture_height = height;
+	params->width = self->width;
+	params->height = self->height;
+	params->capture_width = self->width;
+	params->capture_height = self->height;
 	params->gen_header = 0;
 	params->quality = 90;
 	params->dri_interval = 0;
@@ -552,9 +551,18 @@ sink_setcaps(GstPad *pad,
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
 
 	/** @todo calculate a smaller output buffer size */
-	base->output_buffer_size = width * height;
-	if (base->alg == GSTDSP_JPEGENC)
-		base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
+	switch (base->alg) {
+		case GSTDSP_H263ENC:
+		case GSTDSP_MP4VENC:
+			base->output_buffer_size = width * height;
+			break;
+		case GSTDSP_JPEGENC:
+			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
+			base->output_buffer_size = width * height;
+			break;
+		default:
+			break;
+	}
 
 	self->width = width;
 	self->height = height;
@@ -606,7 +614,7 @@ sink_setcaps(GstPad *pad,
 	/* send dynamic params */
 	switch (base->alg) {
 		case GSTDSP_JPEGENC:
-			jpegenc_send_params(base, width, height);
+			jpegenc_send_params(base);
 			break;
 		default:
 			break;
