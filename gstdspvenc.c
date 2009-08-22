@@ -347,7 +347,7 @@ jpegenc_send_params(GstDspBase *base)
 	params->capture_width = self->width;
 	params->capture_height = self->height;
 	params->gen_header = 0;
-	params->quality = 90;
+	params->quality = self->quality;
 	params->dri_interval = 0;
 	params->huffman_table = 0;
 	params->quant_table = 0;
@@ -559,6 +559,7 @@ sink_setcaps(GstPad *pad,
 		case GSTDSP_JPEGENC:
 			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 			base->output_buffer_size = width * height;
+			self->quality = 90;
 			break;
 		default:
 			break;

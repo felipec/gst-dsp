@@ -49,6 +49,7 @@ struct GstDspVEnc
 	gint width, height;
 	gint bitrate;
 	gint framerate;
+	gint quality;
 };
 
 struct GstDspVEncClass
