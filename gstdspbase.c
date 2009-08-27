@@ -918,6 +918,8 @@ gstdsp_send_codec_data(GstDspBase *self,
 	}
 
 	b = async_queue_pop(self->ports[0]->queue);
+	if (G_UNLIKELY(!b))
+		return FALSE;
 
 	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
 	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
