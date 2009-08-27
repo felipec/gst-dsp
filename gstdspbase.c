@@ -79,6 +79,8 @@ du_port_flush(du_port_t *p)
 		p->comm[i]->used = FALSE;
 	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *b = p->buffers[i];
+		if (!b)
+			continue;
 		if (b->user_data)
 			gst_buffer_unref(b->user_data);
 		dmm_buffer_free(b);
@@ -288,14 +290,14 @@ setup_buffers(GstDspBase *self)
 								self->output_buffer_size,
 								GST_PAD_CAPS(self->srcpad),
 								&buf);
-
+			/* might fail if not (yet) linked */
 			if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 				pr_err(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
-				return;
+				dmm_buffer_allocate(b, self->output_buffer_size);
+			} else {
+				map_buffer(self, buf, b);
+				gst_buffer_unref(buf);
 			}
-
-			map_buffer(self, buf, b);
-			gst_buffer_unref(buf);
 		}
 		else
 			dmm_buffer_allocate(b, self->output_buffer_size);
@@ -371,10 +373,9 @@ output_loop(gpointer data)
 		else {
 			out_buf = new_buf;
 
-			if (b->need_copy) {
-				pr_info(self, "copy");
-				memcpy(GST_BUFFER_DATA(out_buf), b->data, b->len);
-			}
+			/* we have to copy, or downstream sees no data */
+			pr_info(self, "copy");
+			memcpy(GST_BUFFER_DATA(out_buf), b->data, b->len);
 		}
 	}
 	else {
