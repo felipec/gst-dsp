@@ -673,7 +673,7 @@ dsp_stop(GstDspBase *self)
 	}
 
 	g_thread_join(self->dsp_thread);
-	gst_pad_pause_task(self->srcpad);
+	gst_pad_stop_task(self->srcpad);
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++)
 		du_port_flush(self->ports[i]);
