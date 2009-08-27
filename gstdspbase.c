@@ -289,6 +289,9 @@ output_loop(gpointer data)
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");
 		send_buffer(self, b, 1, 0);
+		g_mutex_lock(self->ts_mutex);
+		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
+		g_mutex_unlock(self->ts_mutex);
 		goto leave;
 	}
 
