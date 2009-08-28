@@ -317,7 +317,7 @@ output_loop(gpointer data)
 	gboolean got_eos = FALSE;
 
 	pad = data;
-	self = GST_DSP_BASE(gst_pad_get_parent(pad));
+	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
 
 	pr_debug(self, "begin");
 	b = async_queue_pop(self->ports[1]->queue);
