@@ -173,6 +173,10 @@ got_message(GstDspBase *self,
 						break;
 					}
 				}
+
+				if (!cur)
+					g_error("buffer mismatch");
+
 				msg_data = cur->data;
 				b = (void *) msg_data->user_data;
 				b->len = msg_data->buffer_len;
@@ -759,7 +763,7 @@ send_buffer(GstDspBase *self,
 	    size_t len)
 {
 	dsp_comm_t *msg_data;
-	dmm_buffer_t *tmp;
+	dmm_buffer_t *tmp = NULL;
 	du_port_t *port;
 	guint i;
 
@@ -774,6 +778,9 @@ send_buffer(GstDspBase *self,
 			break;
 		}
 	}
+
+	if (!tmp)
+		g_error("buffer mismatch");
 
 	msg_data = tmp->data;
 
