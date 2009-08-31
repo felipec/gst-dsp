@@ -171,6 +171,7 @@ got_message(GstDspBase *self,
 						break;
 					}
 				}
+				dmm_buffer_invalidate(cur, cur->size);
 				msg_data = cur->data;
 				b = (void *) msg_data->user_data;
 				b->len = msg_data->buffer_len;
