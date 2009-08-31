@@ -463,7 +463,7 @@ setup_mp4params(GstDspBase *base)
 
 	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 	dmm_buffer_allocate(tmp, sizeof(*out_param));
-	dmm_buffer_clean(tmp, sizeof(*out_param));
+	dmm_buffer_invalidate(tmp, sizeof(*out_param));
 
 	base->ports[1]->param = tmp;
 	base->ports[1]->recv_cb = mp4venc_recv_cb;

@@ -171,7 +171,6 @@ got_message(GstDspBase *self,
 						break;
 					}
 				}
-				dmm_buffer_invalidate(cur, cur->size);
 				msg_data = cur->data;
 				b = (void *) msg_data->user_data;
 				b->len = msg_data->buffer_len;
@@ -791,7 +790,7 @@ send_buffer(GstDspBase *self,
 	if (port->send_cb)
 		port->send_cb(self, port, port->param, buffer);
 
-	dmm_buffer_clean(tmp, sizeof(*msg_data));
+	dmm_buffer_flush(tmp, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
 			 0x0600 | id, (uint32_t) tmp->map, 0);
