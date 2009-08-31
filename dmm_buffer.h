@@ -114,6 +114,14 @@ dmm_buffer_invalidate(dmm_buffer_t *b,
 }
 
 static inline void
+dmm_buffer_flush(dmm_buffer_t *b,
+		 size_t len)
+{
+	pr_debug(NULL, "%p", b);
+	dsp_flush(b->handle, b->node, b->data, len, 0);
+}
+
+static inline void
 dmm_buffer_reserve(dmm_buffer_t *b,
 		   size_t size)
 {
