@@ -83,12 +83,10 @@ struct GstDspBase
 	gulong ts_count;
 #endif
 	GSem *flush;
-	dmm_buffer_t *cache[10];
 	guint alg;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
 	gboolean use_eos_align; /**< Wait for all buffers before EOS. */
-	gboolean use_map_cache;
 	guint dsp_error;
 
 	void *(*create_node)(GstDspBase *base);

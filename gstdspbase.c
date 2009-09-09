@@ -220,50 +220,6 @@ got_message(GstDspBase *self,
 	}
 }
 
-static inline dmm_buffer_t *
-get_slot(GstDspBase *self,
-	 GstBuffer *new_buf)
-{
-	guint i;
-	dmm_buffer_t *b = NULL;
-
-	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
-		dmm_buffer_t *cur = self->cache[i];
-		if (cur && !cur->used) {
-			if (cur->data == GST_BUFFER_DATA(new_buf)) {
-				b = cur;
-				return b;
-			}
-		}
-	}
-
-	pr_debug(self, "couldn't reuse mapping");
-
-	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
-		dmm_buffer_t *cur = self->cache[i];
-		if (!cur) {
-			b = dmm_buffer_new(self->dsp_handle, self->proc);
-			self->cache[i] = b;
-			goto found;
-		}
-	}
-
-	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
-		dmm_buffer_t *cur = self->cache[i];
-		if (cur && !cur->used) {
-			b = cur;
-			goto found;
-		}
-	}
-
-	pr_err(self, "couldn't find slot");
-	return NULL;
-
-found:
-	map_buffer(self, new_buf, b);
-	return b;
-}
-
 static inline void
 setup_buffers(GstDspBase *self)
 {
@@ -283,9 +239,6 @@ setup_buffers(GstDspBase *self)
 	for (i = 0; i < p->num_buffers; i++) {
 		b = dmm_buffer_new(self->dsp_handle, self->proc);
 		p->buffers[i] = b;
-		b->used = TRUE;
-		if (self->use_map_cache)
-			self->cache[i] = b;
 
 		if (self->use_pad_alloc) {
 			GstFlowReturn ret;
@@ -331,8 +284,6 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
-	b->used = FALSE;
-
 	if (!b->len) {
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");
@@ -357,22 +308,10 @@ output_loop(gpointer data)
 		}
 
 		if (b->user_data) {
-			dmm_buffer_t *tmp;
 			out_buf = b->user_data;
 			b->user_data = NULL;
-			if (self->use_map_cache) {
-				tmp = get_slot(self, new_buf);
-				if (tmp) {
-					b = tmp;
-					b->user_data = new_buf;
-				}
-				else
-					map_buffer(self, new_buf, b);
-			}
-			else
-				map_buffer(self, new_buf, b);
+			map_buffer(self, new_buf, b);
 			gst_buffer_unref(new_buf);
-			b->used = TRUE;
 		}
 		else {
 			out_buf = new_buf;
@@ -686,14 +625,6 @@ dsp_stop(GstDspBase *self)
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
 		dmm_buffer_free(self->ports[i]->param);
 		self->ports[i]->param = NULL;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(self->cache); i++) {
-		dmm_buffer_t *cur = self->cache[i];
-		if (cur) {
-			dmm_buffer_free(cur);
-			self->cache[i] = NULL;
-		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
