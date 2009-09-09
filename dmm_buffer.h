@@ -102,6 +102,8 @@ dmm_buffer_clean(dmm_buffer_t *b,
 		 size_t len)
 {
 	pr_debug(NULL, "%p", b);
+	if (G_UNLIKELY(len > b->size))
+		g_error("wrong cache flush");
 	dsp_flush(b->handle, b->node, b->data, len, 1);
 }
 
@@ -110,6 +112,8 @@ dmm_buffer_invalidate(dmm_buffer_t *b,
 		      size_t len)
 {
 	pr_debug(NULL, "%p", b);
+	if (G_UNLIKELY(len > b->size))
+		g_error("wrong cache flush");
 	dsp_invalidate(b->handle, b->node, b->data, len);
 }
 
@@ -118,6 +122,8 @@ dmm_buffer_flush(dmm_buffer_t *b,
 		 size_t len)
 {
 	pr_debug(NULL, "%p", b);
+	if (G_UNLIKELY(len > b->size))
+		g_error("wrong cache flush");
 	dsp_flush(b->handle, b->node, b->data, len, 0);
 }
 
