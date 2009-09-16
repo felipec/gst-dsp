@@ -334,7 +334,7 @@ output_loop(gpointer data)
 
 	send_buffer(self, b, 1, 0);
 
-	if (G_LIKELY(self->skip_hack > 0)) {
+	if (G_UNLIKELY(self->skip_hack > 0)) {
 		self->skip_hack--;
 		goto leave;
 	}
@@ -363,13 +363,13 @@ output_loop(gpointer data)
 	}
 
 leave:
-	if (got_eos) {
+	if (G_UNLIKELY(got_eos)) {
 		pr_info(self, "got eos");
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		ret = GST_FLOW_UNEXPECTED;
 	}
 
-	if (ret != GST_FLOW_OK) {
+	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 		g_atomic_int_set(&self->status, ret);
 		gst_pad_pause_task(self->srcpad);
 	}
