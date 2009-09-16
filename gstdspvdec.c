@@ -592,17 +592,15 @@ gst_dsp_vdec_get_type(void)
 	static GType type = 0;
 
 	if (G_UNLIKELY(type == 0)) {
-		GTypeInfo *type_info;
+		GTypeInfo type_info = {
+			.class_size = sizeof(GstDspVDecClass),
+			.class_init = class_init,
+			.base_init = base_init,
+			.instance_size = sizeof(GstDspVDec),
+			.instance_init = instance_init,
+		};
 
-		type_info = g_new0(GTypeInfo, 1);
-		type_info->class_size = sizeof(GstDspVDecClass);
-		type_info->class_init = class_init;
-		type_info->base_init = base_init;
-		type_info->instance_size = sizeof(GstDspVDec);
-		type_info->instance_init = instance_init;
-
-		type = g_type_register_static(GST_DSP_BASE_TYPE, "GstDspVDec", type_info, 0);
-		g_free(type_info);
+		type = g_type_register_static(GST_DSP_BASE_TYPE, "GstDspVDec", &type_info, 0);
 	}
 
 	return type;

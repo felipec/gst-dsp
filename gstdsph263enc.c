@@ -86,16 +86,14 @@ gst_dsp_h263enc_get_type(void)
 	static GType type = 0;
 
 	if (G_UNLIKELY(type == 0)) {
-		GTypeInfo *type_info;
+		GTypeInfo type_info = {
+			.class_size = sizeof(GstDspH263EncClass),
+			.base_init = base_init,
+			.instance_size = sizeof(GstDspH263Enc),
+			.instance_init = instance_init,
+		};
 
-		type_info = g_new0(GTypeInfo, 1);
-		type_info->class_size = sizeof(GstDspH263EncClass);
-		type_info->base_init = base_init;
-		type_info->instance_size = sizeof(GstDspH263Enc);
-		type_info->instance_init = instance_init;
-
-		type = g_type_register_static(GST_DSP_VENC_TYPE, "GstDspH263Enc", type_info, 0);
-		g_free(type_info);
+		type = g_type_register_static(GST_DSP_VENC_TYPE, "GstDspH263Enc", &type_info, 0);
 	}
 
 	return type;

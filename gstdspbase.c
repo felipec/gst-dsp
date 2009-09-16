@@ -1079,16 +1079,14 @@ gst_dsp_base_get_type(void)
 	static GType type = 0;
 
 	if (G_UNLIKELY(type == 0)) {
-		GTypeInfo *type_info;
+		GTypeInfo type_info = {
+			.class_size = sizeof(GstDspBaseClass),
+			.class_init = class_init,
+			.instance_size = sizeof(GstDspBase),
+			.instance_init = instance_init,
+		};
 
-		type_info = g_new0(GTypeInfo, 1);
-		type_info->class_size = sizeof(GstDspBaseClass);
-		type_info->class_init = class_init;
-		type_info->instance_size = sizeof(GstDspBase);
-		type_info->instance_init = instance_init;
-
-		type = g_type_register_static(GST_TYPE_ELEMENT, "GstDspBase", type_info, 0);
-		g_free(type_info);
+		type = g_type_register_static(GST_TYPE_ELEMENT, "GstDspBase", &type_info, 0);
 	}
 
 	return type;

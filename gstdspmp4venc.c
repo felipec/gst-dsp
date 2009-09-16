@@ -87,16 +87,14 @@ gst_dsp_mp4venc_get_type(void)
 	static GType type = 0;
 
 	if (G_UNLIKELY(type == 0)) {
-		GTypeInfo *type_info;
+		GTypeInfo type_info = {
+			.class_size = sizeof(GstDspMp4VEncClass),
+			.base_init = base_init,
+			.instance_size = sizeof(GstDspMp4VEnc),
+			.instance_init = instance_init,
+		};
 
-		type_info = g_new0(GTypeInfo, 1);
-		type_info->class_size = sizeof(GstDspMp4VEncClass);
-		type_info->base_init = base_init;
-		type_info->instance_size = sizeof(GstDspMp4VEnc);
-		type_info->instance_init = instance_init;
-
-		type = g_type_register_static(GST_DSP_VENC_TYPE, "GstDspMp4VEnc", type_info, 0);
-		g_free(type_info);
+		type = g_type_register_static(GST_DSP_VENC_TYPE, "GstDspMp4VEnc", &type_info, 0);
 	}
 
 	return type;
