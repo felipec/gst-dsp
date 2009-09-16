@@ -598,6 +598,7 @@ bool dsp_node_allocate(int handle,
 
 	node = calloc(1, sizeof(*node));
 	node->handle = node_handle;
+	node->heap = attrs->gpp_va;
 
 #ifdef ALLOCATE_SM
 	if (!allocate_segments(handle, proc_handle, node)) {
@@ -653,7 +654,7 @@ bool dsp_node_free(int handle,
 	dsp_node_delete(handle, node);
 
 #ifdef ALLOCATE_HEAP
-	free(attr.attr_in.gpp_va);
+	free(node->heap);
 #endif
 
 	free(node);

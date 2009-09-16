@@ -46,6 +46,7 @@ typedef struct {
 
 typedef struct {
 	void *handle;
+	void *heap;
 } dsp_node_t;
 
 /* note: cmd = 0x20000000 has special handling */
