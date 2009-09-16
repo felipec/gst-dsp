@@ -1054,7 +1054,7 @@ finalize(GObject *obj)
 	du_port_free(self->ports[1]);
 	du_port_free(self->ports[0]);
 
-	G_OBJECT_CLASS(parent_class)->finalize (obj);
+	G_OBJECT_CLASS(parent_class)->finalize(obj);
 }
 
 static void
@@ -1064,8 +1064,8 @@ class_init(gpointer g_class,
 	GstElementClass *gstelement_class;
 	GObjectClass *gobject_class;
 
-	gstelement_class = GST_ELEMENT_CLASS (g_class);
-	gobject_class = G_OBJECT_CLASS (g_class);
+	gstelement_class = GST_ELEMENT_CLASS(g_class);
+	gobject_class = G_OBJECT_CLASS(g_class);
 
 	parent_class = g_type_class_ref(GST_TYPE_ELEMENT);
 

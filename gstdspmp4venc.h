@@ -35,13 +35,11 @@ typedef struct GstDspMp4VEncClass GstDspMp4VEncClass;
 
 #include "gstdspvenc.h"
 
-struct GstDspMp4VEnc
-{
+struct GstDspMp4VEnc {
 	GstDspVEnc element;
 };
 
-struct GstDspMp4VEncClass
-{
+struct GstDspMp4VEncClass {
 	GstDspVEncClass parent_class;
 };
 

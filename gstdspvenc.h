@@ -35,16 +35,14 @@ typedef struct GstDspVEncClass GstDspVEncClass;
 
 #include "gstdspbase.h"
 
-enum
-{
+enum {
 	GSTDSP_JPEGENC,
 	GSTDSP_H263ENC,
 	GSTDSP_MP4VENC,
 	GSTDSP_H264ENC,
 };
 
-struct GstDspVEnc
-{
+struct GstDspVEnc {
 	GstDspBase element;
 	gint width, height;
 	gint bitrate;
@@ -52,8 +50,7 @@ struct GstDspVEnc
 	gint quality;
 };
 
-struct GstDspVEncClass
-{
+struct GstDspVEncClass {
 	GstDspBaseClass parent_class;
 };
 

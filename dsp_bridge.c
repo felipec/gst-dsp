@@ -313,8 +313,7 @@ static inline bool dsp_node_delete(int handle,
 }
 
 #ifdef ALLOCATE_SM
-enum dsp_node_state
-{
+enum dsp_node_state {
 	NODE_ALLOCATED,
 	NODE_CREATED,
 	NODE_RUNNING,
@@ -322,26 +321,23 @@ enum dsp_node_state
 	NODE_DONE
 };
 
-enum dsp_connect_type
-{
+enum dsp_connect_type {
 	CONNECTTYPE_NODEOUTPUT,
 	CONNECTTYPE_GPPOUTPUT,
 	CONNECTTYPE_NODEINPUT,
 	CONNECTTYPE_GPPINPUT
 };
 
-struct dsp_stream_connect
-{
+struct dsp_stream_connect {
 	unsigned long cb;
 	enum dsp_connect_type type;
 	unsigned int index;
-	void *node;
+	void *node_handle;
 	dsp_uuid_t node_id;
 	unsigned int stream_index;
 };
 
-struct dsp_node_info
-{
+struct dsp_node_info {
 	unsigned long cb;
 	struct dsp_ndb_props props;
 	unsigned int priority;
@@ -352,8 +348,7 @@ struct dsp_node_info
 	unsigned int node_env;
 };
 
-struct dsp_node_attr
-{
+struct dsp_node_attr {
 	unsigned long cb;
 	struct dsp_node_attr_in attr_in;
 	unsigned long inputs;
@@ -381,8 +376,7 @@ static inline bool dsp_node_get_attr(int handle,
 	return DSP_SUCCEEDED(ioctl(handle, 31, &arg));
 }
 
-struct dsp_buffer_attr
-{
+struct dsp_buffer_attr {
 	unsigned long cb;
 	unsigned int segment;
 	unsigned int alignment;
@@ -416,8 +410,7 @@ static inline bool dsp_node_alloc_buf(int handle,
 	return true;
 }
 
-struct dsp_cmm_seg_info
-{
+struct dsp_cmm_seg_info {
 	unsigned long base_pa;
 	unsigned long size;
 	unsigned long gpp_base_pa;
@@ -428,8 +421,7 @@ struct dsp_cmm_seg_info
 	unsigned long base_va;
 };
 
-struct dsp_cmm_info
-{
+struct dsp_cmm_info {
 	unsigned long segments;
 	unsigned long use_count;
 	unsigned long min_block_size;
@@ -459,14 +451,12 @@ static inline bool get_cmm_info(int handle,
 		.info = cmm_info,
 	};
 
-	if (!DSP_SUCCEEDED(ioctl(handle, 52, &cmm_arg))) {
+	if (!DSP_SUCCEEDED(ioctl(handle, 52, &cmm_arg)))
 		return false;
-	}
 
 	cmm_info_arg.cmm = cmm;
-	if (!DSP_SUCCEEDED(ioctl(handle, 53, &cmm_info_arg))) {
+	if (!DSP_SUCCEEDED(ioctl(handle, 53, &cmm_info_arg)))
 		return false;
-	}
 
 	return true;
 }
@@ -479,18 +469,15 @@ static inline bool allocate_segments(int handle,
 	struct dsp_node_attr attr;
 	enum dsp_node_type node_type;
 
-	if (!get_cmm_info(handle, proc_handle, &cmm_info)) {
+	if (!get_cmm_info(handle, proc_handle, &cmm_info))
 		return false;
-	}
 
-	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr))) {
+	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr)))
 		return false;
-	}
 
 	node_type = attr.info.props.uNodeType;
 
-	if ((node_type != DSP_NODE_DEVICE) && (cmm_info.segments > 0))
-	{
+	if ((node_type != DSP_NODE_DEVICE) && (cmm_info.segments > 0)) {
 		struct dsp_cmm_seg_info *seg;
 
 		seg = &cmm_info.info[0];
@@ -503,7 +490,6 @@ static inline bool allocate_segments(int handle,
 				    PROT_READ | PROT_WRITE, MAP_SHARED | 0x2000 /* MAP_LOCKED */,
 				    handle, seg->base_pa);
 
-			// printf("segment: %p, size=%lu\n", base, seg->size);
 			if (!base)
 				return false;
 
@@ -629,13 +615,11 @@ bool dsp_node_free(int handle,
 	struct dsp_node_attr attr;
 	enum dsp_node_type node_type;
 
-	if (!get_cmm_info(handle, NULL, &cmm_info)) {
+	if (!get_cmm_info(handle, NULL, &cmm_info))
 		return false;
-	}
 
-	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr))) {
+	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr)))
 		return false;
-	}
 
 	node_type = attr.info.props.uNodeType;
 
@@ -656,9 +640,8 @@ bool dsp_node_free(int handle,
 				return false;
 			}
 
-			if (base && munmap(base, seg->size) < 0) {
+			if (base && munmap(base, seg->size) < 0)
 				return false;
-			}
 		}
 	}
 #endif

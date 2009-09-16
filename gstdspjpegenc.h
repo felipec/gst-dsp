@@ -35,13 +35,11 @@ typedef struct GstDspJpegEncClass GstDspJpegEncClass;
 
 #include "gstdspvenc.h"
 
-struct GstDspJpegEnc
-{
+struct GstDspJpegEnc {
 	GstDspVEnc element;
 };
 
-struct GstDspJpegEncClass
-{
+struct GstDspJpegEncClass {
 	GstDspVEncClass parent_class;
 };
 

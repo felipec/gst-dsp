@@ -34,8 +34,7 @@
 #define DSP_SYSERROR 0x00000020
 #define DSP_NODEMESSAGEREADY 0x00000200
 
-typedef struct
-{
+typedef struct {
 	uint32_t field_1;
 	uint16_t field_2;
 	uint16_t field_3;
@@ -45,21 +44,18 @@ typedef struct
 } dsp_uuid_t;
 
 /* note: cmd = 0x20000000 has special handling */
-typedef struct
-{
+typedef struct {
 	uint32_t cmd;
 	uint32_t arg_1;
 	uint32_t arg_2;
 } dsp_msg_t;
 
-struct dsp_notification
-{
+struct dsp_notification {
 	char *name;
 	void *handle;
 };
 
-struct dsp_node_attr_in
-{
+struct dsp_node_attr_in {
 	unsigned long cb;
 	int priority;
 	unsigned int timeout;
@@ -68,8 +64,7 @@ struct dsp_node_attr_in
 	void *gpp_va;
 };
 
-enum dsp_dcd_object_type
-{
+enum dsp_dcd_object_type {
 	DSP_DCD_NODETYPE,
 	DSP_DCD_PROCESSORTYPE,
 	DSP_DCD_LIBRARYTYPE,
@@ -78,8 +73,7 @@ enum dsp_dcd_object_type
 	DSP_DCD_DELETELIBTYPE,
 };
 
-enum dsp_node_type
-{
+enum dsp_node_type {
 	DSP_NODE_DEVICE,
 	DSP_NODE_TASK,
 	DSP_NODE_DAISSOCKET,
@@ -103,8 +97,7 @@ struct DSP_NODEPROFS {
 	unsigned int ulHeapSize;
 };
 
-struct dsp_ndb_props
-{
+struct dsp_ndb_props {
 	unsigned long cbStruct;
 	dsp_uuid_t uiNodeID;
 	char acName[32];

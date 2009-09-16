@@ -116,8 +116,7 @@ struct foo_data {
 	unsigned short data[42];
 };
 
-struct mp4vdec_args
-{
+struct mp4vdec_args {
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -181,8 +180,7 @@ get_mp4v_args(GstDspVDec *self)
 	return cb_data;
 }
 
-struct h264vdec_args
-{
+struct h264vdec_args {
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -245,8 +243,7 @@ get_h264_args(GstDspVDec *self)
 	return cb_data;
 }
 
-struct wmvdec_args
-{
+struct wmvdec_args {
 	uint16_t num_streams;
 
 	uint16_t in_id;

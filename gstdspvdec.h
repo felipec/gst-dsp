@@ -35,14 +35,12 @@ typedef struct GstDspVDecClass GstDspVDecClass;
 
 #include "gstdspbase.h"
 
-struct GstDspVDec
-{
+struct GstDspVDec {
 	GstDspBase element;
 	gint width, height;
 };
 
-struct GstDspVDecClass
-{
+struct GstDspVDecClass {
 	GstDspBaseClass parent_class;
 };
 

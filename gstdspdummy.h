@@ -35,8 +35,7 @@ typedef struct GstDspDummyClass GstDspDummyClass;
 
 #include "dmm_buffer.h"
 
-struct GstDspDummy
-{
+struct GstDspDummy {
 	GstElement element;
 
 	GstPad *sinkpad, *srcpad;
@@ -48,8 +47,7 @@ struct GstDspDummy
 	dmm_buffer_t *in_buffer, *out_buffer;
 };
 
-struct GstDspDummyClass
-{
+struct GstDspDummyClass {
 	GstElementClass parent_class;
 };
 

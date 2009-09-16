@@ -55,8 +55,7 @@ struct foo_data {
 	unsigned short data[42];
 };
 
-struct jpegenc_args
-{
+struct jpegenc_args {
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -312,8 +311,7 @@ create_node(GstDspVEnc *self)
 	return node;
 }
 
-struct jpegenc_dyn_params
-{
+struct jpegenc_dyn_params {
 	uint32_t size;
 	uint32_t num_au; /* set to 0 */
 	uint32_t color_format;

@@ -26,8 +26,7 @@
 
 typedef struct AsyncQueue AsyncQueue;
 
-struct AsyncQueue
-{
+struct AsyncQueue {
 	GMutex *mutex;
 	GCond *condition;
 	GList *head;

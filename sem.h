@@ -26,8 +26,7 @@
 
 typedef struct GSem GSem;
 
-struct GSem
-{
+struct GSem {
 	GCond *condition;
 	GMutex *mutex;
 	guint count;

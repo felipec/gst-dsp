@@ -35,13 +35,11 @@ typedef struct GstDspH263EncClass GstDspH263EncClass;
 
 #include "gstdspvenc.h"
 
-struct GstDspH263Enc
-{
+struct GstDspH263Enc {
 	GstDspVEnc element;
 };
 
-struct GstDspH263EncClass
-{
+struct GstDspH263EncClass {
 	GstDspVEncClass parent_class;
 };
 

@@ -57,8 +57,7 @@ struct du_port_t {
 	port_buffer_cb_t recv_cb;
 };
 
-struct GstDspBase
-{
+struct GstDspBase {
 	GstElement element;
 
 	GstPad *sinkpad, *srcpad;
@@ -97,8 +96,7 @@ struct GstDspBase
 	guint skip_hack; /* don't push x number of buffers */
 };
 
-struct GstDspBaseClass
-{
+struct GstDspBaseClass {
 	GstElementClass parent_class;
 };
 
