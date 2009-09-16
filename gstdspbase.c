@@ -336,6 +336,7 @@ output_loop(gpointer data)
 
 	if (G_UNLIKELY(self->skip_hack > 0)) {
 		self->skip_hack--;
+		gst_buffer_unref(out_buf);
 		goto leave;
 	}
 
