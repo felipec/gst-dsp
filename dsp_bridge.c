@@ -502,6 +502,9 @@ static inline bool allocate_segments(int handle,
 				munmap(base, seg->size);
 				return false;
 			}
+
+			node->msgbuf_addr = base;
+			node->msgbuf_size = seg->size;
 		}
 	}
 
@@ -616,39 +619,7 @@ bool dsp_node_free(int handle,
 		   dsp_node_t *node)
 {
 #ifdef ALLOCATE_SM
-	struct dsp_cmm_info cmm_info;
-	struct dsp_node_attr attr;
-	enum dsp_node_type node_type;
-
-	if (!get_cmm_info(handle, NULL, &cmm_info))
-		return false;
-
-	if (!dsp_node_get_attr(handle, node, &attr, sizeof(attr)))
-		return false;
-
-	node_type = attr.info.props.uNodeType;
-
-	if (node_type != DSP_NODE_DEVICE) {
-		struct dsp_cmm_seg_info *seg;
-
-		seg = &cmm_info.info[0];
-
-		if (seg->base_pa != 0 && seg->size > 0) {
-			void *base = NULL;
-			struct dsp_buffer_attr buffer_attr;
-
-			buffer_attr.alignment = 0;
-			buffer_attr.segment = 1 | 0x10000000;
-			if (!dsp_node_alloc_buf(handle, node, 1,
-						&buffer_attr, &base))
-			{
-				return false;
-			}
-
-			if (base && munmap(base, seg->size) < 0)
-				return false;
-		}
-	}
+	munmap(node->msgbuf_addr, node->msgbuf_size);
 #endif
 
 	dsp_node_delete(handle, node);

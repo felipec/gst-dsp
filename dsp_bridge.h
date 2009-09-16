@@ -24,6 +24,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define ALLOCATE_HEAP
 
@@ -47,6 +48,8 @@ typedef struct {
 typedef struct {
 	void *handle;
 	void *heap;
+	void *msgbuf_addr;
+	size_t msgbuf_size;
 } dsp_node_t;
 
 /* note: cmd = 0x20000000 has special handling */
