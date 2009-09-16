@@ -618,16 +618,9 @@ bool dsp_node_allocate(int handle,
 bool dsp_node_free(int handle,
 		   dsp_node_t *node)
 {
-#ifdef ALLOCATE_SM
 	munmap(node->msgbuf_addr, node->msgbuf_size);
-#endif
-
 	dsp_node_delete(handle, node);
-
-#ifdef ALLOCATE_HEAP
 	free(node->heap);
-#endif
-
 	free(node);
 
 	return true;
