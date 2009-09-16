@@ -115,13 +115,13 @@ struct node_register_notify {
 };
 
 bool dsp_node_register_notify(int handle,
-			      void *node_handle,
+			      dsp_node_t *node,
 			      unsigned int event_mask,
 			      unsigned int notify_type,
 			      struct dsp_notification *info)
 {
 	struct node_register_notify arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 		.event_mask = event_mask,
 		.notify_type = notify_type,
 		.info = info,
@@ -218,10 +218,10 @@ struct node_create {
 };
 
 bool dsp_node_create(int handle,
-		     void *node_handle)
+		     dsp_node_t *node)
 {
 	struct node_create arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 	};
 
 	return DSP_SUCCEEDED(ioctl(handle, 28, &arg));
@@ -232,10 +232,10 @@ struct node_run {
 };
 
 bool dsp_node_run(int handle,
-		  void *node_handle)
+		  dsp_node_t *node)
 {
 	struct node_run arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 	};
 
 	return DSP_SUCCEEDED(ioctl(handle, 36, &arg));
@@ -247,11 +247,11 @@ struct node_terminate {
 };
 
 bool dsp_node_terminate(int handle,
-			void *node_handle,
+			dsp_node_t *node,
 			unsigned long *status)
 {
 	struct node_terminate arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 		.status = status,
 	};
 
@@ -265,12 +265,12 @@ struct node_put_message {
 };
 
 bool dsp_node_put_message(int handle,
-			  void *node_handle,
+			  dsp_node_t *node,
 			  const dsp_msg_t *message,
 			  unsigned int timeout)
 {
 	struct node_put_message arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 		.message = message,
 		.timeout = timeout,
 	};
@@ -285,12 +285,12 @@ struct node_get_message {
 };
 
 bool dsp_node_get_message(int handle,
-			  void *node_handle,
+			  dsp_node_t *node,
 			  dsp_msg_t *message,
 			  unsigned int timeout)
 {
 	struct node_get_message arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 		.message = message,
 		.timeout = timeout,
 	};
@@ -303,10 +303,10 @@ struct node_delete {
 };
 
 static inline bool dsp_node_delete(int handle,
-				   void *node_handle)
+				   dsp_node_t *node)
 {
 	struct node_delete arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 	};
 
 	return DSP_SUCCEEDED(ioctl(handle, 29, &arg));
@@ -363,12 +363,12 @@ struct node_get_attr {
 };
 
 static inline bool dsp_node_get_attr(int handle,
-				     void *node_handle,
+				     dsp_node_t *node,
 				     struct dsp_node_attr *attr,
 				     size_t attr_size)
 {
 	struct node_get_attr arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 		.attr = attr,
 		.attr_size = attr_size,
 	};
@@ -390,13 +390,13 @@ struct node_alloc_buf {
 };
 
 static inline bool dsp_node_alloc_buf(int handle,
-				      void *node_handle,
+				      dsp_node_t *node,
 				      size_t size,
 				      struct dsp_buffer_attr *attr,
 				      void **buffer)
 {
 	struct node_alloc_buf arg = {
-		.node_handle = node_handle,
+		.node_handle = node->handle,
 		.size = size,
 		.attr = attr,
 		.buffer = buffer,
@@ -463,7 +463,7 @@ static inline bool get_cmm_info(int handle,
 
 static inline bool allocate_segments(int handle,
 				     void *proc_handle,
-				     void *node_handle)
+				     dsp_node_t *node)
 {
 	struct dsp_cmm_info cmm_info;
 	struct dsp_node_attr attr;
@@ -472,7 +472,7 @@ static inline bool allocate_segments(int handle,
 	if (!get_cmm_info(handle, proc_handle, &cmm_info))
 		return false;
 
-	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr)))
+	if (!dsp_node_get_attr(handle, node, &attr, sizeof(attr)))
 		return false;
 
 	node_type = attr.info.props.uNodeType;
@@ -496,7 +496,7 @@ static inline bool allocate_segments(int handle,
 			buffer_attr.alignment = 0;
 			buffer_attr.segment = 1 | 0x10000000;
 			buffer_attr.cb = 0;
-			if (!dsp_node_alloc_buf(handle, node_handle, seg->size,
+			if (!dsp_node_alloc_buf(handle, node, seg->size,
 						&buffer_attr, &base))
 			{
 				munmap(base, seg->size);
@@ -549,8 +549,9 @@ bool dsp_node_allocate(int handle,
 		       const dsp_uuid_t *node_uuid,
 		       const void *cb_data,
 		       struct dsp_node_attr_in *attrs,
-		       void **ret_node)
+		       dsp_node_t **ret_node)
 {
+	dsp_node_t *node;
 	void *node_handle = NULL;
 	struct node_allocate arg = {
 		.proc_handle = proc_handle,
@@ -595,20 +596,23 @@ bool dsp_node_allocate(int handle,
 		return false;
 	}
 
+	node = calloc(1, sizeof(*node));
+	node->handle = node_handle;
+
 #ifdef ALLOCATE_SM
-	if (!allocate_segments(handle, proc_handle, node_handle)) {
-		dsp_node_delete(handle, node_handle);
+	if (!allocate_segments(handle, proc_handle, node)) {
+		dsp_node_delete(handle, node);
 		return false;
 	}
 #endif
 
-	*ret_node = node_handle;
+	*ret_node = node;
 
 	return true;
 }
 
 bool dsp_node_free(int handle,
-		   void *node_handle)
+		   dsp_node_t *node)
 {
 #ifdef ALLOCATE_SM
 	struct dsp_cmm_info cmm_info;
@@ -618,7 +622,7 @@ bool dsp_node_free(int handle,
 	if (!get_cmm_info(handle, NULL, &cmm_info))
 		return false;
 
-	if (!dsp_node_get_attr(handle, node_handle, &attr, sizeof(attr)))
+	if (!dsp_node_get_attr(handle, node, &attr, sizeof(attr)))
 		return false;
 
 	node_type = attr.info.props.uNodeType;
@@ -634,7 +638,7 @@ bool dsp_node_free(int handle,
 
 			buffer_attr.alignment = 0;
 			buffer_attr.segment = 1 | 0x10000000;
-			if (!dsp_node_alloc_buf(handle, node_handle, 1,
+			if (!dsp_node_alloc_buf(handle, node, 1,
 						&buffer_attr, &base))
 			{
 				return false;
@@ -646,11 +650,13 @@ bool dsp_node_free(int handle,
 	}
 #endif
 
-	dsp_node_delete(handle, node_handle);
+	dsp_node_delete(handle, node);
 
 #ifdef ALLOCATE_HEAP
 	free(attr.attr_in.gpp_va);
 #endif
+
+	free(node);
 
 	return true;
 }

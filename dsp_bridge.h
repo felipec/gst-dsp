@@ -43,6 +43,11 @@ typedef struct {
 	uint8_t field_6[6];
 } dsp_uuid_t;
 
+
+typedef struct {
+	void *handle;
+} dsp_node_t;
+
 /* note: cmd = 0x20000000 has special handling */
 typedef struct {
 	uint32_t cmd;
@@ -135,28 +140,28 @@ bool dsp_node_allocate(int handle,
 		       const dsp_uuid_t *node_uuid,
 		       const void *cb_data,
 		       struct dsp_node_attr_in *attrs,
-		       void **ret_node);
+		       dsp_node_t **ret_node);
 
 bool dsp_node_free(int handle,
-		   void *node_handle);
+		   dsp_node_t *node);
 
 bool dsp_node_create(int handle,
-		     void *node_handle);
+		     dsp_node_t *node);
 
 bool dsp_node_run(int handle,
-		  void *node_handle);
+		  dsp_node_t *node);
 
 bool dsp_node_terminate(int handle,
-			void *node_handle,
+			dsp_node_t *node,
 			unsigned long *status);
 
 bool dsp_node_put_message(int handle,
-			  void *node_handle,
+			  dsp_node_t *node,
 			  const dsp_msg_t *message,
 			  unsigned int timeout);
 
 bool dsp_node_get_message(int handle,
-			  void *node_handle,
+			  dsp_node_t *node,
 			  dsp_msg_t *message,
 			  unsigned int timeout);
 
@@ -199,7 +204,7 @@ bool dsp_register_notify(int handle,
 			 struct dsp_notification *info);
 
 bool dsp_node_register_notify(int handle,
-			      void *node_handle,
+			      dsp_node_t *node,
 			      unsigned int event_mask,
 			      unsigned int notify_type,
 			      struct dsp_notification *info);
@@ -227,7 +232,7 @@ bool dsp_unregister(int handle,
 
 static inline bool
 dsp_send_message(int handle,
-		 void *node_handle,
+		 dsp_node_t *node,
 		 uint32_t cmd,
 		 uint32_t arg_1,
 		 uint32_t arg_2)
@@ -238,7 +243,7 @@ dsp_send_message(int handle,
 	msg.arg_1 = arg_1;
 	msg.arg_2 = arg_2;
 
-	return dsp_node_put_message(handle, node_handle, &msg, -1);
+	return dsp_node_put_message(handle, node, &msg, -1);
 }
 
 #endif /* DSP_BRIDGE_H */

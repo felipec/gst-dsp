@@ -55,7 +55,7 @@ static inline void *
 create_node(int dsp_handle,
 	    void *proc)
 {
-	void *node;
+	dsp_node_t *node;
 	const dsp_uuid_t dummy_uuid = { 0x3dac26d0, 0x6d4b, 0x11dd, 0xad, 0x8b,
 		{ 0x08, 0x00, 0x20, 0x0c, 0x9a,0x66 } };
 
@@ -86,7 +86,7 @@ create_node(int dsp_handle,
 
 static inline bool
 destroy_node(int dsp_handle,
-	     void *node)
+	     dsp_node_t *node)
 {
 	if (node) {
 		if (!dsp_node_free(dsp_handle, node)) {
@@ -177,7 +177,7 @@ dsp_deinit(GstDspDummy *self)
 
 static inline void
 configure_dsp_node(int dsp_handle,
-		   void *node,
+		   dsp_node_t *node,
 		   dmm_buffer_t *input_buffer,
 		   dmm_buffer_t *output_buffer)
 {

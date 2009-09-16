@@ -454,7 +454,7 @@ leave:
 static inline bool
 destroy_node(GstDspBase *self,
 	     int dsp_handle,
-	     void *node)
+	     dsp_node_t *node)
 {
 	if (node) {
 		if (!dsp_node_free(dsp_handle, node)) {

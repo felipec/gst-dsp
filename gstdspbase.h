@@ -63,7 +63,8 @@ struct GstDspBase {
 	GstPad *sinkpad, *srcpad;
 
 	int dsp_handle;
-	void *proc, *node;
+	void *proc;
+	dsp_node_t *node;
 	struct dsp_notification *events[3];
 
 	GstFlowReturn status;

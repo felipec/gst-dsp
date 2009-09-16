@@ -214,7 +214,7 @@ create_node(GstDspVEnc *self)
 {
 	GstDspBase *base;
 	int dsp_handle;
-	void *node;
+	dsp_node_t *node;
 	const dsp_uuid_t *alg_uuid;
 	const char *alg_fn;
 

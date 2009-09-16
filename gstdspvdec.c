@@ -309,7 +309,7 @@ create_node(GstDspBase *base)
 {
 	GstDspVDec *self;
 	int dsp_handle;
-	void *node;
+	dsp_node_t *node;
 	const dsp_uuid_t *alg_uuid;
 	const char *alg_fn;
 	const dsp_uuid_t mp4v_dec_uuid = { 0x7e4b8541, 0x47a1, 0x11d6, 0xb1, 0x56,
@@ -437,7 +437,7 @@ create_node(GstDspBase *base)
 static inline bool
 destroy_node(GstDspVDec *self,
 	     int dsp_handle,
-	     void *node)
+	     dsp_node_t *node)
 {
 	if (node) {
 		if (!dsp_node_free(dsp_handle, node)) {

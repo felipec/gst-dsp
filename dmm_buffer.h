@@ -36,7 +36,7 @@
 typedef struct
 {
 	int handle;
-	void *node;
+	dsp_node_t *node;
 	void *data;
 	void *allocated_data;
 	size_t size;
@@ -51,7 +51,7 @@ typedef struct
 
 static inline dmm_buffer_t *
 dmm_buffer_new(int handle,
-	       void *node)
+	       dsp_node_t *node)
 {
 	dmm_buffer_t *b;
 	b = calloc(1, sizeof(*b));
