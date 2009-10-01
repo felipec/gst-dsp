@@ -313,59 +313,16 @@ static inline bool dsp_node_delete(int handle,
 }
 
 #ifdef ALLOCATE_SM
-enum dsp_node_state {
-	NODE_ALLOCATED,
-	NODE_CREATED,
-	NODE_RUNNING,
-	NODE_PAUSED,
-	NODE_DONE
-};
-
-enum dsp_connect_type {
-	CONNECTTYPE_NODEOUTPUT,
-	CONNECTTYPE_GPPOUTPUT,
-	CONNECTTYPE_NODEINPUT,
-	CONNECTTYPE_GPPINPUT
-};
-
-struct dsp_stream_connect {
-	unsigned long cb;
-	enum dsp_connect_type type;
-	unsigned int index;
-	void *node_handle;
-	dsp_uuid_t node_id;
-	unsigned int stream_index;
-};
-
-struct dsp_node_info {
-	unsigned long cb;
-	struct dsp_ndb_props props;
-	unsigned int priority;
-	enum dsp_node_state state;
-	void *owner;
-	unsigned int num_streams;
-	struct dsp_stream_connect streams[16];
-	unsigned int node_env;
-};
-
-struct dsp_node_attr {
-	unsigned long cb;
-	struct dsp_node_attr_in attr_in;
-	unsigned long inputs;
-	unsigned long outputs;
-	struct dsp_node_info info;
-};
-
 struct node_get_attr {
 	void *node_handle;
 	struct dsp_node_attr *attr;
 	unsigned int attr_size;
 };
 
-static inline bool dsp_node_get_attr(int handle,
-				     dsp_node_t *node,
-				     struct dsp_node_attr *attr,
-				     size_t attr_size)
+bool dsp_node_get_attr(int handle,
+		       dsp_node_t *node,
+		       struct dsp_node_attr *attr,
+		       size_t attr_size)
 {
 	struct node_get_attr arg = {
 		.node_handle = node->handle,

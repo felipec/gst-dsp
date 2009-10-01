@@ -156,6 +156,49 @@ struct dsp_info {
 	} result;
 };
 
+enum dsp_connect_type {
+	CONNECTTYPE_NODEOUTPUT,
+	CONNECTTYPE_GPPOUTPUT,
+	CONNECTTYPE_NODEINPUT,
+	CONNECTTYPE_GPPINPUT
+};
+
+struct dsp_stream_connect {
+	unsigned long cb;
+	enum dsp_connect_type type;
+	unsigned int index;
+	void *node_handle;
+	dsp_uuid_t node_id;
+	unsigned int stream_index;
+};
+
+enum dsp_node_state {
+	NODE_ALLOCATED,
+	NODE_CREATED,
+	NODE_RUNNING,
+	NODE_PAUSED,
+	NODE_DONE
+};
+
+struct dsp_node_info {
+	unsigned long cb;
+	struct dsp_ndb_props props;
+	unsigned int priority;
+	enum dsp_node_state state;
+	void *owner;
+	unsigned int num_streams;
+	struct dsp_stream_connect streams[16];
+	unsigned int node_env;
+};
+
+struct dsp_node_attr {
+	unsigned long cb;
+	struct dsp_node_attr_in attr_in;
+	unsigned long inputs;
+	unsigned long outputs;
+	struct dsp_node_info info;
+};
+
 int dsp_open(void);
 
 int dsp_close(int handle);
@@ -284,5 +327,10 @@ dsp_send_message(int handle,
 
 	return dsp_node_put_message(handle, node, &msg, -1);
 }
+
+bool dsp_node_get_attr(int handle,
+		       dsp_node_t *node,
+		       struct dsp_node_attr *attr,
+		       size_t attr_size);
 
 #endif /* DSP_BRIDGE_H */
