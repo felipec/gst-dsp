@@ -733,3 +733,29 @@ bool dsp_proc_get_info(int handle,
 
 	return DSP_SUCCEEDED(ioctl(handle, 11, &arg));
 }
+
+struct enum_nodes {
+	void *proc_handle;
+	void **node_table;
+	unsigned node_table_size;
+	unsigned *num_nodes;
+	unsigned *allocated;
+};
+
+bool dsp_enum_nodes(int handle,
+		    void *proc_handle,
+		    void **node_table,
+		    unsigned node_table_size,
+		    unsigned *num_nodes,
+		    unsigned *allocated)
+{
+	struct enum_nodes arg = {
+		.proc_handle = proc_handle,
+		.node_table = node_table,
+		.node_table_size = node_table_size,
+		.num_nodes = num_nodes,
+		.allocated = allocated,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, 10, &arg));
+}

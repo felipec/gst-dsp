@@ -333,4 +333,11 @@ bool dsp_node_get_attr(int handle,
 		       struct dsp_node_attr *attr,
 		       size_t attr_size);
 
+bool dsp_enum_nodes(int handle,
+		    void *proc_handle,
+		    void **node_table,
+		    unsigned node_table_size,
+		    unsigned *num_nodes,
+		    unsigned *allocated);
+
 #endif /* DSP_BRIDGE_H */
