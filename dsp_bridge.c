@@ -753,3 +753,26 @@ bool dsp_invalidate(int handle,
 
 	return DSP_SUCCEEDED(ioctl(handle, 23, &arg));
 }
+
+struct proc_get_info {
+	void *proc_handle;
+	unsigned type;
+	struct dsp_info *info;
+	unsigned size;
+};
+
+bool dsp_proc_get_info(int handle,
+		       void *proc_handle,
+		       unsigned type,
+		       struct dsp_info *info,
+		       unsigned size)
+{
+	struct proc_get_info arg = {
+		.proc_handle = proc_handle,
+		.type = type,
+		.info = info,
+		.size = size,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, 11, &arg));
+}

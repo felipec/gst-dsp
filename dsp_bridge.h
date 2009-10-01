@@ -127,6 +127,35 @@ struct dsp_ndb_props {
 };
 #endif
 
+enum dsp_resource {
+	DSP_RESOURCE_DYNDARAM = 0,
+	DSP_RESOURCE_DYNSARAM,
+	DSP_RESOURCE_DYNEXTERNAL,
+	DSP_RESOURCE_DYNSRAM,
+	DSP_RESOURCE_PROCLOAD,
+};
+
+struct dsp_info {
+	unsigned long cb;
+	enum dsp_resource type;
+	union {
+		unsigned long resource;
+		struct {
+			unsigned long size;
+			unsigned long total_free_size;
+			unsigned long len_max_free_block;
+			unsigned long free_blocks;
+			unsigned long alloc_blocks;
+		} mem;
+		struct {
+			unsigned long load;
+			unsigned long pred_load;
+			unsigned long freq;
+			unsigned long pred_freq;
+		} proc;
+	} result;
+};
+
 int dsp_open(void);
 
 int dsp_close(int handle);
@@ -233,6 +262,12 @@ bool dsp_register(int handle,
 bool dsp_unregister(int handle,
 		    dsp_uuid_t *uuid,
 		    enum dsp_dcd_object_type type);
+
+bool dsp_proc_get_info(int handle,
+		       void *proc_handle,
+		       enum dsp_resource type,
+		       struct dsp_info *info,
+		       unsigned size);
 
 static inline bool
 dsp_send_message(int handle,
