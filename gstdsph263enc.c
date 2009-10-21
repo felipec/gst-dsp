@@ -52,9 +52,6 @@ instance_init(GTypeInstance *instance,
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
 	base->alg = GSTDSP_H263ENC;
-
-	base->ports[0] = du_port_new(0, 1);
-	base->ports[1] = du_port_new(1, 1);
 }
 
 static void
