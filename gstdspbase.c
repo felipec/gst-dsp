@@ -287,14 +287,14 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
-	if (!b->len) {
+	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");
 		send_buffer(self, b, 1, 0);
 		g_mutex_lock(self->ts_mutex);
 		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
-		if (!flush_buffer)
+		if (G_LIKELY(!flush_buffer))
 			self->ts_push_pos = self->ts_out_pos;
 		g_mutex_unlock(self->ts_mutex);
 		goto leave;
@@ -304,7 +304,7 @@ output_loop(gpointer data)
 	flush_buffer = (self->ts_out_pos != self->ts_push_pos);
 	g_mutex_unlock(self->ts_mutex);
 
-	if (flush_buffer) {
+	if (G_UNLIKELY(flush_buffer)) {
 		send_buffer(self, b, 1, 0);
 		g_mutex_lock(self->ts_mutex);
 		pr_debug(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
