@@ -1025,7 +1025,7 @@ pad_event(GstPad *pad,
 			g_mutex_lock(self->ts_mutex);
 			self->ts_push_pos = self->ts_in_pos;
 			pr_debug(self, "flushing next %u buffer(s)",
-				 (self->ts_push_pos - self->ts_out_pos) % ARRAY_SIZE(self->ts_array));
+				 self->ts_push_pos - self->ts_out_pos);
 			self->eos = FALSE;
 			g_mutex_unlock(self->ts_mutex);
 
