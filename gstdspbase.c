@@ -287,6 +287,12 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
+	if (G_UNLIKELY(self->skip_hack_2 > 0)) {
+		send_buffer(self, b, 1, 0);
+		self->skip_hack_2--;
+		goto leave;
+	}
+
 	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");

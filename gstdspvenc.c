@@ -628,7 +628,7 @@ h264venc_recv_cb(GstDspBase *base,
 				gst_buffer_unref(self->priv.h264.codec_data);
 			}
 		}
-		b->len = 0;
+		base->skip_hack_2++;
 	}
 }
 
