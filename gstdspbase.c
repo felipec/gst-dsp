@@ -307,8 +307,8 @@ output_loop(gpointer data)
 	if (flush_buffer) {
 		send_buffer(self, b, 1, 0);
 		g_mutex_lock(self->ts_mutex);
-		GST_LOG_OBJECT(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
-			       GST_TIME_ARGS((self->ts_array[self->ts_out_pos])));
+		pr_debug(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
+			 GST_TIME_ARGS((self->ts_array[self->ts_out_pos])));
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 		g_mutex_unlock(self->ts_mutex);
 		goto leave;
@@ -380,8 +380,8 @@ output_loop(gpointer data)
 #endif
 	g_mutex_unlock(self->ts_mutex);
 
-	GST_LOG_OBJECT(self, "pushing buffer %" GST_TIME_FORMAT,
-		       GST_TIME_ARGS(GST_BUFFER_TIMESTAMP(out_buf)));
+	pr_debug(self, "pushing buffer %" GST_TIME_FORMAT,
+		 GST_TIME_ARGS(GST_BUFFER_TIMESTAMP(out_buf)));
 	ret = gst_pad_push(self->srcpad, out_buf);
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 		pr_info(self, "pad push failed: %s", gst_flow_get_name(ret));

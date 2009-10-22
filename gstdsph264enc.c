@@ -35,8 +35,8 @@
 #define DEFAULT_BYTESTREAM FALSE
 
 enum {
-    ARG_0,
-    ARG_BYTESTREAM,
+	ARG_0,
+	ARG_BYTESTREAM,
 };
 
 static inline GstCaps *
