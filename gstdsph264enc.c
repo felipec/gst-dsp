@@ -32,7 +32,7 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
-#define DEFAULT_BYTESTREAM FALSE
+#define DEFAULT_BYTESTREAM TRUE
 
 enum {
 	ARG_0,
