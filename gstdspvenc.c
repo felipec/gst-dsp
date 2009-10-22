@@ -174,10 +174,7 @@ get_mp4venc_args(GstDspVEnc *self)
 		.height = self->height,
 		.bitrate = self->bitrate,
 		.vbv_size = 112,
-		.gob_interval = 0,
 		.color_format = 2,
-		.hec = 0,
-		.resync_marker = 0,
 		.data_part = 0,
 		.reversible_vlc = 0,
 		.unrestricted_mv = 1,
@@ -197,10 +194,17 @@ get_mp4venc_args(GstDspVEnc *self)
 
 	args.is_mpeg4 = base->alg == GSTDSP_MP4VENC ? 1 : 0;
 
-	if (base->alg == GSTDSP_MP4VENC)
+	if (base->alg == GSTDSP_MP4VENC) {
 		args.level = 5;
-	else
+		args.gob_interval = 0;
+		args.hec = 0;
+		args.resync_marker = 0;
+	} else {
 		args.level = 20;
+		args.gob_interval = 1;
+		args.hec = 1;
+		args.resync_marker = 1;
+	}
 
 	struct foo_data *cb_data;
 
@@ -803,14 +807,11 @@ setup_mp4param_in(GstDspBase *base)
 	in_param->i_frame_interval = self->framerate;
 	in_param->generate_header = 0;
 	in_param->force_i_frame = 0;
-	in_param->resync_interval = 0;
-	in_param->hec_interval = 0;
 	in_param->air_rate = 10;
 	in_param->mir_rate = 0;
 	in_param->qp_intra = 8;
 	in_param->f_code = 6;
 	in_param->half_pel = 1;
-	in_param->ac_pred = 0;
 	in_param->mv = 0;
 	in_param->use_umv = 1;
 	in_param->mv_data_enable = 0;
@@ -819,10 +820,15 @@ setup_mp4param_in(GstDspBase *base)
 	in_param->last_frame = 0;
 	in_param->width = 0;
 
-	if (base->alg == GSTDSP_MP4VENC)
+	if (base->alg == GSTDSP_MP4VENC) {
 		in_param->ac_pred = 1;
-	else
+		in_param->resync_interval = 0;
+		in_param->hec_interval = 0;
+	} else {
 		in_param->ac_pred = 0;
+		in_param->resync_interval = 1024;
+		in_param->hec_interval = 3;
+	}
 
 	dmm_buffer_clean(tmp, sizeof(*in_param));
 
