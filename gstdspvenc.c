@@ -269,7 +269,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.height = self->height,
 		.bitrate = self->bitrate,
 		.bitstream_buf_size = base->output_buffer_size,
-		.intra_frame_period = (self->framerate > 15) ? 29 : 14,
+		.intra_frame_period = self->framerate,
 		.framerate = self->framerate * 1000,
 		.yuv_format = 2,
 		.unrestricted_mv = 0, /* not supported */
@@ -654,7 +654,7 @@ setup_h264params_in(GstDspBase *base)
 	in_param->ref_framerate = self->framerate * 1000;
 	in_param->target_framerate = self->framerate * 1000;
 	in_param->target_bitrate = self->bitrate;
-	in_param->intra_frame_interval = (self->framerate > 15) ? 29 : 14;
+	in_param->intra_frame_interval = self->framerate;
 	in_param->generate_header = 0;
 	in_param->capture_width = 0;
 	in_param->force_i_frame = 0;
