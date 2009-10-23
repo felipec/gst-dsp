@@ -567,6 +567,13 @@ h264venc_in_send_cb(GstDspBase *base,
 		self->keyframe_event = NULL;
 	}
 	g_mutex_unlock(self->keyframe_mutex);
+
+	/* hack to manually force keyframes */
+	param->force_i_frame |= self->force_i_frame_counter >=
+		self->keyframe_interval * self->framerate;
+	if (param->force_i_frame)
+		self->force_i_frame_counter = 0;
+	self->force_i_frame_counter++;
 }
 
 static inline gboolean
