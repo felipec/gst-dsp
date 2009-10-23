@@ -60,7 +60,10 @@ instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
+	GstDspVEnc *self = GST_DSP_VENC(instance);
 	base->alg = GSTDSP_H264ENC;
+
+	self->priv.h264.bytestream = DEFAULT_BYTESTREAM;
 }
 
 static void
