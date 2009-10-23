@@ -977,7 +977,8 @@ sink_setcaps(GstPad *pad,
 		g_free(str);
 	}
 
-	gst_pad_set_caps(base->srcpad, out_caps);
+	if (!gst_pad_set_caps(base->srcpad, out_caps))
+		return FALSE;
 
 	base->node = create_node(self);
 	if (!base->node) {
@@ -1012,7 +1013,7 @@ sink_setcaps(GstPad *pad,
 			break;
 	}
 
-	return gst_pad_set_caps(pad, caps);
+	return TRUE;
 }
 
 static void
