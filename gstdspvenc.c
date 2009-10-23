@@ -813,7 +813,6 @@ setup_mp4param_in(GstDspBase *base)
 	in_param->f_code = 6;
 	in_param->half_pel = 1;
 	in_param->mv = 0;
-	in_param->use_umv = 1;
 	in_param->mv_data_enable = 0;
 	in_param->resync_data_enable = 0;
 	in_param->qp_inter = 8;
@@ -824,10 +823,12 @@ setup_mp4param_in(GstDspBase *base)
 		in_param->ac_pred = 1;
 		in_param->resync_interval = 0;
 		in_param->hec_interval = 0;
+		in_param->use_umv = 1;
 	} else {
 		in_param->ac_pred = 0;
 		in_param->resync_interval = 1024;
 		in_param->hec_interval = 3;
+		in_param->use_umv = 0;
 	}
 
 	dmm_buffer_clean(tmp, sizeof(*in_param));
