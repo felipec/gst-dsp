@@ -599,6 +599,12 @@ h264venc_recv_cb(GstDspBase *base,
 		 dmm_buffer_t *b)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
+	struct h264venc_out_stream_params *param;
+	param = p->data;
+
+	dmm_buffer_invalidate(p, sizeof(*param));
+
+	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
 
 	if (b->len == 0 || self->priv.h264.bytestream)
 	       return;
