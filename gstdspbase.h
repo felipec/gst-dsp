@@ -109,6 +109,7 @@ void du_port_free(du_port_t *p);
 
 gboolean gstdsp_start(GstDspBase *self);
 gboolean gstdsp_send_codec_data(GstDspBase *self, GstBuffer *buf);
+void gstdsp_got_error(GstDspBase *self, guint id, const char *message);
 void gstdsp_post_error(GstDspBase *self, const char *message);
 
 G_END_DECLS

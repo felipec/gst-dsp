@@ -425,8 +425,8 @@ gstdsp_post_error(GstDspBase *self,
 	g_error_free(gerror);
 }
 
-static inline void
-got_error(GstDspBase *self,
+void
+gstdsp_got_error(GstDspBase *self,
 	  guint id,
 	  const char *message)
 {
@@ -465,15 +465,15 @@ dsp_thread(gpointer data)
 			}
 		}
 		else if (index == 1) {
-			got_error(self, 1, "got DSP MMUFAULT");
+			gstdsp_got_error(self, 1, "got DSP MMUFAULT");
 			goto leave;
 		}
 		else if (index == 2) {
-			got_error(self, 2, "got DSP SYSERROR");
+			gstdsp_got_error(self, 2, "got DSP SYSERROR");
 			goto leave;
 		}
 		else {
-			got_error(self, 3, "wrong event index");
+			gstdsp_got_error(self, 3, "wrong event index");
 			goto leave;
 		}
 	}
