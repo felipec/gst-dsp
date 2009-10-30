@@ -626,6 +626,34 @@ struct h264dec_in_stream_params {
 	uint32_t nalu[1200];
 };
 
+struct h264dec_out_stream_params {
+	uint32_t display_id;
+	uint32_t bytes_consumed;
+	int32_t error_code;
+	uint32_t frame_type;
+	uint32_t num_of_nalu;
+	int32_t mb_err_status_flag;
+	int8_t mb_err_status_out[1620];
+};
+
+static void h264dec_recv_cb(GstDspBase *base,
+			    du_port_t *port,
+			    dmm_buffer_t *p,
+			    dmm_buffer_t *b)
+{
+	struct h264dec_out_stream_params *param;
+	param = p->data;
+
+	dmm_buffer_invalidate(p, sizeof(*param));
+	pr_debug(base, "receive %d/%d",
+		 b->len, base->output_buffer_size);
+	pr_debug(base, "error: 0x%x, frame type: %d",
+		 param->error_code, param->frame_type);
+	if (param->error_code & 0xffff)
+		pr_err(base, "decode error");
+}
+
+
 static void h264dec_send_cb(GstDspBase *base,
 			    du_port_t *port,
 			    dmm_buffer_t *p,
@@ -647,6 +675,7 @@ static inline void
 setup_h264params(GstDspBase *base)
 {
 	struct h264dec_in_stream_params *in_param;
+	struct h264dec_out_stream_params *out_param;
 	guint i;
 
 	for (i = 0; i < base->ports[0]->num_buffers; i++) {
@@ -656,6 +685,14 @@ setup_h264params(GstDspBase *base)
 		base->ports[0]->params[i] = tmp;
 	}
 	base->ports[0]->send_cb = h264dec_send_cb;
+
+	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		base->ports[1]->params[i] = tmp;
+	}
+	base->ports[1]->recv_cb = h264dec_recv_cb;
 }
 
 static void *
