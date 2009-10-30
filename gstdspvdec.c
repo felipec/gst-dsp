@@ -574,10 +574,6 @@ h264dec_transform_codec_data(GstDspVDec *self,
 
 	gst_buffer_unref(buf);
 
-	/* not supported yet */
-	if (lol < 3)
-		goto fail;
-
 	pr_debug(self, "lol: %d", lol);
 	self->priv.h264.lol = lol;
 
@@ -621,7 +617,43 @@ h264dec_transform_nal_encoding(GstDspVDec *self,
 		size -= lol + val;
 	}
 
-	g_assert(lol >= 3);
+	if (lol < 3) {
+		/* slower, but unlikely path; need to copy stuff to make room for sync */
+		guint8 *odata, *alloc_data;
+		gint osize;
+
+		/* set up for next run */
+		data = b->data;
+		size = b->size;
+		osize = size + nal * (4 - lol);
+		/* save this so it is not free'd by subsequent allocate */
+		alloc_data = b->allocated_data;
+		b->allocated_data = NULL;
+		dmm_buffer_allocate(b, osize);
+
+		odata = b->data;
+		while (size) {
+			if (size < lol)
+				goto fail;
+
+			/* get NAL size encoded in BE lol bytes */
+			val = GST_READ_UINT32_BE(data);
+			val >>= ((4 - lol) << 3);
+			GST_WRITE_UINT32_BE(odata, 0x01);
+			odata += 4;
+			data += lol;
+			memcpy(odata, data, val);
+			odata += val;
+			data += val;
+			size -= lol + val;
+		}
+		/* now release original data */
+		if (b->user_data) {
+			gst_buffer_unref(b->user_data);
+			b->user_data = NULL;
+		}
+		free(alloc_data);
+	}
 
 	/* we have been poking around in the data */
 	dmm_buffer_clean(b, b->size);
