@@ -2,6 +2,7 @@ CROSS_COMPILE ?= arm-linux-
 CC := $(CROSS_COMPILE)gcc
 
 CFLAGS := -O2 -ggdb -Wall -Wextra -Wno-unused-parameter -ansi -std=c99
+LDFLAGS := -Wl,--no-undefined
 
 override CFLAGS += -D_GNU_SOURCE
 
@@ -38,7 +39,7 @@ QUIET_CLEAN = $(Q:@=@echo '   CLEAN      '$@;)
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
 
 %.so::
-	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -Wl,--no-undefined -o $@ $^ $(LIBS)
+	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS)
 
 clean:
 	$(QUIET_CLEAN)$(RM) -v $(targets) *.o *.d
