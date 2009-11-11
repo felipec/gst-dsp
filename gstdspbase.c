@@ -737,6 +737,8 @@ send_buffer(GstDspBase *self,
 
 	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
 
+	buffer->len = len;
+
 	port = self->ports[id];
 
 	for (i = 0; i < port->num_buffers; i++) {
@@ -761,7 +763,7 @@ send_buffer(GstDspBase *self,
 	msg_data->buffer_data = (uint32_t) buffer->map;
 	msg_data->buffer_size = buffer->size;
 	msg_data->stream_id = id;
-	msg_data->buffer_len = len;
+	msg_data->buffer_len = buffer->len;
 
 	msg_data->user_data = (uint32_t) buffer;
 
