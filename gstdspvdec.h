@@ -38,6 +38,7 @@ typedef struct GstDspVDecClass GstDspVDecClass;
 struct GstDspVDec {
 	GstDspBase element;
 	gint width, height;
+	gint frame_index;
 	gboolean wmv_is_vc1;
 	GstBuffer *codec_data;
 	gboolean codec_data_sent;

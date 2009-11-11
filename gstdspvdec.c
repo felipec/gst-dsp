@@ -422,9 +422,14 @@ wmvdec_send_cb(GstDspBase *base,
 		dmm_buffer_t *b)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
+	struct wmvdec_in_params *param;
+	param = p->data;
 
 	if (self->wmv_is_vc1)
 		wmvdec_prefix_vc1(self, b);
+
+	param->buf_count = g_atomic_int_exchange_and_add(&self->frame_index, 1);
+	dmm_buffer_clean(p, sizeof(*param));
 }
 
 static inline void
