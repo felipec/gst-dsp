@@ -753,6 +753,9 @@ send_buffer(GstDspBase *self,
 
 	msg_data = tmp->data;
 
+	if (port->send_cb)
+		port->send_cb(self, port, param, buffer);
+
 	memset(msg_data, 0, sizeof(*msg_data));
 
 	msg_data->buffer_data = (uint32_t) buffer->map;
@@ -767,9 +770,6 @@ send_buffer(GstDspBase *self,
 		msg_data->param_size = param->size;
 		msg_data->param_virt = (uint32_t) param;
 	}
-
-	if (port->send_cb)
-		port->send_cb(self, port, param, buffer);
 
 	dmm_buffer_flush(tmp, sizeof(*msg_data));
 
