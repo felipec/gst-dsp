@@ -315,6 +315,15 @@ struct wmvdec_out_params {
 	uint32_t frame_type;
 };
 
+struct wmvdec_dyn_params {
+	int32_t size;
+	uint32_t decode_header;
+	uint32_t display_width;
+	uint32_t frame_skip_mode;
+	uint32_t pp_type;
+	uint16_t stream_format;
+};
+
 struct wmvdec_rcv_struct {
 	uint32_t num_frames : 24;
 	uint32_t frame_type : 8;
@@ -437,6 +446,30 @@ wmvdec_recv_cb(GstDspBase *base,
 	if (param->error_code != 0)
 		pr_debug(self, "error in decoding: 0x%x, frame number: %d frame type: %u",
 			 param->error_code, param->display_id, param->frame_type);
+}
+
+static inline void
+wmvdec_send_params(GstDspBase *base, dsp_node_t *node)
+{
+	struct wmvdec_dyn_params *params;
+	dmm_buffer_t *b;
+	GstDspVDec *self = GST_DSP_VDEC(base);
+
+	b = dmm_buffer_new(base->dsp_handle, base->proc);
+	dmm_buffer_allocate(b, sizeof(*params));
+
+	params = b->data;
+	params->size = (int32_t) sizeof(*params);
+	params->decode_header = 0;
+	params->display_width = 0;
+	params->frame_skip_mode = 0;
+	params->pp_type = 0;
+	params->stream_format = self->wmv_is_vc1 ? 1 : 2;
+	dmm_buffer_clean(b, sizeof(*params));
+
+	base->alg_ctrl = b;
+
+	dsp_send_message(base->dsp_handle, node, 0x0400, 3, (uint32_t) b->map);
 }
 
 static inline void
@@ -593,6 +626,7 @@ create_node(GstDspBase *base)
 	switch (base->alg) {
 		case GSTDSP_WMVDEC:
 			setup_wmvparams(base);
+			wmvdec_send_params(base, node);
 			break;
 		default:
 			break;
