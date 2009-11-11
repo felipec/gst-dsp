@@ -264,9 +264,9 @@ struct wmvdec_args {
 	uint32_t endianness;
 	uint32_t profile;
 	int32_t max_level;
-	uint32_t mode;
+	uint32_t process_mode;
 	int32_t preroll;
-	uint32_t stream_format;
+	int16_t stream_format;
 };
 
 static inline void *
@@ -284,15 +284,15 @@ get_wmv_args(GstDspVDec *self)
 		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
-		.color_format = 1,
+		.color_format = 4,
 		.max_framerate = 0,
-		.max_bitrate = -1,
+		.max_bitrate = 0,
 		.endianness = 1,
 		.profile = -1,
 		.max_level = -1,
-		.mode = 0,
+		.process_mode = 0,
 		.preroll = 0,
-		.stream_format = 2,
+		.stream_format = 2, /* 1 = wvc1, 2 = wmv3 */
 	};
 
 	struct foo_data *cb_data;
