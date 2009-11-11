@@ -292,7 +292,7 @@ get_wmv_args(GstDspVDec *self)
 		.max_level = -1,
 		.process_mode = 0,
 		.preroll = 0,
-		.stream_format = 2, /* 1 = wvc1, 2 = wmv3 */
+		.stream_format = self->wmv_is_vc1 ? 1 : 2, /* 1 = wvc1, 2 = wmv3 */
 	};
 
 	struct foo_data *cb_data;
@@ -302,6 +302,42 @@ get_wmv_args(GstDspVDec *self)
 	memcpy(&cb_data->data, &args, sizeof(args));
 
 	return cb_data;
+}
+
+struct wmvdec_rcv_struct {
+	uint32_t num_frames : 24;
+	uint32_t frame_type : 8;
+	uint32_t id;
+	uint32_t codec_data;
+	uint32_t height;
+	uint32_t width;
+};
+
+static inline void
+wmvdec_create_rcv_buffer(GstDspBase *base, GstBuffer **buf)
+{
+	GstDspVDec *self;
+	GstBuffer *rcv_buf;
+	struct wmvdec_rcv_struct *rcv_struct;
+	guint8 *codec_data;
+
+	self = GST_DSP_VDEC(base);
+
+	rcv_buf = gst_buffer_new_and_alloc(sizeof(*rcv_struct));
+	rcv_struct = (struct wmvdec_rcv_struct *) GST_BUFFER_DATA(rcv_buf);
+	codec_data = GST_BUFFER_DATA(*buf);
+
+	rcv_struct->num_frames = 0xFFFFFF;
+	rcv_struct->frame_type = 0x85;
+	rcv_struct->id = 0x04;
+	rcv_struct->codec_data = codec_data[0] << 0  |
+				 codec_data[1] << 8  |
+				 codec_data[2] << 16 |
+				 codec_data[3] << 24;
+	rcv_struct->height = self->height;
+	rcv_struct->width = self->width;
+
+	gst_buffer_replace(buf, rcv_buf);
 }
 
 static void *
@@ -481,8 +517,19 @@ sink_setcaps(GstPad *pad,
 		base->alg = GSTDSP_H263DEC;
 		base->parse_func = gst_dsp_h263_parse;
 	}
-	else if (strcmp(name, "video/x-wmv") == 0)
+	else if (strcmp(name, "video/x-wmv") == 0) {
+		guint32 fourcc;
 		base->alg = GSTDSP_WMVDEC;
+
+		if (gst_structure_get_fourcc(in_struc, "fourcc", &fourcc) ||
+		    gst_structure_get_fourcc(in_struc, "format", &fourcc))
+		{
+			if (fourcc == GST_MAKE_FOURCC('W', 'V', 'C', '1'))
+				self->wmv_is_vc1 = TRUE;
+			else
+				self->wmv_is_vc1 = FALSE;
+		}
+	}
 	else
 		base->alg = GSTDSP_MPEG4VDEC;
 
@@ -523,9 +570,17 @@ sink_setcaps(GstPad *pad,
 			GstBuffer *buf;
 			buf = gst_value_get_buffer(codec_data);
 
-			if (base->alg == GSTDSP_MPEG4VDEC)
-				base->skip_hack++;
-
+			switch (base->alg) {
+				case GSTDSP_MPEG4VDEC:
+					base->skip_hack++;
+					break;
+				case GSTDSP_WMVDEC:
+					if (!self->wmv_is_vc1)
+						wmvdec_create_rcv_buffer(base, &buf);
+					break;
+				default:
+					break;
+			}
 			ret = gstdsp_send_codec_data(base, buf);
 		}
 	}
