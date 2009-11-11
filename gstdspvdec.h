@@ -39,6 +39,8 @@ struct GstDspVDec {
 	GstDspBase element;
 	gint width, height;
 	gboolean wmv_is_vc1;
+	GstBuffer *codec_data;
+	gboolean codec_data_sent;
 };
 
 struct GstDspVDecClass {

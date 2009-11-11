@@ -304,6 +304,10 @@ get_wmv_args(GstDspVDec *self)
 	return cb_data;
 }
 
+struct wmvdec_in_params {
+	int32_t buf_count;
+};
+
 struct wmvdec_rcv_struct {
 	uint32_t num_frames : 24;
 	uint32_t frame_type : 8;
@@ -338,6 +342,88 @@ wmvdec_create_rcv_buffer(GstDspBase *base, GstBuffer **buf)
 	rcv_struct->width = self->width;
 
 	gst_buffer_replace(buf, rcv_buf);
+}
+
+static inline void
+wmvdec_prefix_vc1(GstDspVDec *self, dmm_buffer_t *b)
+{
+	guint8 *input_data, *output_data, *alloc_data;
+	gint input_size, output_size;
+
+	input_data = b->data;
+	input_size = b->size;
+
+	/* save this so it is not freed by subsequent allocate */
+	alloc_data = b->allocated_data;
+	b->allocated_data = NULL;
+
+	if (G_LIKELY(self->codec_data_sent)) {
+		output_size = input_size + 4;
+		dmm_buffer_allocate(b, output_size);
+		output_data = b->data;
+
+		/* prefix buffer with 0x0000010d */
+		GST_WRITE_UINT32_BE(output_data, 0x10d);
+		output_data += 4;
+		memcpy(output_data, input_data, input_size);
+	} else {
+		output_size = GST_BUFFER_SIZE(self->codec_data) + 4 + input_size;
+		dmm_buffer_allocate(b, output_size);
+		output_data = b->data;
+
+		/* copy codec data to the beginning of the first buffer */
+		memcpy(output_data, GST_BUFFER_DATA(self->codec_data),
+		       GST_BUFFER_SIZE(self->codec_data));
+		output_data += GST_BUFFER_SIZE(self->codec_data);
+
+		/* prefix frame data with 0x0000010d */
+		GST_WRITE_UINT32_BE(output_data, 0x10d);
+		output_data += 4;
+		memcpy(output_data, input_data, input_size);
+
+		self->codec_data_sent = TRUE;
+		gst_buffer_unref(self->codec_data);
+		self->codec_data = NULL;
+	}
+	b->len = output_size;
+
+	/* release original data */
+	if (b->user_data) {
+		gst_buffer_unref(b->user_data);
+		b->user_data = NULL;
+	}
+	g_free(alloc_data);
+
+	/* buffer contents have been modified */
+	dmm_buffer_clean(b, b->size);
+	return;
+}
+
+static inline void
+wmvdec_send_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
+{
+	GstDspVDec *self = GST_DSP_VDEC(base);
+
+	if (self->wmv_is_vc1)
+		wmvdec_prefix_vc1(self, b);
+}
+
+static inline void
+setup_wmvparams (GstDspBase *base)
+{
+	struct wmvdec_in_params *in_param;
+	guint i;
+
+	for (i = 0; i < base->ports[0]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*in_param));
+		base->ports[0]->params[i] = tmp;
+	}
+	base->ports[0]->send_cb = wmvdec_send_cb;
 }
 
 static void *
@@ -467,6 +553,14 @@ create_node(GstDspBase *base)
 
 	pr_info(self, "dsp node created");
 
+	switch (base->alg) {
+		case GSTDSP_WMVDEC:
+			setup_wmvparams(base);
+			break;
+		default:
+			break;
+	}
+
 	return node;
 }
 
@@ -575,8 +669,12 @@ sink_setcaps(GstPad *pad,
 					base->skip_hack++;
 					break;
 				case GSTDSP_WMVDEC:
-					if (!self->wmv_is_vc1)
+					if (!self->wmv_is_vc1) {
 						wmvdec_create_rcv_buffer(base, &buf);
+					} else {
+						self->codec_data = gst_buffer_ref(buf);
+						return ret;
+					}
 					break;
 				default:
 					break;
