@@ -308,6 +308,13 @@ struct wmvdec_in_params {
 	int32_t buf_count;
 };
 
+struct wmvdec_out_params {
+	uint32_t display_id;
+	uint32_t bytes_consumed;
+	int32_t  error_code;
+	uint32_t frame_type;
+};
+
 struct wmvdec_rcv_struct {
 	uint32_t num_frames : 24;
 	uint32_t frame_type : 8;
@@ -412,9 +419,31 @@ wmvdec_send_cb(GstDspBase *base,
 }
 
 static inline void
+wmvdec_recv_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
+{
+	GstDspVDec *self = GST_DSP_VDEC(base);
+	struct wmvdec_out_params *param;
+	param = p->data;
+
+	dmm_buffer_invalidate(p, sizeof(*param));
+
+	if (param->frame_type == 0xFFFFFFFF)
+		pr_warning(self, "empty frame received, frame number: %d",
+			   param->display_id);
+
+	if (param->error_code != 0)
+		pr_debug(self, "error in decoding: 0x%x, frame number: %d frame type: %u",
+			 param->error_code, param->display_id, param->frame_type);
+}
+
+static inline void
 setup_wmvparams (GstDspBase *base)
 {
 	struct wmvdec_in_params *in_param;
+	struct wmvdec_out_params *out_param;
 	guint i;
 
 	for (i = 0; i < base->ports[0]->num_buffers; i++) {
@@ -424,6 +453,14 @@ setup_wmvparams (GstDspBase *base)
 		base->ports[0]->params[i] = tmp;
 	}
 	base->ports[0]->send_cb = wmvdec_send_cb;
+
+	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		base->ports[1]->params[i] = tmp;
+	}
+	base->ports[1]->recv_cb = wmvdec_recv_cb;
 }
 
 static void *
