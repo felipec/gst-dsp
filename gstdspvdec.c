@@ -657,6 +657,38 @@ destroy_node(GstDspVDec *self,
 	return true;
 }
 
+static inline gboolean
+handle_codec_data(GstDspVDec *self,
+		  GstStructure *in_struc)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+	const GValue *codec_data;
+	GstBuffer *buf;
+
+	codec_data = gst_structure_get_value(in_struc, "codec_data");
+	if (!codec_data)
+		return TRUE;
+
+	buf = gst_value_get_buffer(codec_data);
+
+	switch (base->alg) {
+		case GSTDSP_MPEG4VDEC:
+			base->skip_hack++;
+			break;
+		case GSTDSP_WMVDEC:
+			if (!self->wmv_is_vc1) {
+				wmvdec_create_rcv_buffer(base, &buf);
+			} else {
+				self->codec_data = gst_buffer_ref(buf);
+				return TRUE;
+			}
+			break;
+		default:
+			break;
+	}
+	return gstdsp_send_codec_data(base, buf);
+}
+
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -732,34 +764,10 @@ sink_setcaps(GstPad *pad,
 
 	ret = gst_pad_set_caps(pad, caps);
 
-	if (ret) {
-		const GValue *codec_data;
+	if (!ret)
+		return FALSE;
 
-		codec_data = gst_structure_get_value(in_struc, "codec_data");
-		if (codec_data) {
-			GstBuffer *buf;
-			buf = gst_value_get_buffer(codec_data);
-
-			switch (base->alg) {
-				case GSTDSP_MPEG4VDEC:
-					base->skip_hack++;
-					break;
-				case GSTDSP_WMVDEC:
-					if (!self->wmv_is_vc1) {
-						wmvdec_create_rcv_buffer(base, &buf);
-					} else {
-						self->codec_data = gst_buffer_ref(buf);
-						return ret;
-					}
-					break;
-				default:
-					break;
-			}
-			ret = gstdsp_send_codec_data(base, buf);
-		}
-	}
-
-	return ret;
+	return handle_codec_data(self, in_struc);
 }
 
 static void
