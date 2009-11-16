@@ -40,7 +40,7 @@ void pr_helper(unsigned int level,
 #ifndef GST_DISABLE_GST_DEBUG
 #define pr_info(object, ...) pr_base(2, object, __VA_ARGS__)
 #else
-#define pr_info(object, ...)
+#define pr_info(object, ...) {}
 #endif
 
 #define pr_test(object, ...) pr_base(3, object, __VA_ARGS__)
@@ -48,7 +48,7 @@ void pr_helper(unsigned int level,
 #ifdef DEBUG
 #define pr_debug(object, ...) pr_base(3, object, __VA_ARGS__)
 #else
-#define pr_debug(object, ...)
+#define pr_debug(object, ...) {}
 #endif
 
 #endif /* LOG_H */
