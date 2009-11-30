@@ -2,7 +2,7 @@
 
 if test -f .version
 then
-	v=`cat .version`
+        v=`cat .version`
 else
         v=`git describe --tags`
 fi

@@ -11,7 +11,7 @@ GST_LIBS := $(shell pkg-config --libs gstreamer-0.10 gstreamer-base-0.10)
 
 all:
 
-version := $(shell ./get-version.sh)
+version := $(shell ./get-version)
 dspdir := /lib/dsp
 
 # plugin
