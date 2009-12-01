@@ -35,6 +35,12 @@ typedef struct GstDspVDecClass GstDspVDecClass;
 
 #include "gstdspbase.h"
 
+union vdec_priv_data {
+	struct {
+		gint lol;
+	} h264;
+};
+
 struct GstDspVDec {
 	GstDspBase element;
 	gint width, height;
@@ -42,6 +48,8 @@ struct GstDspVDec {
 	gboolean wmv_is_vc1;
 	GstBuffer *codec_data;
 	gboolean codec_data_sent;
+
+	union vdec_priv_data priv;
 };
 
 struct GstDspVDecClass {
