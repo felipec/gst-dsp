@@ -84,7 +84,7 @@ generate_sink_template(void)
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
-	
+
 	struc = gst_structure_new("video/x-wmv",
 				  "wmvversion", G_TYPE_INT, 3,
 				  NULL);
@@ -334,7 +334,8 @@ struct wmvdec_rcv_struct {
 };
 
 static inline void
-wmvdec_create_rcv_buffer(GstDspBase *base, GstBuffer **buf)
+wmvdec_create_rcv_buffer(GstDspBase *base,
+			 GstBuffer **buf)
 {
 	GstDspVDec *self;
 	GstBuffer *rcv_buf;
@@ -361,7 +362,8 @@ wmvdec_create_rcv_buffer(GstDspBase *base, GstBuffer **buf)
 }
 
 static inline void
-wmvdec_prefix_vc1(GstDspVDec *self, dmm_buffer_t *b)
+wmvdec_prefix_vc1(GstDspVDec *self,
+		  dmm_buffer_t *b)
 {
 	guint8 *input_data, *output_data, *alloc_data;
 	gint input_size, output_size;
@@ -415,11 +417,11 @@ wmvdec_prefix_vc1(GstDspVDec *self, dmm_buffer_t *b)
 	return;
 }
 
-static inline void
+static void
 wmvdec_send_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+	       du_port_t *port,
+	       dmm_buffer_t *p,
+	       dmm_buffer_t *b)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct wmvdec_in_params *param;
@@ -432,11 +434,11 @@ wmvdec_send_cb(GstDspBase *base,
 	dmm_buffer_clean(p, sizeof(*param));
 }
 
-static inline void
+static void
 wmvdec_recv_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+	       du_port_t *port,
+	       dmm_buffer_t *p,
+	       dmm_buffer_t *b)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct wmvdec_out_params *param;
@@ -454,7 +456,8 @@ wmvdec_recv_cb(GstDspBase *base,
 }
 
 static inline void
-wmvdec_send_params(GstDspBase *base, dsp_node_t *node)
+wmvdec_send_params(GstDspBase *base,
+		   dsp_node_t *node)
 {
 	struct wmvdec_dyn_params *params;
 	dmm_buffer_t *b;
@@ -478,7 +481,7 @@ wmvdec_send_params(GstDspBase *base, dsp_node_t *node)
 }
 
 static inline void
-setup_wmvparams (GstDspBase *base)
+setup_wmvparams(GstDspBase *base)
 {
 	struct wmvdec_in_params *in_param;
 	struct wmvdec_out_params *out_param;
