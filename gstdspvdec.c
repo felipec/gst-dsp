@@ -509,7 +509,7 @@ h264dec_transform_codec_data(GstDspVDec *self,
 			     GstBuffer *buf)
 {
 	guint8 *data, *outdata;
-	guint total_size = 0, len, num_sps, num_pps;
+	guint size, total_size = 0, len, num_sps, num_pps;
 	guint lol;
 	guint val;
 	guint i;
@@ -519,21 +519,33 @@ h264dec_transform_codec_data(GstDspVDec *self,
 	 * lol bytes (BE) SPS size, SPS, lol bytes (BE) PPS size, PPS */
 
 	data = GST_BUFFER_DATA(buf);
+	size = GST_BUFFER_SIZE(buf);
+
+	if (size < 8)
+		goto fail;
 
 	lol = (data[4] & (0x3)) + 1;
 	num_sps = data[5] & 0x1f;
 	data += 6;
+	size -= 6;
 	for (i = 0; i < num_sps; i++) {
 		len = GST_READ_UINT16_BE(data);
 		total_size += len + lol;
 		data += len + 2;
+		if (size < len + 2)
+			goto fail;
+		size -= len + 2;
 	}
 	num_pps = data[0];
 	data++;
+	size++;
 	for (i = 0; i < num_pps; i++) {
 		len = GST_READ_UINT16_BE(data);
 		total_size += len + lol;
 		data += len + 2;
+		if (size < len + 2)
+			goto fail;
+		size -= len + 2;
 	}
 
 	/* save original data */
