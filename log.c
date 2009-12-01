@@ -92,8 +92,10 @@ pr_helper(unsigned int level,
 	else if (level == 2)
 		g_print("%s: %s\n", function, tmp);
 #endif
+#ifdef DEBUG
 	else if (level == 3)
 		g_print("%s:%s(%u): %s\n", file, function, line, tmp);
+#endif
 
 #ifndef GST_DISABLE_GST_DEBUG
 	gst_debug_log_valist(gstdsp_debug, log_level_to_gst (level), file, function, line, object, fmt, args);
