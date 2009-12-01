@@ -504,6 +504,78 @@ setup_wmvparams(GstDspBase *base)
 	base->ports[1]->recv_cb = wmvdec_recv_cb;
 }
 
+static GstBuffer *
+h264dec_transform_codec_data(GstDspVDec *self,
+			     GstBuffer *buf)
+{
+	guint8 *data, *outdata;
+	guint total_size = 0, len, num_sps, num_pps;
+	guint lol;
+	guint val;
+	guint i;
+	GstBuffer *new;
+
+	/* extract some info and transform into codec expected format, which is:
+	 * lol bytes (BE) SPS size, SPS, lol bytes (BE) PPS size, PPS */
+
+	data = GST_BUFFER_DATA(buf);
+
+	lol = (data[4] & (0x3)) + 1;
+	num_sps = data[5] & 0x1f;
+	data += 6;
+	for (i = 0; i < num_sps; i++) {
+		len = GST_READ_UINT16_BE(data);
+		total_size += len + lol;
+		data += len + 2;
+	}
+	num_pps = data[0];
+	data++;
+	for (i = 0; i < num_pps; i++) {
+		len = GST_READ_UINT16_BE(data);
+		total_size += len + lol;
+		data += len + 2;
+	}
+
+	/* save original data */
+	new = gst_buffer_new_and_alloc(total_size);
+	data = GST_BUFFER_DATA(buf);
+	outdata = GST_BUFFER_DATA(new);
+
+	data += 6;
+	for (i = 0; i < num_sps; ++i) {
+		len = GST_READ_UINT16_BE(data);
+		val = len << (8 * (4 - lol));
+		GST_WRITE_UINT32_BE(outdata, len);
+		memcpy(outdata + lol, data + 2, len);
+		outdata += len + lol;
+		data += 2 + len;
+	}
+	data += 1;
+	for (i = 0; i < num_pps; ++i) {
+		len = GST_READ_UINT16_BE(data);
+		val = len << (8 * (4 - lol));
+		GST_WRITE_UINT32_BE(outdata, len);
+		memcpy(outdata + lol, data + 2, len);
+		outdata += len + lol;
+		data += 2 + len;
+	}
+
+	gst_buffer_unref(buf);
+
+	/* not supported yet */
+	if (lol < 3)
+		goto fail;
+
+	pr_debug(self, "lol: %d", lol);
+	self->priv.h264.lol = lol;
+
+	return new;
+
+fail:
+	pr_warning(self, "failed to transform h264 to codec format");
+	return NULL;
+}
+
 struct h264dec_in_stream_params {
 	int32_t count;
 	uint32_t num_of_nalu;
@@ -707,6 +779,13 @@ handle_codec_data(GstDspVDec *self,
 			} else {
 				self->codec_data = gst_buffer_ref(buf);
 				return TRUE;
+			}
+			break;
+		case GSTDSP_H264DEC:
+			buf = h264dec_transform_codec_data(self, buf);
+			if (!buf) {
+				gstdsp_got_error(base, 0, "invalid codec_data");
+				return FALSE;
 			}
 			break;
 		default:
