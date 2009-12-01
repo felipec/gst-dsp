@@ -504,6 +504,26 @@ setup_wmvparams(GstDspBase *base)
 	base->ports[1]->recv_cb = wmvdec_recv_cb;
 }
 
+struct h264dec_in_stream_params {
+	int32_t count;
+	uint32_t num_of_nalu;
+	uint32_t nalu[1200];
+};
+
+static inline void
+setup_h264params(GstDspBase *base)
+{
+	struct h264dec_in_stream_params *in_param;
+	guint i;
+
+	for (i = 0; i < base->ports[0]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*in_param));
+		base->ports[0]->params[i] = tmp;
+	}
+}
+
 static void *
 create_node(GstDspBase *base)
 {
@@ -635,6 +655,9 @@ create_node(GstDspBase *base)
 		case GSTDSP_WMVDEC:
 			setup_wmvparams(base);
 			wmvdec_send_params(base, node);
+			break;
+		case GSTDSP_H264DEC:
+			setup_h264params(base);
 			break;
 		default:
 			break;
