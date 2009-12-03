@@ -451,6 +451,7 @@ jpegenc_send_params(GstDspBase *base)
 	params->dri_interval = 0;
 	params->huffman_table = 0;
 	params->quant_table = 0;
+	dmm_buffer_clean(b, sizeof(*params));
 
 	base->alg_ctrl = b;
 
