@@ -87,6 +87,7 @@ base_init(gpointer g_class)
 					generate_src_template());
 
 	gst_element_class_add_pad_template(element_class, template);
+	gst_object_unref(template);
 }
 
 static void

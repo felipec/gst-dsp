@@ -415,12 +415,14 @@ base_init(gpointer g_class)
 					generate_src_template());
 
 	gst_element_class_add_pad_template(element_class, template);
+	gst_object_unref(template);
 
 	template = gst_pad_template_new("sink", GST_PAD_SINK,
 					GST_PAD_ALWAYS,
 					generate_sink_template());
 
 	gst_element_class_add_pad_template(element_class, template);
+	gst_object_unref(template);
 }
 
 static void
