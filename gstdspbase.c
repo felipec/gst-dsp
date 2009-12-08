@@ -67,6 +67,7 @@ du_port_free(du_port_t *p)
 
 	free(p->buffers);
 	free(p->comm);
+	free(p->params);
 	async_queue_free(p->queue);
 
 	free(p);
@@ -835,6 +836,7 @@ change_state(GstElement *element,
 			break;
 
 		case GST_STATE_CHANGE_READY_TO_NULL:
+			gst_caps_replace(&self->tmp_caps, NULL);
 			if (!dsp_deinit(self)) {
 				gstdsp_post_error(self, "dsp deinit failed");
 				return GST_STATE_CHANGE_FAILURE;
