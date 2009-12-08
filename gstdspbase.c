@@ -965,9 +965,9 @@ pad_chain(GstPad *pad,
 
 	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
 
-	gst_buffer_unref(buf);
-
 leave:
+
+	gst_buffer_unref(buf);
 
 	pr_debug(self, "end");
 
