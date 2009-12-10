@@ -35,6 +35,13 @@
 
 static GstElementClass *parent_class;
 
+enum {
+    ARG_0,
+    ARG_BITRATE,
+};
+
+#define DEFAULT_BITRATE 0
+
 static inline GstCaps *
 generate_sink_template(void)
 {
@@ -981,7 +988,8 @@ sink_setcaps(GstPad *pad,
 		}
 	}
 
-	self->bitrate = calculate_bitrate(self);
+	if (self->bitrate == 0)
+		self->bitrate = calculate_bitrate(self);
 
 	gst_caps_append_structure(out_caps, out_struc);
 
@@ -1031,17 +1039,61 @@ sink_setcaps(GstPad *pad,
 }
 
 static void
+set_property(GObject *obj,
+	     guint prop_id,
+	     const GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspVEnc *self;
+
+	self = GST_DSP_VENC(obj);
+
+	switch (prop_id) {
+	case ARG_BITRATE:
+		self->bitrate = g_value_get_uint(value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property(GObject *obj,
+	     guint prop_id,
+	     GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspVEnc *self;
+
+	self = GST_DSP_VENC(obj);
+
+	switch (prop_id) {
+	case ARG_BITRATE:
+		g_value_set_uint(value, self->bitrate);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
 	GstDspBase *base;
+	GstDspVEnc *self;
 
 	base = GST_DSP_BASE(instance);
+	self = GST_DSP_VENC(instance);
 
 	base->ports[0] = du_port_new(0, 2);
 	base->ports[1] = du_port_new(1, 2);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
+
+	self->bitrate = DEFAULT_BITRATE;
 }
 
 static void
@@ -1064,7 +1116,19 @@ static void
 class_init(gpointer g_class,
 	   gpointer class_data)
 {
+	GObjectClass *gobject_class;
+
 	parent_class = g_type_class_ref(GST_TYPE_ELEMENT);
+	gobject_class = G_OBJECT_CLASS(g_class);
+
+	gobject_class->set_property = set_property;
+	gobject_class->get_property = get_property;
+
+	g_object_class_install_property(gobject_class, ARG_BITRATE,
+					g_param_spec_uint("bitrate", "Bit-rate",
+							  "Encoding bit-rate (0 for auto)",
+							  0, G_MAXUINT, DEFAULT_BITRATE,
+							  G_PARAM_READWRITE));
 }
 
 GType
