@@ -36,15 +36,14 @@ void pr_helper(unsigned int level,
 
 #define pr_err(object, ...) pr_base(0, object, __VA_ARGS__)
 #define pr_warning(object, ...) pr_base(1, object, __VA_ARGS__)
+#define pr_test(object, ...) pr_base(2, object, __VA_ARGS__)
 
 #if !defined(GST_DISABLE_GST_DEBUG) || defined(DEBUG)
-#define pr_info(object, ...) pr_base(2, object, __VA_ARGS__)
-#define pr_debug(object, ...) pr_base(3, object, __VA_ARGS__)
+#define pr_info(object, ...) pr_base(3, object, __VA_ARGS__)
+#define pr_debug(object, ...) pr_base(4, object, __VA_ARGS__)
 #else
 #define pr_info(object, ...) {}
 #define pr_debug(object, ...) {}
 #endif
-
-#define pr_test(object, ...) pr_base(3, object, __VA_ARGS__)
 
 #endif /* LOG_H */

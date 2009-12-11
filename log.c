@@ -44,7 +44,8 @@ log_level_to_syslog(unsigned int level)
 	switch (level) {
 		case 0: return LOG_ERR;
 		case 1: return LOG_WARNING;
-		case 2: return LOG_INFO;
+		case 2:
+		case 3: return LOG_INFO;
 		default: return LOG_DEBUG;
 	}
 }
@@ -57,7 +58,8 @@ log_level_to_gst(unsigned int level)
 	switch (level) {
 		case 0: return GST_LEVEL_ERROR;
 		case 1: return GST_LEVEL_WARNING;
-		case 2: return GST_LEVEL_INFO;
+		case 2:
+		case 3: return GST_LEVEL_INFO;
 		default: return GST_LEVEL_DEBUG;
 	}
 }
@@ -88,12 +90,14 @@ pr_helper(unsigned int level,
 #endif
 		g_print("%s: %s\n", function, tmp);
 	}
-#ifdef DEVEL
 	else if (level == 2)
+		g_print("%s:%s(%u): %s\n", file, function, line, tmp);
+#ifdef DEVEL
+	else if (level == 3)
 		g_print("%s: %s\n", function, tmp);
 #endif
 #ifdef DEBUG
-	else if (level == 3)
+	else if (level == 4)
 		g_print("%s:%s(%u): %s\n", file, function, line, tmp);
 #endif
 
