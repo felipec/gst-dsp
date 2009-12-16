@@ -528,10 +528,10 @@ struct h264venc_out_stream_params {
 };
 
 static void
-h264venc_send_cb(GstDspBase *base,
-		 du_port_t *port,
-		 dmm_buffer_t *p,
-		 dmm_buffer_t *b)
+h264venc_in_send_cb(GstDspBase *base,
+		    du_port_t *port,
+		    dmm_buffer_t *p,
+		    dmm_buffer_t *b)
 {
 	struct h264venc_in_stream_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
@@ -602,10 +602,10 @@ gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 }
 
 static void
-h264venc_recv_cb(GstDspBase *base,
-		 du_port_t *port,
-		 dmm_buffer_t *p,
-		 dmm_buffer_t *b)
+h264venc_out_recv_cb(GstDspBase *base,
+		     du_port_t *port,
+		     dmm_buffer_t *p,
+		     dmm_buffer_t *b)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	struct h264venc_out_stream_params *param;
@@ -735,7 +735,7 @@ setup_h264params(GstDspBase *base)
 	for (i = 0; i < base->ports[0]->num_buffers; i++)
 		base->ports[0]->params[i] = setup_h264params_in(base);
 
-	base->ports[0]->send_cb = h264venc_send_cb;
+	base->ports[0]->send_cb = h264venc_in_send_cb;
 
 	for (i = 0; i < base->ports[1]->num_buffers; i++) {
 		dmm_buffer_t *tmp;
@@ -743,7 +743,7 @@ setup_h264params(GstDspBase *base)
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
-	base->ports[1]->recv_cb = h264venc_recv_cb;
+	base->ports[1]->recv_cb = h264venc_out_recv_cb;
 }
 
 struct mp4venc_in_stream_params {
@@ -782,10 +782,10 @@ struct mp4venc_out_stream_params {
 };
 
 static void
-mp4venc_recv_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+mp4venc_out_recv_cb(GstDspBase *base,
+		    du_port_t *port,
+		    dmm_buffer_t *p,
+		    dmm_buffer_t *b)
 {
 	struct mp4venc_out_stream_params *param;
 	param = p->data;
@@ -795,10 +795,10 @@ mp4venc_recv_cb(GstDspBase *base,
 }
 
 static void
-mp4venc_send_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+mp4venc_in_send_cb(GstDspBase *base,
+		   du_port_t *port,
+		   dmm_buffer_t *p,
+		   dmm_buffer_t *b)
 {
 	struct mp4venc_in_stream_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
@@ -862,7 +862,7 @@ setup_mp4params(GstDspBase *base)
 
 	for (i = 0; i < base->ports[0]->num_buffers; i++)
 		base->ports[0]->params[i] = setup_mp4param_in(base);
-	base->ports[0]->send_cb = mp4venc_send_cb;
+	base->ports[0]->send_cb = mp4venc_in_send_cb;
 
 	for (i = 0; i < base->ports[1]->num_buffers; i++) {
 		dmm_buffer_t *tmp;
@@ -870,7 +870,7 @@ setup_mp4params(GstDspBase *base)
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
-	base->ports[1]->recv_cb = mp4venc_recv_cb;
+	base->ports[1]->recv_cb = mp4venc_out_recv_cb;
 }
 
 static inline int calculate_bitrate(GstDspVEnc* self)
