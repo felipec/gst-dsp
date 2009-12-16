@@ -680,10 +680,11 @@ struct h264dec_out_stream_params {
 	int8_t mb_err_status_out[1620];
 };
 
-static void h264dec_recv_cb(GstDspBase *base,
-			    du_port_t *port,
-			    dmm_buffer_t *p,
-			    dmm_buffer_t *b)
+static void
+h264dec_recv_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	struct h264dec_out_stream_params *param;
 	param = p->data;
@@ -698,10 +699,11 @@ static void h264dec_recv_cb(GstDspBase *base,
 }
 
 
-static void h264dec_send_cb(GstDspBase *base,
-			    du_port_t *port,
-			    dmm_buffer_t *p,
-			    dmm_buffer_t *b)
+static void
+h264dec_send_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
 	/* transform MP4 format to bytestream format */

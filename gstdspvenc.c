@@ -527,7 +527,7 @@ struct h264venc_out_stream_params {
 	uint32_t nalu_index; /* Number of current NAL unit inside the frame */
 };
 
-static inline void
+static void
 h264venc_send_cb(GstDspBase *base,
 		 du_port_t *port,
 		 dmm_buffer_t *p,
@@ -601,7 +601,7 @@ gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 	memcpy(codec_data + offset, pps, pps_size);
 }
 
-static inline void
+static void
 h264venc_recv_cb(GstDspBase *base,
 		 du_port_t *port,
 		 dmm_buffer_t *p,
@@ -781,10 +781,11 @@ struct mp4venc_out_stream_params {
 	uint8_t resync_data[6480];
 };
 
-static void mp4venc_recv_cb(GstDspBase *base,
-			    du_port_t *port,
-			    dmm_buffer_t *p,
-			    dmm_buffer_t *b)
+static void
+mp4venc_recv_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	struct mp4venc_out_stream_params *param;
 	param = p->data;
@@ -793,10 +794,11 @@ static void mp4venc_recv_cb(GstDspBase *base,
 	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
 }
 
-static void mp4venc_send_cb(GstDspBase *base,
-			    du_port_t *port,
-			    dmm_buffer_t *p,
-			    dmm_buffer_t *b)
+static void
+mp4venc_send_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	struct mp4venc_in_stream_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
