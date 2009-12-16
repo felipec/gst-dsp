@@ -537,6 +537,7 @@ h264venc_send_cb(GstDspBase *base,
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	param = p->data;
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
+	param->target_bitrate = g_atomic_int_get(&self->bitrate);
 	dmm_buffer_clean(p, sizeof(*param));
 }
 
@@ -801,6 +802,7 @@ static void mp4venc_send_cb(GstDspBase *base,
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	param = p->data;
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
+	param->bitrate = g_atomic_int_get(&self->bitrate);
 	dmm_buffer_clean(p, sizeof(*param));
 }
 
@@ -1050,7 +1052,7 @@ set_property(GObject *obj,
 
 	switch (prop_id) {
 	case ARG_BITRATE:
-		self->bitrate = g_value_get_uint(value);
+		g_atomic_int_set(&self->bitrate, g_value_get_uint(value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
@@ -1070,7 +1072,7 @@ get_property(GObject *obj,
 
 	switch (prop_id) {
 	case ARG_BITRATE:
-		g_value_set_uint(value, self->bitrate);
+		g_value_set_uint(value, g_atomic_int_get(&self->bitrate));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
