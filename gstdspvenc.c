@@ -602,6 +602,17 @@ gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 }
 
 static void
+h264venc_out_send_cb(GstDspBase *base,
+		     du_port_t *port,
+		     dmm_buffer_t *p,
+		     dmm_buffer_t *b)
+{
+	struct h264venc_out_stream_params *param;
+	param = p->data;
+	dmm_buffer_invalidate(p, sizeof(*param));
+}
+
+static void
 h264venc_out_recv_cb(GstDspBase *base,
 		     du_port_t *port,
 		     dmm_buffer_t *p,
@@ -610,8 +621,6 @@ h264venc_out_recv_cb(GstDspBase *base,
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	struct h264venc_out_stream_params *param;
 	param = p->data;
-
-	dmm_buffer_invalidate(p, sizeof(*param));
 
 	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
 
@@ -743,6 +752,7 @@ setup_h264params(GstDspBase *base)
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
+	base->ports[1]->send_cb = h264venc_out_send_cb;
 	base->ports[1]->recv_cb = h264venc_out_recv_cb;
 }
 
@@ -782,6 +792,17 @@ struct mp4venc_out_stream_params {
 };
 
 static void
+mp4venc_out_send_cb(GstDspBase *base,
+		    du_port_t *port,
+		    dmm_buffer_t *p,
+		    dmm_buffer_t *b)
+{
+	struct mp4venc_out_stream_params *param;
+	param = p->data;
+	dmm_buffer_invalidate(p, sizeof(*param));
+}
+
+static void
 mp4venc_out_recv_cb(GstDspBase *base,
 		    du_port_t *port,
 		    dmm_buffer_t *p,
@@ -789,8 +810,6 @@ mp4venc_out_recv_cb(GstDspBase *base,
 {
 	struct mp4venc_out_stream_params *param;
 	param = p->data;
-
-	dmm_buffer_invalidate(p, sizeof(*param));
 	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
 }
 
@@ -870,6 +889,7 @@ setup_mp4params(GstDspBase *base)
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
+	base->ports[1]->send_cb = mp4venc_out_send_cb;
 	base->ports[1]->recv_cb = mp4venc_out_recv_cb;
 }
 

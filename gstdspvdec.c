@@ -435,6 +435,17 @@ wmvdec_in_send_cb(GstDspBase *base,
 }
 
 static void
+wmvdec_out_send_cb(GstDspBase *base,
+		   du_port_t *port,
+		   dmm_buffer_t *p,
+		   dmm_buffer_t *b)
+{
+	struct wmvdec_out_params *param;
+	param = p->data;
+	dmm_buffer_invalidate(p, sizeof(*param));
+}
+
+static void
 wmvdec_out_recv_cb(GstDspBase *base,
 		   du_port_t *port,
 		   dmm_buffer_t *p,
@@ -443,8 +454,6 @@ wmvdec_out_recv_cb(GstDspBase *base,
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct wmvdec_out_params *param;
 	param = p->data;
-
-	dmm_buffer_invalidate(p, sizeof(*param));
 
 	if (param->frame_type == 0xFFFFFFFF)
 		pr_warning(self, "empty frame received, frame number: %d",
@@ -501,6 +510,7 @@ setup_wmvparams(GstDspBase *base)
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
+	base->ports[1]->send_cb = wmvdec_out_send_cb;
 	base->ports[1]->recv_cb = wmvdec_out_recv_cb;
 }
 
@@ -681,6 +691,17 @@ struct h264dec_out_stream_params {
 };
 
 static void
+h264dec_out_send_cb(GstDspBase *base,
+		    du_port_t *port,
+		    dmm_buffer_t *p,
+		    dmm_buffer_t *b)
+{
+	struct h264dec_out_stream_params *param;
+	param = p->data;
+	dmm_buffer_invalidate(p, sizeof(*param));
+}
+
+static void
 h264dec_out_recv_cb(GstDspBase *base,
 		    du_port_t *port,
 		    dmm_buffer_t *p,
@@ -689,7 +710,6 @@ h264dec_out_recv_cb(GstDspBase *base,
 	struct h264dec_out_stream_params *param;
 	param = p->data;
 
-	dmm_buffer_invalidate(p, sizeof(*param));
 	pr_debug(base, "receive %d/%d",
 		 b->len, base->output_buffer_size);
 	pr_debug(base, "error: 0x%x, frame type: %d",
@@ -697,7 +717,6 @@ h264dec_out_recv_cb(GstDspBase *base,
 	if (param->error_code & 0xffff)
 		pr_err(base, "decode error");
 }
-
 
 static void
 h264dec_in_send_cb(GstDspBase *base,
@@ -738,6 +757,7 @@ setup_h264params(GstDspBase *base)
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
+	base->ports[1]->send_cb = h264dec_out_send_cb;
 	base->ports[1]->recv_cb = h264dec_out_recv_cb;
 }
 
