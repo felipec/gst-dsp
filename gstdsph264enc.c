@@ -99,12 +99,12 @@ set_property(GObject *obj,
 	GstDspVEnc *self = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
-		case ARG_BYTESTREAM:
-			self->priv.h264.bytestream = g_value_get_boolean(value);
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
-			break;
+	case ARG_BYTESTREAM:
+		self->priv.h264.bytestream = g_value_get_boolean(value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
 	}
 }
 
@@ -117,12 +117,12 @@ get_property(GObject *obj,
 	GstDspVEnc *self = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
-		case ARG_BYTESTREAM:
-			g_value_set_boolean(value, self->priv.h264.bytestream);
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
-			break;
+	case ARG_BYTESTREAM:
+		g_value_set_boolean(value, self->priv.h264.bytestream);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
 	}
 }
 

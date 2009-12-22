@@ -232,24 +232,24 @@ change_state(GstElement *element,
 	self = GST_DSP_DUMMY(element);
 
 	switch (transition) {
-		case GST_STATE_CHANGE_NULL_TO_READY:
-			if (!dsp_init(self)) {
-				GST_ERROR("dsp init failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
+	case GST_STATE_CHANGE_NULL_TO_READY:
+		if (!dsp_init(self)) {
+			GST_ERROR("dsp init failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
 
-			break;
+		break;
 
-		case GST_STATE_CHANGE_READY_TO_PAUSED:
-			if (!dsp_start(self)) {
-				GST_ERROR("dsp start failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
+	case GST_STATE_CHANGE_READY_TO_PAUSED:
+		if (!dsp_start(self)) {
+			GST_ERROR("dsp start failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
 
-			break;
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	ret = GST_ELEMENT_CLASS(parent_class)->change_state(element, transition);
@@ -258,24 +258,24 @@ change_state(GstElement *element,
 		return ret;
 
 	switch (transition) {
-		case GST_STATE_CHANGE_PAUSED_TO_READY:
-			if (!dsp_stop(self)) {
-				GST_ERROR("dsp stop failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
+	case GST_STATE_CHANGE_PAUSED_TO_READY:
+		if (!dsp_stop(self)) {
+			GST_ERROR("dsp stop failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
 
-			break;
+		break;
 
-		case GST_STATE_CHANGE_READY_TO_NULL:
-			if (!dsp_deinit(self)) {
-				GST_ERROR("dsp deinit failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
+	case GST_STATE_CHANGE_READY_TO_NULL:
+		if (!dsp_deinit(self)) {
+			GST_ERROR("dsp deinit failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
 
-			break;
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	return ret;

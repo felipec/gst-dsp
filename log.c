@@ -42,11 +42,11 @@ static inline int
 log_level_to_syslog(unsigned int level)
 {
 	switch (level) {
-		case 0: return LOG_ERR;
-		case 1: return LOG_WARNING;
-		case 2:
-		case 3: return LOG_INFO;
-		default: return LOG_DEBUG;
+	case 0: return LOG_ERR;
+	case 1: return LOG_WARNING;
+	case 2:
+	case 3: return LOG_INFO;
+	default: return LOG_DEBUG;
 	}
 }
 #endif
@@ -56,11 +56,11 @@ static inline GstDebugLevel
 log_level_to_gst(unsigned int level)
 {
 	switch (level) {
-		case 0: return GST_LEVEL_ERROR;
-		case 1: return GST_LEVEL_WARNING;
-		case 2:
-		case 3: return GST_LEVEL_INFO;
-		default: return GST_LEVEL_DEBUG;
+	case 0: return GST_LEVEL_ERROR;
+	case 1: return GST_LEVEL_WARNING;
+	case 2:
+	case 3: return GST_LEVEL_INFO;
+	default: return GST_LEVEL_DEBUG;
 	}
 }
 #endif

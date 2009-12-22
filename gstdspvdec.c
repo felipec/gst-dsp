@@ -798,22 +798,22 @@ create_node(GstDspBase *base)
 	}
 
 	switch (base->alg) {
-		case GSTDSP_MPEG4VDEC:
-		case GSTDSP_H263DEC:
-			alg_uuid = &mp4v_dec_uuid;
-			alg_fn = "mp4vdec_sn.dll64P";
-			break;
-		case GSTDSP_H264DEC:
-			alg_uuid = &h264v_dec_uuid;
-			alg_fn = "h264vdec_sn.dll64P";
-			break;
-		case GSTDSP_WMVDEC:
-			alg_uuid = &wmv_dec_uuid;
-			alg_fn = "wmv9dec_sn.dll64P";
-			break;
-		default:
-			pr_err(self, "unknown algorithm");
-			return NULL;
+	case GSTDSP_MPEG4VDEC:
+	case GSTDSP_H263DEC:
+		alg_uuid = &mp4v_dec_uuid;
+		alg_fn = "mp4vdec_sn.dll64P";
+		break;
+	case GSTDSP_H264DEC:
+		alg_uuid = &h264v_dec_uuid;
+		alg_fn = "h264vdec_sn.dll64P";
+		break;
+	case GSTDSP_WMVDEC:
+		alg_uuid = &wmv_dec_uuid;
+		alg_fn = "wmv9dec_sn.dll64P";
+		break;
+	default:
+		pr_err(self, "unknown algorithm");
+		return NULL;
 	}
 
 	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
@@ -837,40 +837,40 @@ create_node(GstDspBase *base)
 		void *cb_data;
 
 		switch (base->alg) {
-			case GSTDSP_MPEG4VDEC:
-			case GSTDSP_H263DEC:
-				if (self->width * self->height > 640 * 480)
-					attrs.profile_id = 4;
-				else if (self->width * self->height > 352 * 288)
-					attrs.profile_id = 3;
-				else if (self->width * self->height > 176 * 144)
-					attrs.profile_id = 2;
-				else
-					attrs.profile_id = 1;
-				cb_data = get_mp4v_args(self);
-				break;
-			case GSTDSP_H264DEC:
-				if (self->width * self->height > 352 * 288)
-					attrs.profile_id = 3;
-				else if (self->width * self->height > 176 * 144)
-					attrs.profile_id = 2;
-				else
-					attrs.profile_id = 1;
-				cb_data = get_h264_args(self);
-				break;
-			case GSTDSP_WMVDEC:
-				if (self->width * self->height > 640 * 480)
-					attrs.profile_id = 4;
-				else if (self->width * self->height > 352 * 288)
-					attrs.profile_id = 3;
-				else if (self->width * self->height > 176 * 144)
-					attrs.profile_id = 2;
-				else
-					attrs.profile_id = 1;
-				cb_data = get_wmv_args(self);
-				break;
-			default:
-				cb_data = NULL;
+		case GSTDSP_MPEG4VDEC:
+		case GSTDSP_H263DEC:
+			if (self->width * self->height > 640 * 480)
+				attrs.profile_id = 4;
+			else if (self->width * self->height > 352 * 288)
+				attrs.profile_id = 3;
+			else if (self->width * self->height > 176 * 144)
+				attrs.profile_id = 2;
+			else
+				attrs.profile_id = 1;
+			cb_data = get_mp4v_args(self);
+			break;
+		case GSTDSP_H264DEC:
+			if (self->width * self->height > 352 * 288)
+				attrs.profile_id = 3;
+			else if (self->width * self->height > 176 * 144)
+				attrs.profile_id = 2;
+			else
+				attrs.profile_id = 1;
+			cb_data = get_h264_args(self);
+			break;
+		case GSTDSP_WMVDEC:
+			if (self->width * self->height > 640 * 480)
+				attrs.profile_id = 4;
+			else if (self->width * self->height > 352 * 288)
+				attrs.profile_id = 3;
+			else if (self->width * self->height > 176 * 144)
+				attrs.profile_id = 2;
+			else
+				attrs.profile_id = 1;
+			cb_data = get_wmv_args(self);
+			break;
+		default:
+			cb_data = NULL;
 		}
 
 		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, cb_data, &attrs, &node)) {
@@ -889,15 +889,15 @@ create_node(GstDspBase *base)
 	pr_info(self, "dsp node created");
 
 	switch (base->alg) {
-		case GSTDSP_WMVDEC:
-			setup_wmvparams(base);
-			wmvdec_send_params(base, node);
-			break;
-		case GSTDSP_H264DEC:
-			setup_h264params(base);
-			break;
-		default:
-			break;
+	case GSTDSP_WMVDEC:
+		setup_wmvparams(base);
+		wmvdec_send_params(base, node);
+		break;
+	case GSTDSP_H264DEC:
+		setup_h264params(base);
+		break;
+	default:
+		break;
 	}
 
 	return node;
@@ -935,26 +935,26 @@ handle_codec_data(GstDspVDec *self,
 	buf = gst_value_get_buffer(codec_data);
 
 	switch (base->alg) {
-		case GSTDSP_MPEG4VDEC:
-			base->skip_hack++;
-			break;
-		case GSTDSP_WMVDEC:
-			if (!self->wmv_is_vc1) {
-				wmvdec_create_rcv_buffer(base, &buf);
-			} else {
-				self->codec_data = gst_buffer_ref(buf);
-				return TRUE;
-			}
-			break;
-		case GSTDSP_H264DEC:
-			buf = h264dec_transform_codec_data(self, buf);
-			if (!buf) {
-				gstdsp_got_error(base, 0, "invalid codec_data");
-				return FALSE;
-			}
-			break;
-		default:
-			break;
+	case GSTDSP_MPEG4VDEC:
+		base->skip_hack++;
+		break;
+	case GSTDSP_WMVDEC:
+		if (!self->wmv_is_vc1) {
+			wmvdec_create_rcv_buffer(base, &buf);
+		} else {
+			self->codec_data = gst_buffer_ref(buf);
+			return TRUE;
+		}
+		break;
+	case GSTDSP_H264DEC:
+		buf = h264dec_transform_codec_data(self, buf);
+		if (!buf) {
+			gstdsp_got_error(base, 0, "invalid codec_data");
+			return FALSE;
+		}
+		break;
+	default:
+		break;
 	}
 	return gstdsp_send_codec_data(base, buf);
 }

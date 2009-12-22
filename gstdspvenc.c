@@ -332,22 +332,22 @@ create_node(GstDspVEnc *self)
 	}
 
 	switch (base->alg) {
-		case GSTDSP_JPEGENC:
-			alg_uuid = &jpeg_enc_uuid;
-			alg_fn = "jpegenc_sn.dll64P";
-			break;
-		case GSTDSP_H263ENC:
-		case GSTDSP_MP4VENC:
-			alg_uuid = &mp4v_enc_uuid;
-			alg_fn = "m4venc_sn.dll64P";
-			break;
-		case GSTDSP_H264ENC:
-			alg_uuid = &h264_enc_uuid;
-			alg_fn = "h264venc_sn.dll64P";
-			break;
-		default:
-			pr_err(self, "unknown algorithm");
-			return NULL;
+	case GSTDSP_JPEGENC:
+		alg_uuid = &jpeg_enc_uuid;
+		alg_fn = "jpegenc_sn.dll64P";
+		break;
+	case GSTDSP_H263ENC:
+	case GSTDSP_MP4VENC:
+		alg_uuid = &mp4v_enc_uuid;
+		alg_fn = "m4venc_sn.dll64P";
+		break;
+	case GSTDSP_H264ENC:
+		alg_uuid = &h264_enc_uuid;
+		alg_fn = "h264venc_sn.dll64P";
+		break;
+	default:
+		pr_err(self, "unknown algorithm");
+		return NULL;
 	}
 
 	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
@@ -371,35 +371,35 @@ create_node(GstDspVEnc *self)
 		void *cb_data;
 
 		switch (base->alg) {
-			case GSTDSP_JPEGENC:
-				attrs.profile_id = 10;
-				cb_data = get_jpegenc_args(self);
-				break;
-			case GSTDSP_H263ENC:
-			case GSTDSP_MP4VENC:
-				if (self->width * self->height > 720 * 480)
-					attrs.profile_id = 4;
-				else if (self->width * self->height > 640 * 480)
-					attrs.profile_id = 3;
-				else if (self->width * self->height > 352 * 288)
-					attrs.profile_id = 2;
-				else if (self->width * self->height > 176 * 144)
-					attrs.profile_id = 1;
-				else
-					attrs.profile_id = 0;
-				cb_data = get_mp4venc_args(self);
-				break;
-			case GSTDSP_H264ENC:
-				if (self->width * self->height > 352 * 288)
-					attrs.profile_id = 2;
-				else if (self->width * self->height > 176 * 144)
-					attrs.profile_id = 1;
-				else
-					attrs.profile_id = 0;
-				cb_data = get_h264venc_args(self);
-				break;
-			default:
-				cb_data = NULL;
+		case GSTDSP_JPEGENC:
+			attrs.profile_id = 10;
+			cb_data = get_jpegenc_args(self);
+			break;
+		case GSTDSP_H263ENC:
+		case GSTDSP_MP4VENC:
+			if (self->width * self->height > 720 * 480)
+				attrs.profile_id = 4;
+			else if (self->width * self->height > 640 * 480)
+				attrs.profile_id = 3;
+			else if (self->width * self->height > 352 * 288)
+				attrs.profile_id = 2;
+			else if (self->width * self->height > 176 * 144)
+				attrs.profile_id = 1;
+			else
+				attrs.profile_id = 0;
+			cb_data = get_mp4venc_args(self);
+			break;
+		case GSTDSP_H264ENC:
+			if (self->width * self->height > 352 * 288)
+				attrs.profile_id = 2;
+			else if (self->width * self->height > 176 * 144)
+				attrs.profile_id = 1;
+			else
+				attrs.profile_id = 0;
+			cb_data = get_h264venc_args(self);
+			break;
+		default:
+			cb_data = NULL;
 		}
 
 		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, cb_data, &attrs, &node)) {
@@ -902,18 +902,18 @@ static inline int calculate_bitrate(GstDspVEnc* self)
 	const float twiddle = 1.2;
 
 	switch (base->alg) {
-		case GSTDSP_MP4VENC:
-			coeff = 0.2;
-			break;
-		case GSTDSP_H263ENC:
-			coeff = 0.3;
-			break;
-		case GSTDSP_H264ENC:
-			coeff = 0.35;
-			break;
-		default:
-			coeff = 0.1;
-			break;
+	case GSTDSP_MP4VENC:
+		coeff = 0.2;
+		break;
+	case GSTDSP_H263ENC:
+		coeff = 0.3;
+		break;
+	case GSTDSP_H264ENC:
+		coeff = 0.35;
+		break;
+	default:
+		coeff = 0.1;
+		break;
 	}
 
 	ref_bitrate = (self->width * self->height) / coeff;
@@ -951,27 +951,27 @@ sink_setcaps(GstPad *pad,
 	out_caps = gst_caps_new_empty();
 
 	switch (base->alg) {
-		case GSTDSP_JPEGENC:
-			out_struc = gst_structure_new("image/jpeg",
-						      NULL);
-			break;
-		case GSTDSP_H263ENC:
-			out_struc = gst_structure_new("video/x-h263",
-						      "variant", G_TYPE_STRING, "itu",
-						      NULL);
-			break;
-		case GSTDSP_MP4VENC:
-			out_struc = gst_structure_new("video/mpeg",
-						      "mpegversion", G_TYPE_INT, 4,
-						      "systemstream", G_TYPE_BOOLEAN, FALSE,
-						      NULL);
-			break;
-		case GSTDSP_H264ENC:
-			out_struc = gst_structure_new("video/x-h264",
-						      NULL);
-			break;
-		default:
-			return FALSE;
+	case GSTDSP_JPEGENC:
+		out_struc = gst_structure_new("image/jpeg",
+					      NULL);
+		break;
+	case GSTDSP_H263ENC:
+		out_struc = gst_structure_new("video/x-h263",
+					      "variant", G_TYPE_STRING, "itu",
+					      NULL);
+		break;
+	case GSTDSP_MP4VENC:
+		out_struc = gst_structure_new("video/mpeg",
+					      "mpegversion", G_TYPE_INT, 4,
+					      "systemstream", G_TYPE_BOOLEAN, FALSE,
+					      NULL);
+		break;
+	case GSTDSP_H264ENC:
+		out_struc = gst_structure_new("video/x-h264",
+					      NULL);
+		break;
+	default:
+		return FALSE;
 	}
 
 	if (gst_structure_get_int(in_struc, "width", &width))
@@ -980,22 +980,22 @@ sink_setcaps(GstPad *pad,
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
 
 	switch (base->alg) {
-		case GSTDSP_H263ENC:
-		case GSTDSP_MP4VENC:
-		case GSTDSP_H264ENC:
-			base->output_buffer_size = width * height / 2;
-			break;
-		case GSTDSP_JPEGENC:
-			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
-			base->output_buffer_size = width * height;
-			self->quality = 90;
-			if (self->quality < 10)
-				base->output_buffer_size /= 10;
-			else if (self->quality < 100)
-				base->output_buffer_size /= (100 / self->quality);
-			break;
-		default:
-			break;
+	case GSTDSP_H263ENC:
+	case GSTDSP_MP4VENC:
+	case GSTDSP_H264ENC:
+		base->output_buffer_size = width * height / 2;
+		break;
+	case GSTDSP_JPEGENC:
+		base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
+		base->output_buffer_size = width * height;
+		self->quality = 90;
+		if (self->quality < 10)
+			base->output_buffer_size /= 10;
+		else if (self->quality < 100)
+			base->output_buffer_size /= (100 / self->quality);
+		break;
+	default:
+		break;
 	}
 
 	self->width = width;
@@ -1034,15 +1034,15 @@ sink_setcaps(GstPad *pad,
 
 	/* setup stream params */
 	switch (base->alg) {
-		case GSTDSP_H263ENC:
-		case GSTDSP_MP4VENC:
-			setup_mp4params(base);
-			break;
-		case GSTDSP_H264ENC:
-			setup_h264params(base);
-			break;
-		default:
-			break;
+	case GSTDSP_H263ENC:
+	case GSTDSP_MP4VENC:
+		setup_mp4params(base);
+		break;
+	case GSTDSP_H264ENC:
+		setup_h264params(base);
+		break;
+	default:
+		break;
 	}
 
 	if (!gstdsp_start(base)) {
@@ -1052,11 +1052,11 @@ sink_setcaps(GstPad *pad,
 
 	/* send dynamic params */
 	switch (base->alg) {
-		case GSTDSP_JPEGENC:
-			jpegenc_send_params(base);
-			break;
-		default:
-			break;
+	case GSTDSP_JPEGENC:
+		jpegenc_send_params(base);
+		break;
+	default:
+		break;
 	}
 
 	return TRUE;

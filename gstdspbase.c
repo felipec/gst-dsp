@@ -159,65 +159,65 @@ got_message(GstDspBase *self,
 	command_id = msg->cmd & 0xffffff00;
 
 	switch (command_id) {
-		case 0x0600:
-			{
-				dmm_buffer_t *b;
-				du_port_t *p = self->ports[id];
-				dmm_buffer_t *cur = NULL;
-				dsp_comm_t *msg_data;
-				guint i;
+	case 0x0600:
+		{
+			dmm_buffer_t *b;
+			du_port_t *p = self->ports[id];
+			dmm_buffer_t *cur = NULL;
+			dsp_comm_t *msg_data;
+			guint i;
 
-				pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
+			pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 
-				for (i = 0; i < p->num_buffers; i++) {
-					if (msg->arg_1 == (uint32_t) p->comm[i]->map) {
-						cur = p->comm[i];
-						break;
-					}
+			for (i = 0; i < p->num_buffers; i++) {
+				if (msg->arg_1 == (uint32_t) p->comm[i]->map) {
+					cur = p->comm[i];
+					break;
 				}
+			}
 
-				if (!cur)
-					g_error("buffer mismatch");
+			if (!cur)
+				g_error("buffer mismatch");
 
-				msg_data = cur->data;
-				b = (void *) msg_data->user_data;
-				b->len = msg_data->buffer_len;
+			msg_data = cur->data;
+			b = (void *) msg_data->user_data;
+			b->len = msg_data->buffer_len;
 
-				if (p->recv_cb)
-					p->recv_cb(self, p, (void *) msg_data->param_virt, b);
+			if (p->recv_cb)
+				p->recv_cb(self, p, (void *) msg_data->param_virt, b);
 
-				if (id == 0) {
-					if (b->user_data) {
-						gst_buffer_unref(b->user_data);
-						b->user_data = NULL;
-					}
+			if (id == 0) {
+				if (b->user_data) {
+					gst_buffer_unref(b->user_data);
+					b->user_data = NULL;
 				}
+			}
 
-				cur->used = FALSE;
-				async_queue_push(p->queue, b);
-			}
+			cur->used = FALSE;
+			async_queue_push(p->queue, b);
+		}
+		break;
+	case 0x0500:
+		pr_debug(self, "got flush");
+		break;
+	case 0x0200:
+		pr_debug(self, "got stop");
+		break;
+	case 0x0400:
+		pr_debug(self, "got alg ctrl");
+		dmm_buffer_free(self->alg_ctrl);
+		self->alg_ctrl = NULL;
+		break;
+	case 0x0e00:
+		if (msg->arg_1 == 1 && msg->arg_2 == 0x0500) {
+			pr_debug(self, "playback completed");
 			break;
-		case 0x0500:
-			pr_debug(self, "got flush");
-			break;
-		case 0x0200:
-			pr_debug(self, "got stop");
-			break;
-		case 0x0400:
-			pr_debug(self, "got alg ctrl");
-			dmm_buffer_free(self->alg_ctrl);
-			self->alg_ctrl = NULL;
-			break;
-		case 0x0e00:
-			if (msg->arg_1 == 1 && msg->arg_2 == 0x0500) {
-				pr_debug(self, "playback completed");
-				break;
-			}
-			pr_err(self, "error: cmd=%u, arg1=%u, arg2=%u",
-			       msg->cmd, msg->arg_1, msg->arg_2);
-			break;
-		default:
-			pr_warning(self, "unhandled command: %u", command_id);
+		}
+		pr_err(self, "error: cmd=%u, arg1=%u, arg2=%u",
+		       msg->cmd, msg->arg_1, msg->arg_2);
+		break;
+	default:
+		pr_warning(self, "unhandled command: %u", command_id);
 	}
 }
 
@@ -796,30 +796,30 @@ change_state(GstElement *element,
 		gst_element_state_get_name(GST_STATE_TRANSITION_NEXT(transition)));
 
 	switch (transition) {
-		case GST_STATE_CHANGE_NULL_TO_READY:
-			if (!dsp_init(self)) {
-				gstdsp_post_error(self, "dsp init failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
-			break;
+	case GST_STATE_CHANGE_NULL_TO_READY:
+		if (!dsp_init(self)) {
+			gstdsp_post_error(self, "dsp init failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
+		break;
 
-		case GST_STATE_CHANGE_READY_TO_PAUSED:
-			self->status = GST_FLOW_OK;
-			self->done = FALSE;
-			async_queue_enable(self->ports[0]->queue);
-			async_queue_enable(self->ports[1]->queue);
-			self->eos = FALSE;
-			break;
+	case GST_STATE_CHANGE_READY_TO_PAUSED:
+		self->status = GST_FLOW_OK;
+		self->done = FALSE;
+		async_queue_enable(self->ports[0]->queue);
+		async_queue_enable(self->ports[1]->queue);
+		self->eos = FALSE;
+		break;
 
-		case GST_STATE_CHANGE_PAUSED_TO_READY:
-			self->done = TRUE;
-			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
-			async_queue_disable(self->ports[0]->queue);
-			async_queue_disable(self->ports[1]->queue);
-			break;
+	case GST_STATE_CHANGE_PAUSED_TO_READY:
+		self->done = TRUE;
+		g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
+		async_queue_disable(self->ports[0]->queue);
+		async_queue_disable(self->ports[1]->queue);
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	ret = GST_ELEMENT_CLASS(parent_class)->change_state(element, transition);
@@ -828,23 +828,23 @@ change_state(GstElement *element,
 		return ret;
 
 	switch (transition) {
-		case GST_STATE_CHANGE_PAUSED_TO_READY:
-			if (!dsp_stop(self)) {
-				gstdsp_post_error(self, "dsp stop failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
-			break;
+	case GST_STATE_CHANGE_PAUSED_TO_READY:
+		if (!dsp_stop(self)) {
+			gstdsp_post_error(self, "dsp stop failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
+		break;
 
-		case GST_STATE_CHANGE_READY_TO_NULL:
-			gst_caps_replace(&self->tmp_caps, NULL);
-			if (!dsp_deinit(self)) {
-				gstdsp_post_error(self, "dsp deinit failed");
-				return GST_STATE_CHANGE_FAILURE;
-			}
-			break;
+	case GST_STATE_CHANGE_READY_TO_NULL:
+		gst_caps_replace(&self->tmp_caps, NULL);
+		if (!dsp_deinit(self)) {
+			gstdsp_post_error(self, "dsp deinit failed");
+			return GST_STATE_CHANGE_FAILURE;
+		}
+		break;
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	return ret;
@@ -986,59 +986,59 @@ pad_event(GstPad *pad,
 	pr_info(self, "event: %s", GST_EVENT_TYPE_NAME(event));
 
 	switch (GST_EVENT_TYPE(event)) {
-		case GST_EVENT_EOS:
-			if (g_atomic_int_get(&self->status) != GST_FLOW_OK) {
-				ret = gst_pad_push_event(self->srcpad, event);
-				break;
-			}
-
-			if (!self->use_eos_align) {
-				ret = gst_pad_push_event(self->srcpad, event);
-				break;
-			}
-
-			g_mutex_lock(self->ts_mutex);
-			if (self->ts_in_pos == self->ts_out_pos) {
-				ret = gst_pad_push_event(self->srcpad, event);
-			}
-			else {
-				self->eos = TRUE;
-				gst_event_unref(event);
-			}
-			g_mutex_unlock(self->ts_mutex);
-			break;
-
-		case GST_EVENT_FLUSH_START:
+	case GST_EVENT_EOS:
+		if (g_atomic_int_get(&self->status) != GST_FLOW_OK) {
 			ret = gst_pad_push_event(self->srcpad, event);
-			g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
-
-			async_queue_disable(self->ports[0]->queue);
-			async_queue_disable(self->ports[1]->queue);
-
-			gst_pad_pause_task(self->srcpad);
-
 			break;
+		}
 
-		case GST_EVENT_FLUSH_STOP:
+		if (!self->use_eos_align) {
 			ret = gst_pad_push_event(self->srcpad, event);
-
-			g_mutex_lock(self->ts_mutex);
-			self->ts_push_pos = self->ts_in_pos;
-			pr_debug(self, "flushing next %u buffer(s)",
-				 self->ts_push_pos - self->ts_out_pos);
-			self->eos = FALSE;
-			g_mutex_unlock(self->ts_mutex);
-
-			g_atomic_int_set(&self->status, GST_FLOW_OK);
-			async_queue_enable(self->ports[0]->queue);
-			async_queue_enable(self->ports[1]->queue);
-
-			gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
 			break;
+		}
 
-		default:
-			ret = gst_pad_push_event (self->srcpad, event);
-			break;
+		g_mutex_lock(self->ts_mutex);
+		if (self->ts_in_pos == self->ts_out_pos) {
+			ret = gst_pad_push_event(self->srcpad, event);
+		}
+		else {
+			self->eos = TRUE;
+			gst_event_unref(event);
+		}
+		g_mutex_unlock(self->ts_mutex);
+		break;
+
+	case GST_EVENT_FLUSH_START:
+		ret = gst_pad_push_event(self->srcpad, event);
+		g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
+
+		async_queue_disable(self->ports[0]->queue);
+		async_queue_disable(self->ports[1]->queue);
+
+		gst_pad_pause_task(self->srcpad);
+
+		break;
+
+	case GST_EVENT_FLUSH_STOP:
+		ret = gst_pad_push_event(self->srcpad, event);
+
+		g_mutex_lock(self->ts_mutex);
+		self->ts_push_pos = self->ts_in_pos;
+		pr_debug(self, "flushing next %u buffer(s)",
+			 self->ts_push_pos - self->ts_out_pos);
+		self->eos = FALSE;
+		g_mutex_unlock(self->ts_mutex);
+
+		g_atomic_int_set(&self->status, GST_FLOW_OK);
+		async_queue_enable(self->ports[0]->queue);
+		async_queue_enable(self->ports[1]->queue);
+
+		gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
+		break;
+
+	default:
+		ret = gst_pad_push_event (self->srcpad, event);
+		break;
 	}
 
 	return ret;
