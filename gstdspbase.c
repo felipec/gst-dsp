@@ -975,13 +975,10 @@ leave:
 }
 
 static gboolean
-pad_event(GstPad *pad,
-	  GstEvent *event)
+sink_event(GstDspBase *self,
+	   GstEvent *event)
 {
-	GstDspBase *self;
 	gboolean ret = TRUE;
-
-	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
 
 	pr_info(self, "event: %s", GST_EVENT_TYPE_NAME(event));
 
@@ -1044,6 +1041,44 @@ pad_event(GstPad *pad,
 	return ret;
 }
 
+static gboolean
+base_sink_event(GstPad *pad,
+		GstEvent *event)
+{
+	GstDspBase *self;
+	GstDspBaseClass *class;
+	gboolean ret = TRUE;
+
+	self = GST_DSP_BASE(gst_pad_get_parent(pad));
+	class = GST_DSP_BASE_GET_CLASS(self);
+
+	if (class->sink_event)
+		ret = class->sink_event(self, event);
+
+	gst_object_unref(self);
+
+	return ret;
+}
+
+static gboolean
+base_src_event(GstPad *pad,
+	  GstEvent *event)
+{
+	GstDspBase *self;
+	GstDspBaseClass *class;
+	gboolean ret = TRUE;
+
+	self = GST_DSP_BASE(gst_pad_get_parent(pad));
+	class = GST_DSP_BASE_GET_CLASS(self);
+
+	if (class->src_event)
+		ret = class->src_event(self, event);
+
+	gst_object_unref(self);
+
+	return ret;
+}
+
 static void
 instance_init(GTypeInstance *instance,
 	      gpointer g_class)
@@ -1058,12 +1093,14 @@ instance_init(GTypeInstance *instance,
 		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "sink"), "sink");
 
 	gst_pad_set_chain_function(self->sinkpad, pad_chain);
-	gst_pad_set_event_function(self->sinkpad, pad_event);
+	gst_pad_set_event_function(self->sinkpad, base_sink_event);
 
 	self->srcpad =
 		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "src"), "src");
 
 	gst_pad_use_fixed_caps(self->srcpad);
+
+	gst_pad_set_event_function(self->srcpad, base_src_event);
 
 	gst_element_add_pad(GST_ELEMENT(self), self->sinkpad);
 	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);
@@ -1096,13 +1133,17 @@ class_init(gpointer g_class,
 {
 	GstElementClass *gstelement_class;
 	GObjectClass *gobject_class;
+	GstDspBaseClass *class;
 
 	parent_class = g_type_class_peek_parent(g_class);
 	gstelement_class = GST_ELEMENT_CLASS(g_class);
 	gobject_class = G_OBJECT_CLASS(g_class);
+	class = GST_DSP_BASE_CLASS(g_class);
 
 	gstelement_class->change_state = change_state;
 	gobject_class->finalize = finalize;
+
+	class->sink_event = sink_event;
 }
 
 GType

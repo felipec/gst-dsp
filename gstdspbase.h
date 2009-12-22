@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 #define GST_DSP_BASE(obj) (GstDspBase *)(obj)
 #define GST_DSP_BASE_TYPE (gst_dsp_base_get_type())
 #define GST_DSP_BASE_CLASS(obj) (GstDspBaseClass *)(obj)
+#define GST_DSP_BASE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj),GST_DSP_BASE_TYPE,GstDspBaseClass))
 
 /* #define TS_COUNT */
 
@@ -100,6 +101,9 @@ struct GstDspBase {
 
 struct GstDspBaseClass {
 	GstElementClass parent_class;
+
+	gboolean (*sink_event)(GstDspBase *base, GstEvent *event);
+	gboolean (*src_event)(GstDspBase *base, GstEvent *event);
 };
 
 GType gst_dsp_base_get_type(void);
