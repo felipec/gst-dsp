@@ -1062,6 +1062,44 @@ sink_setcaps(GstPad *pad,
 	return TRUE;
 }
 
+static gboolean
+sink_event(GstDspBase *base,
+	   GstEvent *event)
+{
+	GstDspVEnc *self;
+
+	self = GST_DSP_VENC(base);
+
+	switch (GST_EVENT_TYPE(event)) {
+	default:
+		break;
+	}
+
+	if (parent_class->sink_event)
+		return parent_class->sink_event(base, event);
+
+	return gst_pad_push_event(base->srcpad, event);
+}
+
+static gboolean
+src_event(GstDspBase *base,
+	  GstEvent *event)
+{
+	GstDspVEnc *self;
+
+	self = GST_DSP_VENC(base);
+
+	switch (GST_EVENT_TYPE(event)) {
+	default:
+		break;
+	}
+
+	if (parent_class->src_event)
+		return parent_class->src_event(base, event);
+
+	return gst_pad_push_event(base->sinkpad, event);
+}
+
 static void
 set_property(GObject *obj,
 	     guint prop_id,
@@ -1141,9 +1179,11 @@ class_init(gpointer g_class,
 	   gpointer class_data)
 {
 	GObjectClass *gobject_class;
+	GstDspBaseClass *base_class;
 
 	parent_class = g_type_class_peek_parent(g_class);
 	gobject_class = G_OBJECT_CLASS(g_class);
+	base_class = GST_DSP_BASE_CLASS(g_class);
 
 	gobject_class->set_property = set_property;
 	gobject_class->get_property = get_property;
@@ -1153,6 +1193,9 @@ class_init(gpointer g_class,
 							  "Encoding bit-rate (0 for auto)",
 							  0, G_MAXUINT, DEFAULT_BITRATE,
 							  G_PARAM_READWRITE));
+
+	base_class->src_event = src_event;
+	base_class->sink_event = sink_event;
 }
 
 GType
