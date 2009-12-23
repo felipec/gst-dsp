@@ -58,7 +58,7 @@ struct GstDspVEnc {
 	gint quality;
 	union venc_priv_data priv;
 	gint frame_index;
-	gboolean force_keyframe;
+	GstEvent *keyframe_event;
 	GMutex *keyframe_mutex;
 };
 

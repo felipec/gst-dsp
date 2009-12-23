@@ -539,9 +539,11 @@ h264venc_in_send_cb(GstDspBase *base,
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	param->target_bitrate = g_atomic_int_get(&self->bitrate);
 	g_mutex_lock(self->keyframe_mutex);
-	param->force_i_frame = self->force_keyframe;
-	if (param->force_i_frame)
-		self->force_keyframe = FALSE;
+	param->force_i_frame = !!self->keyframe_event;
+	if (self->keyframe_event) {
+		gst_pad_push_event(base->srcpad, self->keyframe_event);
+		self->keyframe_event = NULL;
+	}
 	g_mutex_unlock(self->keyframe_mutex);
 	dmm_buffer_clean(p, sizeof(*param));
 }
@@ -830,9 +832,11 @@ mp4venc_in_send_cb(GstDspBase *base,
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	param->bitrate = g_atomic_int_get(&self->bitrate);
 	g_mutex_lock(self->keyframe_mutex);
-	param->force_i_frame = self->force_keyframe;
-	if (param->force_i_frame)
-		self->force_keyframe = FALSE;
+	param->force_i_frame = !!self->keyframe_event;
+	if (self->keyframe_event) {
+		gst_pad_push_event(base->srcpad, self->keyframe_event);
+		self->keyframe_event = NULL;
+	}
 	g_mutex_unlock(self->keyframe_mutex);
 	dmm_buffer_clean(p, sizeof(*param));
 }
@@ -1088,9 +1092,11 @@ sink_event(GstDspBase *base,
 
 			if (gst_structure_has_name(s, "GstForceKeyUnit")) {
 				g_mutex_lock(self->keyframe_mutex);
-				self->force_keyframe = TRUE;
+				if (self->keyframe_event)
+					gst_event_unref(self->keyframe_event);
+				self->keyframe_event = event;
 				g_mutex_unlock(self->keyframe_mutex);
-				return gst_pad_push_event(base->srcpad, event);
+				return TRUE;
 			}
 			break;
 		}
@@ -1187,6 +1193,8 @@ finalize(GObject *obj)
 {
 	GstDspVEnc *self = GST_DSP_VENC(obj);
 	g_mutex_free(self->keyframe_mutex);
+	if (self->keyframe_event)
+		gst_event_unref(self->keyframe_event);
 	G_OBJECT_CLASS(parent_class)->finalize(obj);
 }
 
