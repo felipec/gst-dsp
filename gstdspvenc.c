@@ -1159,6 +1159,12 @@ instance_init(GTypeInstance *instance,
 }
 
 static void
+finalize(GObject *obj)
+{
+	G_OBJECT_CLASS(parent_class)->finalize(obj);
+}
+
+static void
 base_init(gpointer g_class)
 {
 	GstElementClass *element_class;
@@ -1193,6 +1199,8 @@ class_init(gpointer g_class,
 							  "Encoding bit-rate (0 for auto)",
 							  0, G_MAXUINT, DEFAULT_BITRATE,
 							  G_PARAM_READWRITE));
+
+	gobject_class->finalize = finalize;
 
 	base_class->src_event = src_event;
 	base_class->sink_event = sink_event;
