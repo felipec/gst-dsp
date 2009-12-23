@@ -33,7 +33,7 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
-static GstElementClass *parent_class;
+static GstDspBaseClass *parent_class;
 
 enum {
     ARG_0,
@@ -1142,7 +1142,7 @@ class_init(gpointer g_class,
 {
 	GObjectClass *gobject_class;
 
-	parent_class = g_type_class_ref(GST_TYPE_ELEMENT);
+	parent_class = g_type_class_peek_parent(g_class);
 	gobject_class = G_OBJECT_CLASS(g_class);
 
 	gobject_class->set_property = set_property;

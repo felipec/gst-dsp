@@ -41,7 +41,7 @@ enum {
 	GSTDSP_WMVDEC,
 };
 
-static GstElementClass *parent_class;
+static GstDspBaseClass *parent_class;
 
 static inline GstCaps *
 generate_sink_template(void)
@@ -1094,7 +1094,7 @@ static void
 class_init(gpointer g_class,
 	   gpointer class_data)
 {
-	parent_class = g_type_class_ref(GST_TYPE_ELEMENT);
+	parent_class = g_type_class_peek_parent(g_class);
 }
 
 GType

@@ -252,7 +252,7 @@ change_state(GstElement *element,
 		break;
 	}
 
-	ret = GST_ELEMENT_CLASS(parent_class)->change_state(element, transition);
+	ret = parent_class->change_state(element, transition);
 
 	if (ret == GST_STATE_CHANGE_FAILURE)
 		return ret;
@@ -431,9 +431,8 @@ class_init(gpointer g_class,
 {
 	GstElementClass *gstelement_class;
 
+	parent_class = g_type_class_peek_parent(g_class);
 	gstelement_class = GST_ELEMENT_CLASS (g_class);
-
-	parent_class = g_type_class_ref(GST_TYPE_ELEMENT);
 
 	gstelement_class->change_state = change_state;
 }
