@@ -1119,6 +1119,23 @@ src_event(GstDspBase *base,
 	self = GST_DSP_VENC(base);
 
 	switch (GST_EVENT_TYPE(event)) {
+	case GST_EVENT_CUSTOM_UPSTREAM:
+		{
+			const GstStructure *s;
+			s = gst_event_get_structure(event);
+
+			if (gst_structure_has_name(s, "GstForceKeyUnit")) {
+				g_mutex_lock(self->keyframe_mutex);
+				/* make it downstream */
+				GST_EVENT_TYPE(event) = GST_EVENT_CUSTOM_DOWNSTREAM;
+				if (self->keyframe_event)
+					gst_event_unref(self->keyframe_event);
+				self->keyframe_event = event;
+				g_mutex_unlock(self->keyframe_mutex);
+				return TRUE;
+			}
+			break;
+		}
 	default:
 		break;
 	}
