@@ -58,6 +58,8 @@ struct GstDspVEnc {
 	gint quality;
 	union venc_priv_data priv;
 	gint frame_index;
+	gboolean force_keyframe;
+	GMutex *keyframe_mutex;
 };
 
 struct GstDspVEncClass {
