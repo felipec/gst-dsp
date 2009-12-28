@@ -222,13 +222,16 @@ get_mp4venc_args(GstDspVEnc *self)
 
 	args.is_mpeg4 = base->alg == GSTDSP_MP4VENC ? 1 : 0;
 
-	if (base->alg == GSTDSP_MP4VENC) {
+	if (base->alg == GSTDSP_MP4VENC)
 		args.level = 5;
+	else
+		args.level = 20;
+
+	if (self->mode == 0) {
 		args.gob_interval = 0;
 		args.hec = 0;
 		args.resync_marker = 0;
 	} else {
-		args.level = 20;
 		args.gob_interval = 1;
 		args.hec = 1;
 		args.resync_marker = 1;
@@ -891,13 +894,16 @@ setup_mp4param_in(GstDspBase *base)
 	in_param->last_frame = 0;
 	in_param->width = 0;
 
-	if (base->alg == GSTDSP_MP4VENC) {
+	if (base->alg == GSTDSP_MP4VENC)
 		in_param->ac_pred = 1;
+	else
+		in_param->ac_pred = 0;
+
+	if (self->mode == 0) {
 		in_param->resync_interval = 0;
 		in_param->hec_interval = 0;
 		in_param->use_umv = 1;
 	} else {
-		in_param->ac_pred = 0;
 		in_param->resync_interval = 1024;
 		in_param->hec_interval = 3;
 		in_param->use_umv = 0;
