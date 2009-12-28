@@ -183,6 +183,9 @@ got_message(GstDspBase *self,
 			b = (void *) msg_data->user_data;
 			b->len = msg_data->buffer_len;
 
+			if (G_UNLIKELY(b->len > b->size))
+				g_error("wrong buffer size");
+
 			if (p->recv_cb)
 				p->recv_cb(self, p, (void *) msg_data->param_virt, b);
 
