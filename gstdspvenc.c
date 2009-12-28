@@ -38,9 +38,30 @@ static GstDspBaseClass *parent_class;
 enum {
     ARG_0,
     ARG_BITRATE,
+    ARG_MODE,
 };
 
 #define DEFAULT_BITRATE 0
+#define DEFAULT_MODE 0
+
+#define GST_TYPE_DSPVENC_MODE gst_dspvenc_mode_get_type()
+static GType
+gst_dspvenc_mode_get_type (void)
+{
+	static GType gst_dspvenc_mode_type = 0;
+
+	if (!gst_dspvenc_mode_type) {
+		static GEnumValue modes[] = {
+			{0, "Storage", "storage"},
+			{1, "Streaming", "streaming"},
+			{0, NULL, NULL},
+		};
+
+		gst_dspvenc_mode_type = g_enum_register_static("GstDspVEncMode", modes);
+	}
+
+	return gst_dspvenc_mode_type;
+}
 
 static inline GstCaps *
 generate_sink_template(void)
@@ -1160,6 +1181,9 @@ set_property(GObject *obj,
 	case ARG_BITRATE:
 		g_atomic_int_set(&self->bitrate, g_value_get_uint(value));
 		break;
+	case ARG_MODE:
+		g_atomic_int_set(&self->mode, g_value_get_enum(value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;
@@ -1179,6 +1203,9 @@ get_property(GObject *obj,
 	switch (prop_id) {
 	case ARG_BITRATE:
 		g_value_set_uint(value, g_atomic_int_get(&self->bitrate));
+		break;
+	case ARG_MODE:
+		g_value_set_enum(value, g_atomic_int_get(&self->mode));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
@@ -1249,6 +1276,12 @@ class_init(gpointer g_class,
 					g_param_spec_uint("bitrate", "Bit-rate",
 							  "Encoding bit-rate (0 for auto)",
 							  0, G_MAXUINT, DEFAULT_BITRATE,
+							  G_PARAM_READWRITE));
+	g_object_class_install_property(gobject_class, ARG_MODE,
+					g_param_spec_enum("mode", "Encoding mode",
+							  "Encoding mode",
+							  GST_TYPE_DSPVENC_MODE,
+							  DEFAULT_MODE,
 							  G_PARAM_READWRITE));
 
 	gobject_class->finalize = finalize;

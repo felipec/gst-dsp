@@ -60,6 +60,7 @@ struct GstDspVEnc {
 	gint frame_index;
 	GstEvent *keyframe_event;
 	GMutex *keyframe_mutex;
+	gint mode;
 };
 
 struct GstDspVEncClass {
