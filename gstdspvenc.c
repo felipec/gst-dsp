@@ -207,7 +207,6 @@ get_mp4venc_args(GstDspVEnc *self)
 		.reversible_vlc = 0,
 		.unrestricted_mv = 1,
 		.framerate = self->framerate,
-		.rate_control = 2, /* low delay = 1, storage = 2, none = 4 */
 		.qp_first = 12,
 		.profile = 1,
 		.max_delay = 300,
@@ -231,10 +230,12 @@ get_mp4venc_args(GstDspVEnc *self)
 		args.gob_interval = 0;
 		args.hec = 0;
 		args.resync_marker = 0;
+		args.rate_control = 2;
 	} else {
 		args.gob_interval = 1;
 		args.hec = 1;
 		args.resync_marker = 1;
+		args.rate_control = 1;
 	}
 
 	struct foo_data *cb_data;
@@ -316,6 +317,11 @@ get_h264venc_args(GstDspVEnc *self)
 		.encoding_preset = 3,
 		.rc_algo = 0,
 	};
+
+	if (self->mode == 0)
+		args.rc_algorithm = 0;
+	else
+		args.rc_algorithm = 1;
 
 	struct foo_data *cb_data;
 
