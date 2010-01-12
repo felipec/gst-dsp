@@ -1045,6 +1045,13 @@ sink_event(GstDspBase *self,
 }
 
 static gboolean
+src_event(GstDspBase *self,
+	  GstEvent *event)
+{
+	return gst_pad_push_event(self->sinkpad, event);
+}
+
+static gboolean
 base_sink_event(GstPad *pad,
 		GstEvent *event)
 {
@@ -1147,6 +1154,7 @@ class_init(gpointer g_class,
 	gobject_class->finalize = finalize;
 
 	class->sink_event = sink_event;
+	class->src_event = src_event;
 }
 
 GType
