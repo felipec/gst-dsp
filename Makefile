@@ -6,8 +6,8 @@ LDFLAGS := -Wl,--no-undefined
 
 override CFLAGS += -D_GNU_SOURCE
 
-GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10 gstreamer-base-0.10)
-GST_LIBS := $(shell pkg-config --libs gstreamer-0.10 gstreamer-base-0.10)
+GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10)
+GST_LIBS := $(shell pkg-config --libs gstreamer-0.10)
 
 all:
 
