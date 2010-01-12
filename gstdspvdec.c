@@ -640,6 +640,7 @@ h264dec_transform_nal_encoding(GstDspVDec *self,
 		alloc_data = b->allocated_data;
 		b->allocated_data = NULL;
 		dmm_buffer_allocate(b, osize);
+		b->len = osize;
 
 		odata = b->data;
 		while (size) {
