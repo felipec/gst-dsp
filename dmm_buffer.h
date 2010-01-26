@@ -33,8 +33,7 @@
 
 #define ROUND_UP(num, scale) (((num) + ((scale) - 1)) & ~((scale) - 1))
 
-typedef struct
-{
+typedef struct {
 	int handle;
 	dsp_node_t *node;
 	void *data;

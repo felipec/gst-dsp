@@ -44,7 +44,6 @@ typedef struct {
 	uint8_t field_6[6];
 } dsp_uuid_t;
 
-
 typedef struct {
 	void *handle;
 	void *heap;
