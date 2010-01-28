@@ -40,42 +40,76 @@
 #include <sys/mman.h> /* for mmap */
 #endif
 
+#include <linux/ioctl.h>
+
+/*
+ * Dspbridge ioctl numbering scheme
+ *
+ *    7                           0
+ *  ---------------------------------
+ *  |  Module   |   ioctl Number    |
+ *  ---------------------------------
+ *  | x | x | x | 0 | 0 | 0 | 0 | 0 |
+ *  ---------------------------------
+ */
+
+/* ioctl driver identifier */
+#define DB 0xDB
+
+/*
+ * Following are used to distinguish between module ioctls, this is needed
+ * in case new ioctls are introduced.
+ */
+#define DB_MODULE_MASK 0xE0
+#define DB_IOC_MASK    0x1F
+
+/* ioctl module masks */
+#define DB_MGR  0x0
+#define DB_PROC 0x20
+#define DB_NODE 0x40
+#define DB_STRM 0x60
+#define DB_CMM  0x80
+
+/* Used to calculate the ioctl per dspbridge module */
+#define DB_IOC(module, num) \
+	(((module) & DB_MODULE_MASK) | ((num) & DB_IOC_MASK))
+
 /* MGR Module */
-#define MGR_WAIT		5
-#define MGR_ENUMNODE_INFO	1
-#define MGR_REGISTEROBJECT	3
-#define MGR_UNREGISTEROBJECT	4
+#define MGR_WAIT		_IOWR(DB, DB_IOC(DB_MGR, 4), unsigned long)
+#define MGR_ENUMNODE_INFO	_IOWR(DB, DB_IOC(DB_MGR, 0), unsigned long)
+#define MGR_REGISTEROBJECT	_IOWR(DB, DB_IOC(DB_MGR, 2), unsigned long)
+#define MGR_UNREGISTEROBJECT	_IOWR(DB, DB_IOC(DB_MGR, 3), unsigned long)
 
 /* PROC Module */
-#define PROC_ATTACH		7
+#define PROC_ATTACH		_IOWR(DB, DB_IOC(DB_PROC, 0), unsigned long)
 /* PROC_DETACH Deprecated */
-#define PROC_DETACH		9
-#define PROC_REGISTERNOTIFY	15
-#define PROC_RSVMEM		17
-#define PROC_UNRSVMEM		18
-#define PROC_MAPMEM		19
-#define PROC_UNMAPMEM		20
-#define PROC_FLUSHMEMORY	21
-#define PROC_INVALIDATEMEMORY	23
-#define PROC_GET_STATE		11
-#define PROC_ENUMRESOURCES	10
+#define PROC_DETACH		_IOR(DB, DB_IOC(DB_PROC, 2), unsigned long)
+#define PROC_REGISTERNOTIFY	_IOWR(DB, DB_IOC(DB_PROC, 8), unsigned long)
+#define PROC_RSVMEM		_IOWR(DB, DB_IOC(DB_PROC, 10), unsigned long)
+#define PROC_UNRSVMEM		_IOW(DB, DB_IOC(DB_PROC, 11), unsigned long)
+#define PROC_MAPMEM		_IOWR(DB, DB_IOC(DB_PROC, 12), unsigned long)
+#define PROC_UNMAPMEM		_IOR(DB, DB_IOC(DB_PROC, 13), unsigned long)
+#define PROC_FLUSHMEMORY	_IOW(DB, DB_IOC(DB_PROC, 14), unsigned long)
+#define PROC_INVALIDATEMEMORY	_IOW(DB, DB_IOC(DB_PROC, 16), unsigned long)
+#define PROC_GET_STATE		_IOWR(DB, DB_IOC(DB_PROC, 5), unsigned long)
+#define PROC_ENUMRESOURCES	_IOWR(DB, DB_IOC(DB_PROC, 4), unsigned long)
 
 /* NODE Module */
-#define NODE_REGISTERNOTIFY	35
-#define NODE_CREATE		28
-#define NODE_RUN		36
-#define NODE_TERMINATE		37
-#define NODE_PUTMESSAGE		34
-#define NODE_GETMESSAGE		32
-#define NODE_DELETE		29
-#define NODE_GETATTR		31
-#define NODE_ALLOCMSGBUF	25
-#define NODE_GETUUIDPROPS	38
-#define NODE_ALLOCATE		24
+#define NODE_REGISTERNOTIFY	_IOWR(DB, DB_IOC(DB_NODE, 11), unsigned long)
+#define NODE_CREATE		_IOW(DB, DB_IOC(DB_NODE, 4), unsigned long)
+#define NODE_RUN		_IOW(DB, DB_IOC(DB_NODE, 12), unsigned long)
+#define NODE_TERMINATE		_IOWR(DB, DB_IOC(DB_NODE, 13), unsigned long)
+#define NODE_PUTMESSAGE		_IOW(DB, DB_IOC(DB_NODE, 10), unsigned long)
+#define NODE_GETMESSAGE		_IOWR(DB, DB_IOC(DB_NODE, 8), unsigned long)
+#define NODE_DELETE		_IOW(DB, DB_IOC(DB_NODE, 5), unsigned long)
+#define NODE_GETATTR		_IOWR(DB, DB_IOC(DB_NODE, 7), unsigned long)
+#define NODE_ALLOCMSGBUF	_IOWR(DB, DB_IOC(DB_NODE, 1), unsigned long)
+#define NODE_GETUUIDPROPS	_IOWR(DB, DB_IOC(DB_NODE, 14), unsigned long)
+#define NODE_ALLOCATE		_IOWR(DB, DB_IOC(DB_NODE, 0), unsigned long)
 
 /* CMM Module */
-#define CMM_GETHANDLE		52
-#define CMM_GETINFO		53
+#define CMM_GETHANDLE		_IOR(DB, DB_IOC(DB_CMM, 2), unsigned long)
+#define CMM_GETINFO		_IOR(DB, DB_IOC(DB_CMM, 3), unsigned long)
 
 int dsp_open(void)
 {
