@@ -40,6 +40,43 @@
 #include <sys/mman.h> /* for mmap */
 #endif
 
+/* MGR Module */
+#define MGR_WAIT		5
+#define MGR_ENUMNODE_INFO	1
+#define MGR_REGISTEROBJECT	3
+#define MGR_UNREGISTEROBJECT	4
+
+/* PROC Module */
+#define PROC_ATTACH		7
+/* PROC_DETACH Deprecated */
+#define PROC_DETACH		9
+#define PROC_REGISTERNOTIFY	15
+#define PROC_RSVMEM		17
+#define PROC_UNRSVMEM		18
+#define PROC_MAPMEM		19
+#define PROC_UNMAPMEM		20
+#define PROC_FLUSHMEMORY	21
+#define PROC_INVALIDATEMEMORY	23
+#define PROC_GET_STATE		11
+#define PROC_ENUMRESOURCES	10
+
+/* NODE Module */
+#define NODE_REGISTERNOTIFY	35
+#define NODE_CREATE		28
+#define NODE_RUN		36
+#define NODE_TERMINATE		37
+#define NODE_PUTMESSAGE		34
+#define NODE_GETMESSAGE		32
+#define NODE_DELETE		29
+#define NODE_GETATTR		31
+#define NODE_ALLOCMSGBUF	25
+#define NODE_GETUUIDPROPS	38
+#define NODE_ALLOCATE		24
+
+/* CMM Module */
+#define CMM_GETHANDLE		52
+#define CMM_GETINFO		53
+
 int dsp_open(void)
 {
 	return open("/dev/DspBridge", O_RDWR);
@@ -67,7 +104,7 @@ bool dsp_attach(int handle,
 		.ret_handle = ret_handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 7, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_ATTACH, &arg));
 }
 
 struct proc_detach {
@@ -81,7 +118,7 @@ bool dsp_detach(int handle,
 		.proc_handle = proc_handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 9, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_DETACH, &arg));
 }
 
 struct register_notify {
@@ -104,7 +141,7 @@ bool dsp_register_notify(int handle,
 		.info = info,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 15, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_REGISTERNOTIFY, &arg));
 }
 
 struct node_register_notify {
@@ -127,7 +164,7 @@ bool dsp_node_register_notify(int handle,
 		.info = info,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 35, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_REGISTERNOTIFY, &arg));
 }
 
 struct wait_for_events {
@@ -150,7 +187,7 @@ bool dsp_wait_for_events(int handle,
 		.timeout = timeout,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 5, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, MGR_WAIT, &arg));
 }
 
 struct enum_node {
@@ -173,7 +210,7 @@ bool dsp_enum(int handle,
 		.ret_num = ret_num,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 1, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, MGR_ENUMNODE_INFO, &arg));
 }
 
 struct register_object {
@@ -193,7 +230,7 @@ bool dsp_register(int handle,
 		.path = path,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 3, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, MGR_REGISTEROBJECT, &arg));
 }
 
 struct unregister_object {
@@ -210,7 +247,7 @@ bool dsp_unregister(int handle,
 		.type = type,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 4, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, MGR_UNREGISTEROBJECT, &arg));
 }
 
 struct node_create {
@@ -224,7 +261,7 @@ bool dsp_node_create(int handle,
 		.node_handle = node->handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 28, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_CREATE, &arg));
 }
 
 struct node_run {
@@ -238,7 +275,7 @@ bool dsp_node_run(int handle,
 		.node_handle = node->handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 36, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_RUN, &arg));
 }
 
 struct node_terminate {
@@ -255,7 +292,7 @@ bool dsp_node_terminate(int handle,
 		.status = status,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 37, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_TERMINATE, &arg));
 }
 
 struct node_put_message {
@@ -275,7 +312,7 @@ bool dsp_node_put_message(int handle,
 		.timeout = timeout,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 34, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_PUTMESSAGE, &arg));
 }
 
 struct node_get_message {
@@ -295,7 +332,7 @@ bool dsp_node_get_message(int handle,
 		.timeout = timeout,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 32, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_GETMESSAGE, &arg));
 }
 
 struct node_delete {
@@ -309,7 +346,7 @@ static inline bool dsp_node_delete(int handle,
 		.node_handle = node->handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 29, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_DELETE, &arg));
 }
 
 #ifdef ALLOCATE_SM
@@ -330,7 +367,7 @@ bool dsp_node_get_attr(int handle,
 		.attr_size = attr_size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 31, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_GETATTR, &arg));
 }
 
 struct dsp_buffer_attr {
@@ -359,7 +396,7 @@ static inline bool dsp_node_alloc_buf(int handle,
 		.buffer = buffer,
 	};
 
-	if (!DSP_SUCCEEDED(ioctl(handle, 25, &arg))) {
+	if (!DSP_SUCCEEDED(ioctl(handle, NODE_ALLOCMSGBUF, &arg))) {
 		*buffer = NULL;
 		return false;
 	}
@@ -408,11 +445,11 @@ static inline bool get_cmm_info(int handle,
 		.info = cmm_info,
 	};
 
-	if (!DSP_SUCCEEDED(ioctl(handle, 52, &cmm_arg)))
+	if (!DSP_SUCCEEDED(ioctl(handle, CMM_GETHANDLE, &cmm_arg)))
 		return false;
 
 	cmm_info_arg.cmm = cmm;
-	if (!DSP_SUCCEEDED(ioctl(handle, 53, &cmm_info_arg)))
+	if (!DSP_SUCCEEDED(ioctl(handle, CMM_GETINFO, &cmm_info_arg)))
 		return false;
 
 	return true;
@@ -487,7 +524,7 @@ static inline bool get_uuid_props(int handle,
 		.props = props,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 38, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, NODE_GETUUIDPROPS, &arg));
 }
 
 #define PG_SIZE_4K 4096
@@ -548,7 +585,7 @@ bool dsp_node_allocate(int handle,
 	}
 #endif
 
-	if (!DSP_SUCCEEDED(ioctl(handle, 24, &arg))) {
+	if (!DSP_SUCCEEDED(ioctl(handle, NODE_ALLOCATE, &arg))) {
 		if (attrs) {
 			free(attrs->gpp_va);
 			attrs->gpp_va = NULL;
@@ -600,7 +637,7 @@ bool dsp_reserve(int handle,
 		.addr = addr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 17, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_RSVMEM, &arg));
 }
 
 struct unreserve_mem {
@@ -618,7 +655,7 @@ bool dsp_unreserve(int handle,
 		.addr = addr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 18, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_UNRSVMEM, &arg));
 }
 
 struct map_mem {
@@ -647,7 +684,7 @@ bool dsp_map(int handle,
 		.attr = attr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 19, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_MAPMEM, &arg));
 }
 
 struct unmap_mem {
@@ -665,7 +702,7 @@ bool dsp_unmap(int handle,
 		.map_addr = map_addr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 20, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_UNMAPMEM, &arg));
 }
 
 struct flush_mem {
@@ -688,7 +725,7 @@ bool dsp_flush(int handle,
 		.flags = flags,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 21, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_FLUSHMEMORY, &arg));
 }
 
 struct invalidate_mem {
@@ -708,7 +745,7 @@ bool dsp_invalidate(int handle,
 		.size = size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 23, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_INVALIDATEMEMORY, &arg));
 }
 
 struct proc_get_info {
@@ -731,7 +768,7 @@ bool dsp_proc_get_info(int handle,
 		.size = size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 11, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_GET_STATE, &arg));
 }
 
 struct enum_nodes {
@@ -757,5 +794,5 @@ bool dsp_enum_nodes(int handle,
 		.allocated = allocated,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, 10, &arg));
+	return DSP_SUCCEEDED(ioctl(handle, PROC_ENUMRESOURCES, &arg));
 }
