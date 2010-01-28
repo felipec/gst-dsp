@@ -40,8 +40,6 @@
 #include <sys/mman.h> /* for mmap */
 #endif
 
-#include <linux/ioctl.h>
-
 /*
  * Dspbridge ioctl numbering scheme
  *
@@ -63,6 +61,10 @@
 #define DB_MODULE_MASK 0xE0
 #define DB_IOC_MASK    0x1F
 
+#ifdef NEW_API
+
+#include <linux/ioctl.h>
+
 /* ioctl module masks */
 #define DB_MGR  0x0
 #define DB_PROC 0x20
@@ -73,6 +75,26 @@
 /* Used to calculate the ioctl per dspbridge module */
 #define DB_IOC(module, num) \
 	(((module) & DB_MODULE_MASK) | ((num) & DB_IOC_MASK))
+
+#else /* NEW_API */
+
+#define DB_MGR  1
+#define DB_PROC 7
+#define DB_NODE 24
+#define DB_STRM 39
+#define DB_CMM  50
+
+#define DB_IOC(module, num)	((module) + (num))
+
+#undef _IOR
+#undef _IOW
+#undef _IOWR
+
+#define _IOR(type, nr, size)	(nr)
+#define _IOW(type, nr, size)	(nr)
+#define _IOWR(type, nr, size)	(nr)
+
+#endif /* NEW_API */
 
 /* MGR Module */
 #define MGR_WAIT		_IOWR(DB, DB_IOC(DB_MGR, 4), unsigned long)
