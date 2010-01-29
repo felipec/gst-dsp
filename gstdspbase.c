@@ -668,6 +668,9 @@ dsp_stop(GstDspBase *self)
 		}
 	}
 
+	self->ts_in_pos = self->ts_out_pos = self->ts_push_pos = 0;
+	self->ts_count = 0;
+
 	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
 		free(self->events[i]);
 		self->events[i] = NULL;
