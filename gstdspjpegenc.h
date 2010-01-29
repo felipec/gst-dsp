@@ -35,8 +35,8 @@ typedef struct GstDspJpegEncClass GstDspJpegEncClass;
 
 #include "gstdspvenc.h"
 
-#define JPEGENC_MAX_WIDTH 2592
-#define JPEGENC_MAX_HEIGHT 1968
+#define JPEGENC_MAX_WIDTH 4096
+#define JPEGENC_MAX_HEIGHT 4096
 
 struct GstDspJpegEnc {
 	GstDspVEnc element;
