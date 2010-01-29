@@ -9,6 +9,10 @@ override CFLAGS += -D_GNU_SOURCE
 GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10)
 GST_LIBS := $(shell pkg-config --libs gstreamer-0.10)
 
+ifdef NEW
+  override CFLAGS += -DNEW_API
+endif
+
 all:
 
 version := $(shell ./get-version)
