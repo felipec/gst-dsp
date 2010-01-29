@@ -305,6 +305,7 @@ output_loop(gpointer data)
 		g_mutex_lock(self->ts_mutex);
 		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
+		self->ts_count--;
 		if (G_LIKELY(!flush_buffer))
 			self->ts_push_pos = self->ts_out_pos;
 		g_mutex_unlock(self->ts_mutex);
@@ -320,6 +321,7 @@ output_loop(gpointer data)
 		g_mutex_lock(self->ts_mutex);
 		pr_debug(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
 			 GST_TIME_ARGS((self->ts_array[self->ts_out_pos])));
+		self->ts_count--;
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 		g_mutex_unlock(self->ts_mutex);
 		goto leave;
@@ -380,12 +382,13 @@ output_loop(gpointer data)
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 	self->ts_push_pos = self->ts_out_pos;
+	self->ts_count--;
+
 	if (self->use_eos_align) {
-		if (G_UNLIKELY(self->eos) && self->ts_in_pos == self->ts_out_pos)
+		if (G_UNLIKELY(self->eos) && self->ts_count == 0)
 			got_eos = TRUE;
 	}
 #ifdef TS_COUNT
-	self->ts_count--;
 	if (self->ts_count > 2 || self->ts_count < 1)
 		pr_info(self, "tsc=%lu", self->ts_count);
 #endif
@@ -964,9 +967,7 @@ pad_chain(GstPad *pad,
 	g_mutex_lock(self->ts_mutex);
 	self->ts_array[self->ts_in_pos] = GST_BUFFER_TIMESTAMP(buf);
 	self->ts_in_pos = (self->ts_in_pos + 1) % ARRAY_SIZE(self->ts_array);
-#ifdef TS_COUNT
 	self->ts_count++;
-#endif
 	g_mutex_unlock(self->ts_mutex);
 
 	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
@@ -1001,7 +1002,7 @@ sink_event(GstDspBase *self,
 		}
 
 		g_mutex_lock(self->ts_mutex);
-		if (self->ts_in_pos == self->ts_out_pos) {
+		if (self->ts_count == 0) {
 			ret = gst_pad_push_event(self->srcpad, event);
 		}
 		else {

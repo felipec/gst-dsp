@@ -80,9 +80,7 @@ struct GstDspBase {
 	GstClockTime ts_array[20];
 	guint ts_in_pos, ts_out_pos, ts_push_pos;
 	GMutex *ts_mutex;
-#ifdef TS_COUNT
 	gulong ts_count;
-#endif
 	GSem *flush;
 	guint alg;
 
