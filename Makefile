@@ -13,6 +13,9 @@ all:
 
 version := $(shell ./get-version)
 dspdir := /lib/dsp
+prefix := /usr
+
+D = $(DESTDIR)
 
 # plugin
 
@@ -35,6 +38,10 @@ QUIET_CC    = @echo '   CC         '$@;
 QUIET_LINK  = @echo '   LINK       '$@;
 QUIET_CLEAN = @echo '   CLEAN      '$@;
 endif
+
+install: $(targets)
+	mkdir -p $(D)$(prefix)/lib/gstreamer-0.10
+	install -m 644 libgstdsp.so $(D)$(prefix)/lib/gstreamer-0.10
 
 %.o:: %.c
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
