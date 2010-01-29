@@ -66,6 +66,7 @@ base_init(gpointer g_class)
 	GstElementClass *element_class;
 	GstPadTemplate *template;
 	GstElementDetails details;
+	GstCaps *caps;
 
 	element_class = GST_ELEMENT_CLASS(g_class);
 
@@ -82,6 +83,14 @@ base_init(gpointer g_class)
 
 	gst_element_class_add_pad_template(element_class, template);
 	gst_object_unref(template);
+
+	/* publicly announce specific w/h restrictions */
+	template = gst_element_class_get_pad_template(element_class, "sink");
+	caps = gst_pad_template_get_caps(template);
+	gst_caps_set_simple(caps,
+			    "width", GST_TYPE_INT_RANGE, 16, JPEGENC_MAX_WIDTH,
+			    "height", GST_TYPE_INT_RANGE, 16, JPEGENC_MAX_HEIGHT,
+			    NULL);
 }
 
 GType

@@ -108,6 +108,8 @@ struct jpegenc_args {
 	uint16_t scans;
 };
 
+#include "gstdspjpegenc.h"
+
 static inline void *
 get_jpegenc_args(GstDspVEnc *self)
 {
@@ -121,8 +123,8 @@ get_jpegenc_args(GstDspVEnc *self)
 		.out_id = 1,
 		.out_type = 0,
 		.out_count = base->ports[1]->num_buffers,
-		.max_width = 2592 + 32,
-		.max_height = 1968 + 32,
+		.max_width = JPEGENC_MAX_WIDTH + 32,
+		.max_height = JPEGENC_MAX_HEIGHT + 32,
 		.color_format = 1,
 		.max_app0_width = 0,
 		.max_app0_height = 0,
