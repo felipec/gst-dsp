@@ -125,8 +125,7 @@ g_sem_reset(GSem *sem,
 	g_mutex_unlock(sem->mutex);
 }
 
-typedef struct
-{
+typedef struct {
 	uint32_t buffer_data;
 	uint32_t buffer_size;
 	uint32_t param_data;
@@ -286,7 +285,8 @@ output_loop(gpointer data)
 	pr_debug(self, "begin");
 	b = async_queue_pop(self->ports[1]->queue);
 
-	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
+	ret = g_atomic_int_get(&self->status);
+	if (ret != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		if (b)
 			async_queue_push(self->ports[1]->queue, b);
@@ -552,16 +552,14 @@ dsp_init(GstDspBase *self)
 
 fail:
 	if (self->proc) {
-		if (!dsp_detach(dsp_handle, self->proc)) {
+		if (!dsp_detach(dsp_handle, self->proc))
 			pr_err(self, "dsp detach failed");
-		}
 		self->proc = NULL;
 	}
 
 	if (self->dsp_handle >= 0) {
-		if (dsp_close(dsp_handle) < 0) {
+		if (dsp_close(dsp_handle) < 0)
 			pr_err(self, "dsp close failed");
-		}
 		self->dsp_handle = -1;
 	}
 
@@ -964,7 +962,8 @@ pad_chain(GstPad *pad,
 
 	b = async_queue_pop(self->ports[0]->queue);
 
-	if ((ret = g_atomic_int_get(&self->status)) != GST_FLOW_OK) {
+	ret = g_atomic_int_get(&self->status);
+	if (ret != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		if (b)
 			async_queue_push(self->ports[0]->queue, b);
@@ -1074,7 +1073,7 @@ sink_event(GstDspBase *self,
 	 */
 
 	default:
-		ret = gst_pad_push_event (self->srcpad, event);
+		ret = gst_pad_push_event(self->srcpad, event);
 		break;
 	}
 
@@ -1197,7 +1196,7 @@ class_init(gpointer g_class,
 GType
 gst_dsp_base_get_type(void)
 {
-	static GType type = 0;
+	static GType type;
 
 	if (G_UNLIKELY(type == 0)) {
 		GTypeInfo type_info = {

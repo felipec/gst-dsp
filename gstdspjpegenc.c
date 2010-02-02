@@ -87,7 +87,7 @@ base_init(gpointer g_class)
 GType
 gst_dsp_jpegenc_get_type(void)
 {
-	static GType type = 0;
+	static GType type;
 
 	if (G_UNLIKELY(type == 0)) {
 		GTypeInfo type_info = {

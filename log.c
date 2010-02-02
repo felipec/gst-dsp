@@ -102,7 +102,7 @@ pr_helper(unsigned int level,
 #endif
 
 #ifndef GST_DISABLE_GST_DEBUG
-	gst_debug_log_valist(gstdsp_debug, log_level_to_gst (level), file, function, line, object, fmt, args);
+	gst_debug_log_valist(gstdsp_debug, log_level_to_gst(level), file, function, line, object, fmt, args);
 #endif
 
 	free(tmp);

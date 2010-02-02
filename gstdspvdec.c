@@ -325,8 +325,8 @@ struct wmvdec_dyn_params {
 };
 
 struct wmvdec_rcv_struct {
-	uint32_t num_frames : 24;
-	uint32_t frame_type : 8;
+	uint32_t num_frames:24;
+	uint32_t frame_type:8;
 	uint32_t id;
 	uint32_t codec_data;
 	uint32_t height;
@@ -618,7 +618,7 @@ h264dec_transform_nal_encoding(GstDspVDec *self,
 		if (lol == 4)
 			/* blank size prefix with 00 00 00 01 */
 			GST_WRITE_UINT32_BE(data, 0x01);
-                else if (lol == 3)
+		else if (lol == 3)
 			/* blank size prefix with 00 00 01 */
 			GST_WRITE_UINT24_BE(data, 0x01);
 		else
@@ -1101,7 +1101,7 @@ class_init(gpointer g_class,
 GType
 gst_dsp_vdec_get_type(void)
 {
-	static GType type = 0;
+	static GType type;
 
 	if (G_UNLIKELY(type == 0)) {
 		GTypeInfo type_info = {

@@ -57,7 +57,7 @@ create_node(int dsp_handle,
 {
 	dsp_node_t *node;
 	const dsp_uuid_t dummy_uuid = { 0x3dac26d0, 0x6d4b, 0x11dd, 0xad, 0x8b,
-		{ 0x08, 0x00, 0x20, 0x0c, 0x9a,0x66 } };
+		{ 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 } };
 
 	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_NODETYPE, "dummy.dll64P")) {
 		GST_ERROR("dsp node register failed");
@@ -127,16 +127,14 @@ dsp_init(GstDspDummy *self)
 
 fail:
 	if (self->proc) {
-		if (!dsp_detach(dsp_handle, self->proc)) {
+		if (!dsp_detach(dsp_handle, self->proc))
 			GST_ERROR("dsp detach failed");
-		}
 		self->proc = NULL;
 	}
 
 	if (self->dsp_handle >= 0) {
-		if (dsp_close(dsp_handle) < 0) {
+		if (dsp_close(dsp_handle) < 0)
 			GST_ERROR("dsp close failed");
-		}
 		self->dsp_handle = -1;
 	}
 
@@ -212,7 +210,7 @@ dsp_stop(GstDspDummy *self)
 	dmm_buffer_free(self->out_buffer);
 	dmm_buffer_free(self->in_buffer);
 
-	if (!dsp_node_terminate (self->dsp_handle, self->node, &exit_status)) {
+	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
 		GST_ERROR("dsp node terminate failed: %lx", exit_status);
 		return FALSE;
 	}
@@ -319,7 +317,7 @@ pad_chain(GstPad *pad,
 	GstFlowReturn ret;
 	GstBuffer *out_buf;
 
-	self = GST_DSP_DUMMY(GST_OBJECT_PARENT (pad));
+	self = GST_DSP_DUMMY(GST_OBJECT_PARENT(pad));
 
 	ret = gst_pad_alloc_buffer_and_set_caps(self->srcpad,
 						GST_BUFFER_OFFSET_NONE,
@@ -432,7 +430,7 @@ class_init(gpointer g_class,
 	GstElementClass *gstelement_class;
 
 	parent_class = g_type_class_peek_parent(g_class);
-	gstelement_class = GST_ELEMENT_CLASS (g_class);
+	gstelement_class = GST_ELEMENT_CLASS(g_class);
 
 	gstelement_class->change_state = change_state;
 }
@@ -440,7 +438,7 @@ class_init(gpointer g_class,
 GType
 gst_dsp_dummy_get_type(void)
 {
-	static GType type = 0;
+	static GType type;
 
 	if (G_UNLIKELY(type == 0)) {
 		GTypeInfo type_info = {

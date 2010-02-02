@@ -46,9 +46,9 @@ enum {
 
 #define GST_TYPE_DSPVENC_MODE gst_dspvenc_mode_get_type()
 static GType
-gst_dspvenc_mode_get_type (void)
+gst_dspvenc_mode_get_type(void)
 {
-	static GType gst_dspvenc_mode_type = 0;
+	static GType gst_dspvenc_mode_type;
 
 	if (!gst_dspvenc_mode_type) {
 		static GEnumValue modes[] = {
@@ -662,7 +662,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
 
 	if (b->len == 0 || self->priv.h264.bytestream)
-	       return;
+		return;
 
 	if (G_LIKELY(self->priv.h264.codec_data_done)) {
 		/* prefix the NALU with a lenght field, don't count the start code */
@@ -734,7 +734,7 @@ setup_h264params_in(GstDspBase *base)
 	in_param->filter_offset_a = 0;
 	in_param->filter_offset_b = 0;
 	in_param->log2MaxFNumMinus4 = 0;
-	in_param->chroma_qpi_index_offset= 0;
+	in_param->chroma_qpi_index_offset = 0;
 	in_param->constrained_intra_pred_enable = 0;
 	in_param->pic_order_count_type = 0;
 	in_param->max_mv_per_mb = 4;
@@ -940,7 +940,7 @@ setup_mp4params(GstDspBase *base)
 	base->ports[1]->recv_cb = mp4venc_out_recv_cb;
 }
 
-static inline int calculate_bitrate(GstDspVEnc* self)
+static inline int calculate_bitrate(GstDspVEnc *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	float coeff, scale;
@@ -1305,7 +1305,7 @@ class_init(gpointer g_class,
 GType
 gst_dsp_venc_get_type(void)
 {
-	static GType type = 0;
+	static GType type;
 
 	if (G_UNLIKELY(type == 0)) {
 		GTypeInfo type_info = {

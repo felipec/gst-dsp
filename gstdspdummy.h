@@ -27,7 +27,7 @@
 G_BEGIN_DECLS
 
 #define GST_DSP_DUMMY(obj) (GstDspDummy *) (obj)
-#define GST_DSP_DUMMY_TYPE (gst_dsp_dummy_get_type ())
+#define GST_DSP_DUMMY_TYPE (gst_dsp_dummy_get_type())
 #define GST_DSP_DUMMY_CLASS(obj) (GstDspDummyClass *) (obj)
 
 typedef struct GstDspDummy GstDspDummy;
