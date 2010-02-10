@@ -582,8 +582,6 @@ h264dec_transform_codec_data(GstDspVDec *self,
 		data += 2 + len;
 	}
 
-	gst_buffer_unref(buf);
-
 	pr_debug(self, "lol: %d", lol);
 	self->priv.h264.lol = lol;
 
