@@ -204,6 +204,7 @@ got_message(GstDspBase *self,
 		break;
 	case 0x0200:
 		pr_debug(self, "got stop");
+		g_sem_up(self->flush);
 		break;
 	case 0x0400:
 		pr_debug(self, "got alg ctrl");
@@ -666,6 +667,7 @@ dsp_stop(GstDspBase *self)
 	if (!self->dsp_error) {
 		/* stop */
 		dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0);
+		g_sem_down(self->flush);
 	}
 
 	g_thread_join(self->dsp_thread);
