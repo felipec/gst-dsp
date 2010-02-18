@@ -862,7 +862,7 @@ mp4venc_in_send_cb(GstDspBase *base,
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	param->bitrate = g_atomic_int_get(&self->bitrate);
 	g_mutex_lock(self->keyframe_mutex);
-	param->force_i_frame = !!self->keyframe_event;
+	param->force_i_frame = self->keyframe_event ? 1 : 0;
 	if (self->keyframe_event) {
 		gst_pad_push_event(base->srcpad, self->keyframe_event);
 		self->keyframe_event = NULL;
