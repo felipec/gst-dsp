@@ -22,26 +22,30 @@
 static inline void
 set_framesize(GstDspBase *base,
 		int width, int height,
-		int par_num, int par_den)
+		int par_num, int par_den,
+		int crop_width, int crop_height)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
+	gint w = crop_width ? crop_width : width;
+	gint h = crop_height ? crop_height : height;
 
-	/* update the framesize only if it hasn't been set yet. */
-	if (vdec->crop_width == 0 || vdec->crop_height == 0) {
+	/* update the framesize only if it hasn't been set yet or received wrong hxw through in-caps */
+	if ((vdec->crop_width == 0 || vdec->crop_height == 0) ||
+			(vdec->crop_width != w || vdec->crop_height != h)) {
 		GstCaps *out_caps;
 		GstStructure *struc;
 
 		out_caps = base->tmp_caps;
 		struc = gst_caps_get_structure(out_caps, 0);
 		gst_structure_set(struc,
-				"width", G_TYPE_INT, width,
-				"height", G_TYPE_INT, height, NULL);
+				"width", G_TYPE_INT, w,
+				"height", G_TYPE_INT, h, NULL);
 		if (par_num && par_den)
 			gst_structure_set(struc,
 					"pixel-aspect-ratio", GST_TYPE_FRACTION,
 					par_num, par_den, NULL);
-		vdec->crop_width = width;
-		vdec->crop_height = height;
+		vdec->crop_width = w;
+		vdec->crop_height = h;
 	}
 
 	if (vdec->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'))
@@ -194,7 +198,7 @@ exit:
 	pr_debug(base, "width=%u, height=%u, par=%d:%d", width, height,
 			par_num, par_den);
 
-	set_framesize(base, width, height, par_num, par_den);
+	set_framesize(base, width, height, par_num, par_den, 0, 0);
 	return true;
 
 not_enough:
@@ -443,7 +447,7 @@ VOS:
 		}
 	}
 
-	set_framesize(base, width, height, 0, 0);
+	set_framesize(base, width, height, 0, 0, 0, 0);
 	return true;
 
 failed:
@@ -760,7 +764,7 @@ try_again:
 
 	pr_debug(base, "final width=%u, height=%u", width, height);
 
-	set_framesize(base, width, height, 0, 0);
+	set_framesize(base, width, height, 0, 0, 0, 0);
 	free(rbsp_buffer);
 	return true;
 

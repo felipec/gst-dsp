@@ -232,17 +232,18 @@ configure_caps(GstDspVDec *self,
 				      "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'),
 				      NULL);
 
-	if (gst_structure_get_int(in_struc, "width", &self->width))
-		gst_structure_set(out_struc, "width", G_TYPE_INT, self->width, NULL);
-	if (gst_structure_get_int(in_struc, "height", &self->height))
-		gst_structure_set(out_struc, "height", G_TYPE_INT, self->height, NULL);
+	gst_structure_get_int(in_struc, "width", &self->width);
+	gst_structure_get_int(in_struc, "height", &self->height);
+
+	self->crop_width = self->width;
+	self->crop_height = self->height;
+
+	gst_structure_set(out_struc, "width", G_TYPE_INT, self->crop_width, NULL);
+	gst_structure_set(out_struc, "height", G_TYPE_INT, self->crop_height, NULL);
 
 	aspect_ratio = gst_structure_get_value(in_struc, "pixel-aspect-ratio");
 	if (aspect_ratio)
 		gst_structure_set_value(out_struc, "pixel-aspect-ratio", aspect_ratio);
-
-	self->crop_width = self->width;
-	self->crop_height = self->height;
 
 	/* estimate the real coded framesize */
 	if (base->alg == GSTDSP_H264DEC) {
