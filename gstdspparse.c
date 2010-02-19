@@ -544,6 +544,7 @@ bool gst_dsp_h264_parse(GstDspBase *base, GstBuffer *buf)
 	guint8 b, profile, chroma, frame;
 	guint fc_top, fc_bottom, fc_left, fc_right;
 	gint width, height;
+	gint crop_width, crop_height;
 	guint subwc[] = { 1, 2, 2, 1 }, subhc[] = { 1, 2, 1, 1 };
 	guint32 d;
 	bool avc;
@@ -755,16 +756,16 @@ try_again:
 		pr_err(base, "invalid SPS");
 		goto bail;
 	}
-	width -= (fc_left + fc_right) * subwc[chroma];
-	height -= (fc_top + fc_bottom) * subhc[chroma] * (2 - frame);
-	if (width < 0 || height < 0) {
+	crop_width = width - (fc_left + fc_right) * subwc[chroma];
+	crop_height = height - (fc_top + fc_bottom) * subhc[chroma] * (2 - frame);
+	if (width < 0 || height < 0 || crop_width < 0 || crop_height < 0) {
 		pr_err(base, "invalid SPS");
 		goto bail;
 	}
 
-	pr_debug(base, "final width=%u, height=%u", width, height);
+	pr_debug(base, "final width=%u, height=%u", crop_width, crop_height);
 
-	set_framesize(base, width, height, 0, 0, 0, 0);
+	set_framesize(base, width, height, 0, 0, crop_width, crop_height);
 	free(rbsp_buffer);
 	return true;
 
