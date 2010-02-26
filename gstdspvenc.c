@@ -693,7 +693,6 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->ref_framerate = self->framerate * 1000;
 	in_param->target_framerate = self->framerate * 1000;
 	in_param->target_bitrate = self->bitrate;
-	in_param->intra_frame_interval = self->keyframe_interval * self->framerate;
 
 	in_param->qp_intra = 0x1c;
 	in_param->qp_inter = 0x1c;
