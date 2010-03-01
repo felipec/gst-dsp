@@ -786,6 +786,11 @@ create_node(GstDspBase *base)
 	const dsp_uuid_t wmv_dec_uuid = { 0x609DAB97, 0x3DFC, 0x471F, 0x8A, 0xB9,
 		{ 0x4E, 0x56, 0xE8, 0x34, 0x50, 0x1B } };
 
+#if SN_API >= 1
+	const dsp_uuid_t conversions_uuid = { 0x722DD0DA, 0xF532, 0x4238, 0xB8, 0x46,
+		{ 0xAB, 0xFF, 0x5D, 0xA4, 0xBA, 0x02 } };
+#endif
+
 	self = GST_DSP_VDEC(base);
 	dsp_handle = base->dsp_handle;
 
@@ -817,6 +822,13 @@ create_node(GstDspBase *base)
 		pr_err(self, "unknown algorithm");
 		return NULL;
 	}
+
+#if SN_API >= 1
+	if (!gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P")) {
+		pr_err(self, "failed to register conversions node library");
+		return NULL;
+	}
+#endif
 
 	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
 		pr_err(self, "failed to register algo node library");
