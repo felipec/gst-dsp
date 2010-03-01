@@ -266,7 +266,8 @@ struct wmvdec_args {
 	int32_t max_level;
 	uint32_t process_mode;
 	int32_t preroll;
-	int16_t stream_format;
+	int32_t stream_format;
+	int32_t stride_width;
 };
 
 static inline void *
@@ -293,6 +294,7 @@ get_wmv_args(GstDspVDec *self)
 		.process_mode = 0,
 		.preroll = 0,
 		.stream_format = self->wmv_is_vc1 ? 1 : 2, /* 1 = wvc1, 2 = wmv3 */
+		.stride_width = 0,
 	};
 
 	struct foo_data *cb_data;
