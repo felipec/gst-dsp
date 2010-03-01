@@ -216,7 +216,7 @@ got_message(GstDspBase *self,
 			pr_debug(self, "playback completed");
 			break;
 		}
-		pr_err(self, "error: cmd=%u, arg1=%u, arg2=%u",
+		pr_err(self, "error: cmd=0x%04X, arg1=%u, arg2=0x%04X",
 		       msg->cmd, msg->arg_1, msg->arg_2);
 		break;
 	default:
