@@ -73,7 +73,6 @@ struct GstDspBase {
 	unsigned long output_buffer_size;
 	GThread *dsp_thread, *out_thread;
 	gboolean done, eos;
-	gint keyframe;
 
 	du_port_t *ports[2];
 	dmm_buffer_t *alg_ctrl;

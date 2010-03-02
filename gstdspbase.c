@@ -278,6 +278,7 @@ output_loop(gpointer data)
 	dmm_buffer_t *b;
 	gboolean flush_buffer;
 	gboolean got_eos = FALSE;
+	gboolean keyframe = FALSE;
 	GstEvent *event;
 
 	pad = data;
@@ -346,6 +347,9 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
+	/* now go after the data, but let's first see if it is keyframe */
+	keyframe = b->keyframe;
+
 	if (self->use_pad_alloc) {
 		GstBuffer *new_buf;
 
@@ -394,7 +398,7 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
-	if (!g_atomic_int_get(&self->keyframe))
+	if (!keyframe)
 		GST_BUFFER_FLAGS(out_buf) |= GST_BUFFER_FLAG_DELTA_UNIT;
 
 	g_mutex_lock(self->ts_mutex);

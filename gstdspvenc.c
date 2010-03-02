@@ -661,7 +661,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 	struct h264venc_out_stream_params *param;
 	param = p->data;
 
-	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
+	b->keyframe = (param->frame_type == 1);
 
 	if (b->len == 0 || self->priv.h264.bytestream)
 		return;
@@ -849,7 +849,7 @@ mp4venc_out_recv_cb(GstDspBase *base,
 {
 	struct mp4venc_out_stream_params *param;
 	param = p->data;
-	g_atomic_int_set(&base->keyframe, param->frame_type == 1);
+	b->keyframe = (param->frame_type == 1);
 }
 
 static void
