@@ -303,13 +303,17 @@ output_loop(gpointer data)
 	/* first clear pending events */
 	g_mutex_lock(self->ts_mutex);
 	while ((event = self->event_array[self->ts_out_pos])) {
-		pr_debug(self, "pushing event: %s", GST_EVENT_TYPE_NAME(event));
-		gst_pad_push_event(self->srcpad, event);
 		self->event_array[self->ts_out_pos] = NULL;
 		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
-		if (G_LIKELY(!flush_buffer))
+		if (G_LIKELY(!flush_buffer)) {
 			self->ts_push_pos = self->ts_out_pos;
+			pr_debug(self, "pushing event: %s", GST_EVENT_TYPE_NAME(event));
+			gst_pad_push_event(self->srcpad, event);
+		} else {
+			pr_debug(self, "ignored flushed event: %s", GST_EVENT_TYPE_NAME(event));
+			gst_event_unref(event);
+		}
 	}
 	g_mutex_unlock(self->ts_mutex);
 
