@@ -469,8 +469,25 @@ leave:
 
 nok:
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
+		/*
+		 * we plan to shutdown, synchronize to ensure passing on EOS,
+		 * so we don't hang the pipeline in the rare case that downstream
+		 * returned an error, while upstream reached EOS
+		 * (so the downstream error will not pass upstream anymore).
+		 * In all other cases, error will be passed upstream, or whatever
+		 * is responsible for stopping/pausing the task should take proper
+		 * action not to hang pipeline anyway (e.g. post message).
+		 */
+		g_mutex_lock(self->ts_mutex);
 		g_atomic_int_set(&self->status, ret);
+		got_eos = !got_eos && (self->use_eos_align && self->eos);
+		g_mutex_unlock(self->ts_mutex);
+		pr_info(self, "pausing task; reason %s", gst_flow_get_name(ret));
 		gst_pad_pause_task(self->srcpad);
+		if (got_eos) {
+			pr_info(self, "task pausing; sending eos");
+			gst_pad_push_event(self->srcpad, gst_event_new_eos());
+		}
 	}
 
 end:
@@ -1081,12 +1098,15 @@ sink_event(GstDspBase *self,
 
 	switch (GST_EVENT_TYPE(event)) {
 	case GST_EVENT_EOS:
-		if (g_atomic_int_get(&self->status) != GST_FLOW_OK) {
-			ret = gst_pad_push_event(self->srcpad, event);
-			break;
-		}
+	{
+		gboolean do_push;
 
-		if (!self->use_eos_align) {
+		g_mutex_lock(self->ts_mutex);
+		do_push = (self->status != GST_FLOW_OK) || !self->use_eos_align;
+		self->eos = self->use_eos_align;
+		g_mutex_unlock(self->ts_mutex);
+
+		if (do_push) {
 			ret = gst_pad_push_event(self->srcpad, event);
 			break;
 		}
@@ -1101,7 +1121,7 @@ sink_event(GstDspBase *self,
 		}
 		g_mutex_unlock(self->ts_mutex);
 		break;
-
+	}
 	case GST_EVENT_FLUSH_START:
 		ret = gst_pad_push_event(self->srcpad, event);
 		g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
