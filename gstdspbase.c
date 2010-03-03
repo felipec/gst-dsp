@@ -957,9 +957,15 @@ gstdsp_send_codec_data(GstDspBase *self,
 		}
 	}
 
-	b = async_queue_pop(self->ports[0]->queue);
-	if (G_UNLIKELY(!b))
-		return FALSE;
+	/*
+	 * codec-data must make it through as part of setcaps setup,
+	 * otherwise node will miss (likely vital) config data,
+	 * Since the port's async_queue might be disabled/flushing,
+	 * we forcibly pop a buffer here.
+	 */
+	b = async_queue_pop_forced(self->ports[0]->queue);
+	/* there should always be one available, as we are just starting */
+	g_assert(b);
 
 	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
 	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
