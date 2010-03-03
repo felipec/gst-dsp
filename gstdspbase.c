@@ -297,10 +297,20 @@ output_loop(gpointer data)
 	pr_debug(self, "begin");
 	b = async_queue_pop(self->ports[1]->queue);
 
+	/*
+	 * queue might have been disabled above, so perhaps b == NULL,
+	 * but then right here in between self->status may have been set to
+	 * OK by e.g. FLUSH_STOP
+	 */
+	if (G_UNLIKELY(!b)) {
+		pr_info(self, "no buffer");
+		ret = check_status(self);
+		goto leave;
+	}
+
 	ret = check_status(self);
 	if (ret != GST_FLOW_OK) {
-		if (b)
-			async_queue_push(self->ports[1]->queue, b);
+		async_queue_push(self->ports[1]->queue, b);
 		goto leave;
 	}
 
