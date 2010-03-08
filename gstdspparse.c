@@ -45,10 +45,15 @@ set_framesize(GstDspBase *base, int width, int height)
 
 bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 {
-	guint format;
-	gint width, height;
-	/* Used to multiplex from the format in the codec_data extra information */
-	gint h263_formats[8][2] = {
+	struct get_bit_context s;
+	unsigned bits;
+	unsigned type;
+	bool baseline = true;
+	int width, height;
+	struct size {
+		int width;
+		int height;
+	} sizes[] = {
 		{ 0, 0 },
 		{ 128, 96 },
 		{ 176, 144 },
@@ -57,18 +62,95 @@ bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 		{ 1408, 1152 },
 	};
 
-	/* The format is obtained from the 3 bits starting in offset 35 of the video header */
-	format = (GST_BUFFER_DATA(buf)[4] & 0x1C) >> 2;
+	init_get_bits(&s, buf->data, buf->size * 8);
 
-	pr_debug(base, "format=%u", format);
+	if (get_bits_left(&s) < 38)
+		goto not_enough;
 
-	if (format == 7 || format == 6)
-		return FALSE;
+	/* picture start code */
+	if (get_bits(&s, 22) != 0x20)
+		goto bail;
 
-	width = h263_formats[format][0];
-	height = h263_formats[format][1];
+	/* temporal reference */
+	skip_bits(&s, 8);
+
+	type = get_bits(&s, 8) & 0x7;
+	switch (type) {
+	case 0:
+	case 6:
+		/* forbidden or reserved */
+		goto bail;
+	case 7:
+		/* extended */
+		baseline = false;
+
+		if (get_bits_left(&s) < 54)
+			goto not_enough;
+
+		/* Updated Full Extended PTYPE */
+
+		if (get_bits(&s, 3) != 1) {
+			/* spec wise, should be present at start */
+			goto bail;
+		}
+
+		type = get_bits(&s, 18) >> 15;
+		if (type == 0 || type == 7) {
+			goto bail;
+		} else if (type != 6) {
+			pr_debug(base, "format=%d", type);
+			width = sizes[type].width;
+			height = sizes[type].height;
+			/* have all we need, exit */
+			goto exit;
+		}
+
+		/* mandatory PLUSPTYPE part */
+
+		skip_bits(&s, 9);
+
+		/* CPM */
+		if (get_bits1(&s))
+			/* PSBI */
+			skip_bits(&s, 2);
+
+		/* Custom Picture format */
+		bits = get_bits(&s, 23);
+		height = (bits & 0x1FF) * 4;
+		bits >>= 10;
+		width = ((bits & 0x1FF) + 1) * 4;
+		break;
+	default:
+		/* regular */
+
+		pr_debug(base, "format=%d", type);
+		width = sizes[type].width;
+		height = sizes[type].height;
+
+		if (get_bits_left(&s) < 11)
+			goto not_enough;
+
+		/* optional PTYPE part */
+		baseline = !(get_bits(&s, 5) & 1);
+
+		/* PQUANT */
+		skip_bits(&s, 5);
+
+		/* CPM */
+		baseline = baseline && !get_bits1(&s);
+		break;
+	}
+
+exit:
+	/* TODO use to decide on node */
+	pr_debug(base, "baseline=%u", baseline);
+	pr_debug(base, "width=%u, height=%u", width, height);
 
 	set_framesize(base, width, height);
+	return true;
 
-	return TRUE;
+not_enough:
+	pr_err(base, "not enough data");
+bail:
+	return false;
 }
