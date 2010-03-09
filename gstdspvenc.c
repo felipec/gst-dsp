@@ -1243,6 +1243,8 @@ instance_init(GTypeInstance *instance,
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 
 	self->bitrate = DEFAULT_BITRATE;
+	self->mode = DEFAULT_MODE;
+
 	self->keyframe_mutex = g_mutex_new();
 }
 
