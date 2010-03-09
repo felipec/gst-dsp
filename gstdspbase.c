@@ -519,19 +519,18 @@ dsp_thread(gpointer data)
 		}
 		else if (index == 1) {
 			gstdsp_got_error(self, 1, "got DSP MMUFAULT");
-			goto leave;
+			break;
 		}
 		else if (index == 2) {
 			gstdsp_got_error(self, 2, "got DSP SYSERROR");
-			goto leave;
+			break;
 		}
 		else {
 			gstdsp_got_error(self, 3, "wrong event index");
-			goto leave;
+			break;
 		}
 	}
 
-leave:
 	pr_info(self, "end");
 
 	return NULL;
