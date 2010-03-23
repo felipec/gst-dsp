@@ -268,6 +268,16 @@ setup_buffers(GstDspBase *self)
 	}
 }
 
+static inline GstFlowReturn
+check_status(GstDspBase *self)
+{
+	GstFlowReturn ret;
+	ret = g_atomic_int_get(&self->status);
+	if (ret != GST_FLOW_OK)
+		pr_info(self, "status: %s", gst_flow_get_name(self->status));
+	return ret;
+}
+
 static void
 output_loop(gpointer data)
 {
@@ -287,9 +297,8 @@ output_loop(gpointer data)
 	pr_debug(self, "begin");
 	b = async_queue_pop(self->ports[1]->queue);
 
-	ret = g_atomic_int_get(&self->status);
+	ret = check_status(self);
 	if (ret != GST_FLOW_OK) {
-		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		if (b)
 			async_queue_push(self->ports[1]->queue, b);
 		goto leave;
