@@ -273,8 +273,10 @@ check_status(GstDspBase *self)
 {
 	GstFlowReturn ret;
 	ret = g_atomic_int_get(&self->status);
-	if (ret != GST_FLOW_OK)
-		pr_info(self, "status: %s", gst_flow_get_name(self->status));
+	if (ret != GST_FLOW_OK) {
+		pr_info(self, "status: %s", gst_flow_get_name(ret));
+		gst_pad_pause_task(self->srcpad);
+	}
 	return ret;
 }
 
@@ -305,13 +307,13 @@ output_loop(gpointer data)
 	if (G_UNLIKELY(!b)) {
 		pr_info(self, "no buffer");
 		ret = check_status(self);
-		goto leave;
+		goto end;
 	}
 
 	ret = check_status(self);
 	if (ret != GST_FLOW_OK) {
 		async_queue_push(self->ports[1]->queue, b);
-		goto leave;
+		goto end;
 	}
 
 	if (G_UNLIKELY(self->skip_hack_2 > 0)) {
@@ -456,6 +458,7 @@ leave:
 		gst_pad_pause_task(self->srcpad);
 	}
 
+end:
 	pr_debug(self, "end");
 }
 
