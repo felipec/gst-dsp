@@ -696,8 +696,8 @@ dsp_stop(GstDspBase *self)
 
 	if (!self->dsp_error) {
 		/* stop */
-		dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0);
-		g_sem_down(self->flush);
+		if (dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0))
+			g_sem_down(self->flush);
 	}
 
 	g_thread_join(self->dsp_thread);
