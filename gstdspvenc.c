@@ -546,9 +546,16 @@ struct h264venc_out_stream_params {
 	uint32_t bitstream_size;
 	int32_t frame_type;
 	uint32_t nalus_per_frame;
+#if SN_API >= 1
+	uint32_t nalu_sizes[240];
+#else
 	uint32_t nalu_sizes[1618];
+#endif
 	uint32_t frame_index; /* Gives the number of the input frame which NAL unit belongs */
 	uint32_t nalu_index; /* Number of current NAL unit inside the frame */
+#if SN_API >= 1
+	int32_t error_code;
+#endif
 };
 
 static void
