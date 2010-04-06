@@ -187,6 +187,43 @@ struct mp4vdec_in_params {
 	int32_t performance_mode;
 };
 
+struct mp4vdec_out_params {
+	uint32_t frame_index;
+	uint32_t bytes_consumed;
+	int32_t error_code;
+	uint32_t frame_type;
+	uint32_t qp[(720 * 576) / 256];
+	int32_t mb_error_buf_flag;
+	uint8_t mb_error_buf[(720 * 576) / 256];
+};
+
+static void
+mp4vdec_out_send_cb(GstDspBase *base,
+		   du_port_t *port,
+		   dmm_buffer_t *p,
+		   dmm_buffer_t *b)
+{
+	struct mp4vdec_out_params *param;
+	param = p->data;
+	dmm_buffer_invalidate(p, sizeof(*param));
+}
+
+static void
+mp4vdec_out_recv_cb(GstDspBase *base,
+		   du_port_t *port,
+		   dmm_buffer_t *p,
+		   dmm_buffer_t *b)
+{
+	GstDspVDec *self = GST_DSP_VDEC(base);
+	struct mp4vdec_out_params *param;
+	param = p->data;
+
+	b->keyframe = (param->frame_type == 0);
+
+	pr_debug(self, "error: 0x%x, frame number: %u, frame type: %u",
+		param->error_code, param->frame_index, param->frame_type);
+}
+
 static inline dmm_buffer_t *
 setup_mp4vparams_in(GstDspBase *base)
 {
@@ -206,10 +243,21 @@ setup_mp4vparams_in(GstDspBase *base)
 static inline void
 setup_mp4vdec_params(GstDspBase *base)
 {
+	struct mp4vdec_out_params *out_param;
 	unsigned i;
 
 	for (i = 0; i < base->ports[0]->num_buffers; i++)
 		base->ports[0]->params[i] = setup_mp4vparams_in(base);
+
+	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+		dmm_buffer_t *tmp;
+		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
+		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		memset(tmp->data, 0, sizeof(*out_param));
+		base->ports[1]->params[i] = tmp;
+	}
+	base->ports[1]->send_cb = mp4vdec_out_send_cb;
+	base->ports[1]->recv_cb = mp4vdec_out_recv_cb;
 }
 
 struct h264vdec_args {
