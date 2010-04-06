@@ -310,12 +310,12 @@ struct wmvdec_args {
 	uint32_t max_framerate;
 	uint32_t max_bitrate;
 	uint32_t endianness;
-	uint32_t profile;
+	int32_t profile;
 	int32_t max_level;
 	uint32_t process_mode;
 	int32_t preroll;
-	int32_t stream_format;
-	int32_t stride_width;
+	uint32_t stream_format;
+	uint32_t stride_width;
 };
 
 static inline void *
@@ -351,6 +351,7 @@ get_wmv_args(GstDspVDec *self)
 
 struct wmvdec_in_params {
 	int32_t buf_count;
+	uint32_t frame_index;
 };
 
 struct wmvdec_out_params {
@@ -473,7 +474,7 @@ wmvdec_in_send_cb(GstDspBase *base,
 	if (self->wmv_is_vc1)
 		wmvdec_prefix_vc1(self, b);
 
-	param->buf_count = g_atomic_int_exchange_and_add(&self->frame_index, 1);
+	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 }
 
 static void
