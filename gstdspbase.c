@@ -287,6 +287,10 @@ pause_task(GstDspBase *self, GstFlowReturn status)
 	pr_info(self, "pausing task; reason %s", gst_flow_get_name(status));
 	gst_pad_pause_task(self->srcpad);
 
+	/* avoid waiting for buffers that will never come */
+	async_queue_disable(self->ports[0]->queue);
+	async_queue_disable(self->ports[1]->queue);
+
 	/* there's a pending deferred EOS, it's now or never */
 	if (deferred_eos) {
 		pr_info(self, "send elapsed eos");
