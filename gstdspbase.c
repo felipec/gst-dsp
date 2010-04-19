@@ -699,6 +699,8 @@ dsp_stop(GstDspBase *self)
 		/* stop */
 		if (dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0))
 			g_sem_down(self->flush);
+		/** @todo find a way to stop wait_for_events */
+		self->done = TRUE;
 	}
 
 	g_thread_join(self->dsp_thread);
@@ -866,7 +868,6 @@ change_state(GstElement *element,
 		break;
 
 	case GST_STATE_CHANGE_PAUSED_TO_READY:
-		self->done = TRUE;
 		g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
 		async_queue_disable(self->ports[0]->queue);
 		async_queue_disable(self->ports[1]->queue);
