@@ -907,6 +907,7 @@ create_node(GstDspBase *base)
 		setup_h264params(base);
 		break;
 	case GSTDSP_MPEG4VDEC:
+	case GSTDSP_H263DEC:
 		setup_mp4vdec_params(base);
 		break;
 	default:
