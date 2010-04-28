@@ -359,6 +359,9 @@ create_node(GstDspVEnc *self)
 	const dsp_uuid_t h264_enc_uuid = { 0x63A3581A, 0x09D7, 0x4AD0, 0x80, 0xB8,
 		{ 0x5F, 0x2C, 0x4D, 0x4D, 0x59, 0xC9 } };
 
+	const dsp_uuid_t conversions_uuid = { 0x722DD0DA, 0xF532, 0x4238, 0xB8, 0x46,
+		{ 0xAB, 0xFF, 0x5D, 0xA4, 0xBA, 0x02 } };
+
 	base = GST_DSP_BASE(self);
 	dsp_handle = base->dsp_handle;
 
@@ -394,6 +397,12 @@ create_node(GstDspVEnc *self)
 	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
 		pr_err(self, "failed to register algo node");
 		return NULL;
+	}
+
+	/* only needed for jpegenc */
+	if (base->alg == GSTDSP_JPEGENC) {
+		/* SN_API == 0 doesn't have it, so don't fail */
+		gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P");
 	}
 
 	{
