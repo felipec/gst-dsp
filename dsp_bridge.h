@@ -189,6 +189,17 @@ struct dsp_stream_attr {
 	unsigned int dma_priority;
 };
 
+struct dsp_stream_attr_in {
+	unsigned long cb;
+	unsigned int timeout;
+	unsigned int segment;
+	unsigned int alignment;
+	unsigned int num_bufs;
+	enum dsp_stream_mode mode;
+	unsigned int dma_chnl_id;
+	unsigned int dma_priority;
+};
+
 enum dsp_node_state {
 	NODE_ALLOCATED,
 	NODE_CREATED,
@@ -364,5 +375,12 @@ bool dsp_enum_nodes(int handle,
 		    unsigned node_table_size,
 		    unsigned *num_nodes,
 		    unsigned *allocated);
+
+bool dsp_stream_open(int handle,
+		     dsp_node_t *node,
+		     unsigned int direction,
+		     unsigned int index,
+		     struct dsp_stream_attr_in *attrin,
+		     void *stream);
 
 #endif /* DSP_BRIDGE_H */

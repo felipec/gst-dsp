@@ -134,6 +134,9 @@
 #define CMM_GETHANDLE		_IOR(DB, DB_IOC(DB_CMM, 2), unsigned long)
 #define CMM_GETINFO		_IOR(DB, DB_IOC(DB_CMM, 3), unsigned long)
 
+/* STRM Module */
+#define STRM_OPEN		_IOWR(DB, DB_IOC(DB_STRM, 7), unsigned long)
+
 int dsp_open(void)
 {
 	return open("/dev/DspBridge", O_RDWR);
@@ -881,4 +884,66 @@ bool dsp_enum_nodes(int handle,
 	};
 
 	return DSP_SUCCEEDED(ioctl(handle, PROC_ENUMRESOURCES, &arg));
+}
+
+struct stream_attr {
+	void *event;
+	char *name;
+	void *base;
+	unsigned long size;
+	struct dsp_stream_attr_in *attrin;
+};
+
+struct stream_open {
+	void *node_handle;
+	unsigned int direction;
+	unsigned int index;
+	struct stream_attr *attr;
+	void *stream;
+};
+
+bool dsp_stream_open(int handle,
+		     dsp_node_t *node,
+		     unsigned int direction,
+		     unsigned int index,
+		     struct dsp_stream_attr_in *attrin,
+		     void *stream)
+{
+	struct stream_attr strm_attr = {
+		.attrin = attrin,
+	};
+	struct stream_open stream_arg = {
+		.node_handle = node->handle,
+		.direction = direction,
+		.index = index,
+		.attr = &strm_attr,
+		.stream = stream,
+	};
+
+	if (attrin && (attrin->mode == STRMMODE_ZEROCOPY ||
+		       attrin->mode == STRMMODE_RDMA)) {
+		struct dsp_cmm_info cmm_info;
+
+		if (!get_cmm_info(handle, NULL, &cmm_info))
+			return false;
+
+		if (cmm_info.segments > 0) {
+			void *base;
+			struct dsp_cmm_seg_info *seg;
+
+			seg = &cmm_info.info[0];
+			base = mmap(NULL, seg->size,
+				    PROT_READ | PROT_WRITE,
+				    MAP_SHARED | 0x2000 /* MAP_LOCKED */,
+				    handle, seg->base_pa);
+
+			if (!base)
+				return false;
+
+			strm_attr.base = base;
+			strm_attr.size = seg->size;
+		}
+	}
+
+	return DSP_SUCCEEDED(ioctl(handle, STRM_OPEN, &stream_arg));
 }
