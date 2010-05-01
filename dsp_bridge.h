@@ -171,6 +171,24 @@ struct dsp_stream_connect {
 	unsigned int stream_index;
 };
 
+enum dsp_stream_mode {
+	STRMMODE_PROCCOPY,
+	STRMMODE_ZEROCOPY,
+	STRMMODE_LDMA,
+	STRMMODE_RDMA
+};
+
+struct dsp_stream_attr {
+	unsigned int seg_id;
+	unsigned int buf_size;
+	unsigned int num_bufs;
+	unsigned int alignment;
+	unsigned int timeout;
+	enum dsp_stream_mode mode;
+	unsigned int dma_chnl_id;
+	unsigned int dma_priority;
+};
+
 enum dsp_node_state {
 	NODE_ALLOCATED,
 	NODE_CREATED,
@@ -219,6 +237,14 @@ bool dsp_node_allocate(int handle,
 
 bool dsp_node_free(int handle,
 		   dsp_node_t *node);
+
+bool dsp_node_connect(int handle,
+		      dsp_node_t *node,
+		      unsigned int stream,
+		      dsp_node_t *other_node,
+		      unsigned int other_stream,
+		      struct dsp_stream_attr *attrs,
+		      void *params);
 
 bool dsp_node_create(int handle,
 		     dsp_node_t *node);

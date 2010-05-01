@@ -128,6 +128,7 @@
 #define NODE_ALLOCMSGBUF	_IOWR(DB, DB_IOC(DB_NODE, 1), unsigned long)
 #define NODE_GETUUIDPROPS	_IOWR(DB, DB_IOC(DB_NODE, 14), unsigned long)
 #define NODE_ALLOCATE		_IOWR(DB, DB_IOC(DB_NODE, 0), unsigned long)
+#define NODE_CONNECT		_IOW(DB, DB_IOC(DB_NODE, 3), unsigned long)
 
 /* CMM Module */
 #define CMM_GETHANDLE		_IOR(DB, DB_IOC(DB_CMM, 2), unsigned long)
@@ -663,6 +664,35 @@ bool dsp_node_allocate(int handle,
 	*ret_node = node;
 
 	return true;
+}
+
+struct node_connect {
+	void *node_handle;
+	unsigned int stream;
+	void *other_node_handle;
+	unsigned int other_stream;
+	struct dsp_stream_attr *attrs;
+	void *params;
+};
+
+bool dsp_node_connect(int handle,
+		      dsp_node_t *node,
+		      unsigned int stream,
+		      dsp_node_t *other_node,
+		      unsigned int other_stream,
+		      struct dsp_stream_attr *attrs,
+		      void *params)
+{
+	struct node_connect arg = {
+		.node_handle = node->handle,
+		.stream = stream,
+		.other_node_handle = other_node->handle,
+		.other_stream = other_stream,
+		.attrs = attrs,
+		.params = params,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, NODE_CONNECT, &arg));
 }
 
 bool dsp_node_free(int handle,
