@@ -136,6 +136,8 @@
 
 /* STRM Module */
 #define STRM_OPEN		_IOWR(DB, DB_IOC(DB_STRM, 7), unsigned long)
+#define STRM_CLOSE		_IOW(DB, DB_IOC(DB_STRM, 1), unsigned long)
+#define STRM_GETINFO		_IOWR(DB, DB_IOC(DB_STRM, 4), unsigned long)
 
 int dsp_open(void)
 {
@@ -946,4 +948,55 @@ bool dsp_stream_open(int handle,
 	}
 
 	return DSP_SUCCEEDED(ioctl(handle, STRM_OPEN, &stream_arg));
+}
+
+struct stream_info {
+	enum dsp_stream_mode mode;
+	unsigned int segment;
+	void *base;
+	void *info;
+};
+
+struct stream_get_info {
+	void *stream;
+	struct stream_info *info;
+	unsigned int size;
+};
+
+static inline bool get_stream_info(int handle,
+				   void *stream,
+				   struct stream_info *info,
+				   unsigned int size)
+{
+	struct stream_get_info arg = {
+		.stream = stream,
+		.info = info,
+		.size = size,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, STRM_GETINFO, &arg));
+}
+
+bool dsp_stream_close(int handle,
+		      void *stream)
+{
+	struct stream_info info;
+	if (!get_stream_info(handle, stream, &info, sizeof(struct stream_info)))
+		return false;
+
+	if (info.base) {
+		struct dsp_cmm_info cmm_info;
+
+		if (!get_cmm_info(handle, NULL, &cmm_info))
+			return false;
+
+		if (cmm_info.segments > 0) {
+			struct dsp_cmm_seg_info *seg;
+			seg = &cmm_info.info[0];
+			if (munmap(info.base, seg->size))
+				return false;
+		}
+	}
+
+	return DSP_SUCCEEDED(ioctl(handle, STRM_CLOSE, &stream));
 }

@@ -383,4 +383,7 @@ bool dsp_stream_open(int handle,
 		     struct dsp_stream_attr_in *attrin,
 		     void *stream);
 
+bool dsp_stream_close(int handle,
+		      void *stream);
+
 #endif /* DSP_BRIDGE_H */
