@@ -138,6 +138,7 @@
 #define STRM_OPEN		_IOWR(DB, DB_IOC(DB_STRM, 7), unsigned long)
 #define STRM_CLOSE		_IOW(DB, DB_IOC(DB_STRM, 1), unsigned long)
 #define STRM_GETINFO		_IOWR(DB, DB_IOC(DB_STRM, 4), unsigned long)
+#define STRM_ALLOCATEBUFFER	_IOWR(DB, DB_IOC(DB_STRM, 0), unsigned long)
 
 int dsp_open(void)
 {
@@ -999,4 +1000,39 @@ bool dsp_stream_close(int handle,
 	}
 
 	return DSP_SUCCEEDED(ioctl(handle, STRM_CLOSE, &stream));
+}
+
+struct stream_allocate_buffer {
+	void *stream;
+	unsigned int size;
+	unsigned char **buff;
+	unsigned int num_buf;
+};
+
+bool dsp_stream_allocate_buffers(int handle,
+				 void *stream,
+				 unsigned int size,
+				 unsigned char **buff,
+				 unsigned int num_buf)
+{
+	unsigned int i;
+	struct stream_info info;
+	if (!get_stream_info(handle, stream, &info, sizeof(struct stream_info)))
+		return false;
+
+	if (info.segment > 0) {
+		struct stream_allocate_buffer arg = {
+			.stream = stream,
+			.size = size,
+			.buff = buff,
+			.num_buf = num_buf,
+		};
+
+		return DSP_SUCCEEDED(ioctl(handle, STRM_ALLOCATEBUFFER, &arg));
+	}
+
+	for (i = 0; i < num_buf; i++)
+		buff[i] = (unsigned char *) malloc(size);
+
+	return true;
 }
