@@ -956,7 +956,7 @@ struct stream_info {
 	enum dsp_stream_mode mode;
 	unsigned int segment;
 	void *base;
-	void *info;
+	struct dsp_stream_info *info;
 };
 
 struct stream_get_info {
@@ -1018,6 +1018,19 @@ bool dsp_stream_idle(int handle,
 	};
 	return DSP_SUCCEEDED(ioctl(handle, STRM_IDLE, &arg));
 }
+
+bool dsp_stream_get_info(int handle,
+			 void *stream,
+			 struct dsp_stream_info *info,
+			 unsigned int size)
+{
+	struct stream_info stream_info = {
+		.info = info
+	};
+
+	return get_stream_info(handle, stream, &stream_info, size);
+}
+
 
 struct stream_allocate_buffer {
 	void *stream;

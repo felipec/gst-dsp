@@ -200,6 +200,22 @@ struct dsp_stream_attr_in {
 	unsigned int dma_priority;
 };
 
+enum dsp_stream_state {
+	STREAM_IDLE,
+	STREAM_READY,
+	STREAM_PENDING,
+	STREAM_DONE
+};
+
+struct dsp_stream_info {
+	unsigned long cb;
+	unsigned int num_bufs_allowed;
+	unsigned int num_bufs_in_stream;
+	unsigned long num_bytes;
+	void *sync_handle;
+	enum dsp_stream_state state;
+};
+
 enum dsp_node_state {
 	NODE_ALLOCATED,
 	NODE_CREATED,
@@ -389,6 +405,11 @@ bool dsp_stream_close(int handle,
 bool dsp_stream_idle(int handle,
 		     void *stream,
 		     bool flush);
+
+bool dsp_stream_get_info(int handle,
+			 void *stream,
+			 struct dsp_stream_info *info,
+			 unsigned int size);
 
 bool dsp_stream_allocate_buffers(int handle,
 				 void *stream,
