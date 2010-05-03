@@ -424,4 +424,9 @@ bool dsp_stream_allocate_buffers(int handle,
 				 unsigned char **buff,
 				 unsigned int num_buf);
 
+bool dsp_stream_free_buffers(int handle,
+			     void *stream,
+			     unsigned char **buff,
+			     unsigned int num_buf);
+
 #endif /* DSP_BRIDGE_H */
