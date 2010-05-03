@@ -139,6 +139,7 @@
 #define STRM_CLOSE		_IOW(DB, DB_IOC(DB_STRM, 1), unsigned long)
 #define STRM_GETINFO		_IOWR(DB, DB_IOC(DB_STRM, 4), unsigned long)
 #define STRM_ALLOCATEBUFFER	_IOWR(DB, DB_IOC(DB_STRM, 0), unsigned long)
+#define STRM_IDLE		_IOW(DB, DB_IOC(DB_STRM, 5), unsigned long)
 
 int dsp_open(void)
 {
@@ -1000,6 +1001,22 @@ bool dsp_stream_close(int handle,
 	}
 
 	return DSP_SUCCEEDED(ioctl(handle, STRM_CLOSE, &stream));
+}
+
+struct stream_idle {
+	void *stream;
+	bool flush;
+};
+
+bool dsp_stream_idle(int handle,
+		     void *stream,
+		     bool flush)
+{
+	struct stream_idle arg = {
+		.stream = stream,
+		.flush = flush,
+	};
+	return DSP_SUCCEEDED(ioctl(handle, STRM_IDLE, &arg));
 }
 
 struct stream_allocate_buffer {

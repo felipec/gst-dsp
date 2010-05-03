@@ -386,6 +386,10 @@ bool dsp_stream_open(int handle,
 bool dsp_stream_close(int handle,
 		      void *stream);
 
+bool dsp_stream_idle(int handle,
+		     void *stream,
+		     bool flush);
+
 bool dsp_stream_allocate_buffers(int handle,
 				 void *stream,
 				 unsigned int size,
