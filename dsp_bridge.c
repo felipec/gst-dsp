@@ -142,6 +142,7 @@
 #define STRM_IDLE		_IOW(DB, DB_IOC(DB_STRM, 5), unsigned long)
 #define STRM_RECLAIM		_IOWR(DB, DB_IOC(DB_STRM, 8), unsigned long)
 #define STRM_FREEBUFFER	_IOWR(DB, DB_IOC(DB_STRM, 2), unsigned long)
+#define STRM_ISSUE		_IOW(DB, DB_IOC(DB_STRM, 6), unsigned long)
 
 int dsp_open(void)
 {
@@ -1046,6 +1047,30 @@ bool dsp_stream_reclaim(int handle,
 	return DSP_SUCCEEDED(ioctl(handle, STRM_RECLAIM, &arg));
 }
 
+struct stream_issue {
+	void *stream;
+	unsigned char *buff;
+	unsigned long data_size;
+	unsigned long buff_size;
+	unsigned long flag;
+};
+
+bool dsp_stream_issue(int handle,
+		      void *stream,
+		      unsigned char *buff,
+		      unsigned long data_size,
+		      unsigned long buff_size,
+		      unsigned long flag)
+{
+	struct stream_issue arg = {
+		.stream = stream,
+		.buff = buff,
+		.data_size = data_size,
+		.buff_size = buff_size,
+		.flag = flag,
+	};
+	return DSP_SUCCEEDED(ioctl(handle, STRM_ISSUE, &arg));
+}
 
 bool dsp_stream_get_info(int handle,
 			 void *stream,

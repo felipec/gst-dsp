@@ -413,6 +413,13 @@ bool dsp_stream_reclaim(int handle,
 			unsigned long *buff_size,
 			unsigned long *args);
 
+bool dsp_stream_issue(int handle,
+		      void *stream,
+		      unsigned char *buff,
+		      unsigned long data_size,
+		      unsigned long buff_size,
+		      unsigned long arg);
+
 bool dsp_stream_get_info(int handle,
 			 void *stream,
 			 struct dsp_stream_info *info,
