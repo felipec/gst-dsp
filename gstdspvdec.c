@@ -884,6 +884,7 @@ create_node(GstDspBase *base)
 
 	if (!dsp_node_create(dsp_handle, node)) {
 		pr_err(self, "dsp node create failed");
+		dsp_node_free(dsp_handle, node);
 		return NULL;
 	}
 
