@@ -668,6 +668,8 @@ bool dsp_node_allocate(int handle,
 #ifdef ALLOCATE_SM
 	if (!allocate_segments(handle, proc_handle, node)) {
 		dsp_node_delete(handle, node);
+		free(node->heap);
+		free(node);
 		return false;
 	}
 #endif
