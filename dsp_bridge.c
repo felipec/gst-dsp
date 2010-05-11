@@ -40,6 +40,10 @@
 #include <sys/mman.h> /* for mmap */
 #endif
 
+#if DSP_API < 2
+#include <errno.h>
+#endif
+
 /*
  * Dspbridge ioctl numbering scheme
  *
@@ -254,7 +258,19 @@ bool dsp_wait_for_events(int handle,
 		.timeout = timeout,
 	};
 
+#if DSP_API >= 2
 	return DSP_SUCCEEDED(ioctl(handle, MGR_WAIT, &arg));
+#else
+	/*
+	 * Temporary hack since libc only saves errors -1 to -4095; 0x80008017
+	 * is not stored.
+	 */
+	int r;
+	r = ioctl(handle, MGR_WAIT, &arg);
+	if (r == (int)0x80008017)
+		errno = ETIME;
+	return DSP_SUCCEEDED(r);
+#endif
 }
 
 struct enum_node {

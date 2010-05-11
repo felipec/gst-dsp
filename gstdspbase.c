@@ -504,8 +504,13 @@ dsp_thread(gpointer data)
 		unsigned int index = 0;
 		pr_debug(self, "waiting for events");
 		if (!dsp_wait_for_events(self->dsp_handle, self->events, 3, &index, 1000)) {
-			pr_warning(self, "failed waiting for events");
-			continue;
+			if (errno == ETIME) {
+				pr_info(self, "timed out waiting for events");
+				continue;
+			}
+			pr_err(self, "failed waiting for events: %i", errno);
+			gstdsp_got_error(self, -1, "unable to get event");
+			break;
 		}
 
 		if (index == 0) {
