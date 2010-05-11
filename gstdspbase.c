@@ -319,7 +319,6 @@ output_loop(gpointer data)
 	}
 
 	if (G_UNLIKELY(self->skip_hack_2 > 0)) {
-		send_buffer(self, b, 1, 0);
 		self->skip_hack_2--;
 		goto leave;
 	}
@@ -344,7 +343,6 @@ output_loop(gpointer data)
 	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");
-		send_buffer(self, b, 1, 0);
 		g_mutex_lock(self->ts_mutex);
 		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
@@ -360,7 +358,6 @@ output_loop(gpointer data)
 	g_mutex_unlock(self->ts_mutex);
 
 	if (G_UNLIKELY(flush_buffer)) {
-		send_buffer(self, b, 1, 0);
 		g_mutex_lock(self->ts_mutex);
 		pr_debug(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
 			 GST_TIME_ARGS((self->ts_array[self->ts_out_pos])));
@@ -409,11 +406,9 @@ output_loop(gpointer data)
 		GST_BUFFER_SIZE(out_buf) = b->len;
 		gst_buffer_set_caps(out_buf, GST_PAD_CAPS(self->srcpad));
 
-		b->allocated_data = NULL;
-		dmm_buffer_allocate(b, self->output_buffer_size);
+		/* invalidate data to force reallocation */
+		b->data = b->allocated_data = NULL;
 	}
-
-	send_buffer(self, b, 1, 0);
 
 	if (G_UNLIKELY(self->skip_hack > 0)) {
 		self->skip_hack--;
@@ -453,6 +448,11 @@ leave:
 		pr_info(self, "got eos");
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		ret = GST_FLOW_UNEXPECTED;
+	}
+	else {
+		if (!b->data)
+			dmm_buffer_allocate(b, self->output_buffer_size);
+		send_buffer(self, b, 1, 0);
 	}
 
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
