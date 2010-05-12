@@ -110,6 +110,11 @@ struct jpegenc_args {
 	uint16_t max_app13_width;
 	uint16_t max_app13_height;
 	uint16_t scans;
+
+	/* SN_API >= 1 */
+	uint16_t convert;
+	uint16_t max_app5_width;
+	uint16_t max_app5_height;
 };
 
 #include "gstdspjpegenc.h"
@@ -137,6 +142,11 @@ get_jpegenc_args(GstDspVEnc *self)
 		.max_app13_width = 0,
 		.max_app13_height = 0,
 		.scans = 0,
+
+		/* SN_API >= 1 */
+		.convert = 0,
+		.max_app5_width = 0,
+		.max_app5_height = 0,
 	};
 
 	struct foo_data *cb_data;
@@ -475,6 +485,8 @@ struct jpegenc_dyn_params {
 	uint32_t capture_width;
 	uint32_t gen_header;
 	uint32_t quality;
+
+	/* SN_API == 0 */
 	uint32_t capture_height;
 	uint32_t dri_interval;
 	uint32_t huffman_table;
@@ -497,8 +509,10 @@ jpegenc_send_params(GstDspBase *base)
 	params->width = self->width;
 	params->height = self->height;
 	params->capture_width = self->width;
-	params->capture_height = self->height;
 	params->quality = self->quality;
+
+	/* SN_API == 0 */
+	params->capture_height = self->height;
 
 	gstdsp_send_alg_ctrl(base, base->node, b);
 }
