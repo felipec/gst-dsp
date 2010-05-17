@@ -548,11 +548,8 @@ wmvdec_send_params(GstDspBase *base,
 	params = b->data;
 	params->size = (int32_t) sizeof(*params);
 	params->stream_format = self->wmv_is_vc1 ? 1 : 2;
-	dmm_buffer_clean(b, sizeof(*params));
 
-	base->alg_ctrl = b;
-
-	dsp_send_message(base->dsp_handle, node, 0x0400, 3, (uint32_t) b->map);
+	gstdsp_send_alg_ctrl(base, node, b);
 }
 
 static inline void

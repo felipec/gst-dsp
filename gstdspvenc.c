@@ -485,11 +485,8 @@ jpegenc_send_params(GstDspBase *base)
 	params->capture_width = self->width;
 	params->capture_height = self->height;
 	params->quality = self->quality;
-	dmm_buffer_clean(b, sizeof(*params));
 
-	base->alg_ctrl = b;
-
-	dsp_send_message(base->dsp_handle, base->node, 0x0400, 3, (uint32_t) b->map);
+	gstdsp_send_alg_ctrl(base, base->node, b);
 }
 
 struct h264venc_in_stream_params {

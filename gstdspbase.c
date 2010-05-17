@@ -844,6 +844,17 @@ send_buffer(GstDspBase *self,
 	return true;
 }
 
+void
+gstdsp_send_alg_ctrl(GstDspBase *self,
+		     dsp_node_t *node,
+		     dmm_buffer_t *b)
+{
+	self->alg_ctrl = b;
+	dmm_buffer_clean(b, b->size);
+	dsp_send_message(self->dsp_handle, node,
+			 0x0400, 3, (uint32_t) b->map);
+}
+
 static GstStateChangeReturn
 change_state(GstElement *element,
 	     GstStateChange transition)
