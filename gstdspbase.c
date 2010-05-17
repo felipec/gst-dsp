@@ -164,7 +164,7 @@ got_message(GstDspBase *self,
 			du_port_t *p = self->ports[id];
 			dmm_buffer_t *cur = NULL;
 			dsp_comm_t *msg_data;
-			guint i;
+			unsigned i;
 
 			pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 

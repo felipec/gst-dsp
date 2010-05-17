@@ -738,7 +738,6 @@ setup_h264params(GstDspBase *base)
 
 	for (i = 0; i < base->ports[0]->num_buffers; i++)
 		base->ports[0]->params[i] = setup_h264params_in(base);
-
 	base->ports[0]->send_cb = h264venc_in_send_cb;
 
 	for (i = 0; i < base->ports[1]->num_buffers; i++) {
