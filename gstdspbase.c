@@ -739,6 +739,11 @@ dsp_stop(GstDspBase *self)
 		self->events[i] = NULL;
 	}
 
+	if (self->alg_ctrl) {
+		dmm_buffer_free(self->alg_ctrl);
+		self->alg_ctrl = NULL;
+	}
+
 	if (self->dsp_error)
 		goto leave;
 
