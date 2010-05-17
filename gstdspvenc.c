@@ -725,8 +725,6 @@ setup_h264params_in(GstDspBase *base)
 	in_param->max_mv_per_mb = 4;
 	in_param->intra_4x4_enable_idc = 2;
 
-	dmm_buffer_clean(tmp, sizeof(*in_param));
-
 	return tmp;
 }
 
@@ -859,8 +857,6 @@ setup_mp4param_in(GstDspBase *base)
 		in_param->resync_interval = 1024;
 		in_param->hec_interval = 3;
 	}
-
-	dmm_buffer_clean(tmp, sizeof(*in_param));
 
 	return tmp;
 }
