@@ -177,6 +177,8 @@ got_message(GstDspBase *self,
 			if (!cur)
 				g_error("buffer mismatch");
 
+			dmm_buffer_invalidate(cur, cur->size);
+
 			msg_data = cur->data;
 			b = (void *) msg_data->user_data;
 			b->len = msg_data->buffer_len;
@@ -184,8 +186,12 @@ got_message(GstDspBase *self,
 			if (G_UNLIKELY(b->len > b->size))
 				g_error("wrong buffer size");
 
-			if (p->recv_cb)
-				p->recv_cb(self, p, (void *) msg_data->param_virt, b);
+			if (p->recv_cb) {
+				dmm_buffer_t *param = (void *) msg_data->param_virt;
+				if (id == 1 && param)
+					dmm_buffer_invalidate(param, param->size);
+				p->recv_cb(self, p, param, b);
+			}
 
 			if (id == 0) {
 				if (b->user_data) {
@@ -847,7 +853,7 @@ send_buffer(GstDspBase *self,
 		msg_data->param_virt = (uint32_t) param;
 	}
 
-	dmm_buffer_flush(tmp, sizeof(*msg_data));
+	dmm_buffer_clean(tmp, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
 			 0x0600 | id, (uint32_t) tmp->map, 0);
