@@ -165,6 +165,7 @@ got_message(GstDspBase *self,
 			du_port_t *p = self->ports[id];
 			dmm_buffer_t *cur = NULL;
 			dsp_comm_t *msg_data;
+			dmm_buffer_t *param;
 			unsigned i;
 
 			pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
@@ -179,7 +180,7 @@ got_message(GstDspBase *self,
 			if (!cur)
 				g_error("buffer mismatch");
 
-			dmm_buffer_invalidate(cur, cur->size);
+			dmm_buffer_end(cur, cur->size);
 
 			msg_data = cur->data;
 			b = (void *) msg_data->user_data;
@@ -188,12 +189,12 @@ got_message(GstDspBase *self,
 			if (G_UNLIKELY(b->len > b->size))
 				g_error("wrong buffer size");
 
-			if (p->recv_cb) {
-				dmm_buffer_t *param = (void *) msg_data->param_virt;
-				if (id == 1 && param)
-					dmm_buffer_invalidate(param, param->size);
+			param = (void *) msg_data->param_virt;
+			if (param)
+				dmm_buffer_end(param, param->size);
+
+			if (p->recv_cb)
 				p->recv_cb(self, p, param, b);
-			}
 
 			if (id == 0) {
 				if (b->user_data) {
@@ -831,14 +832,11 @@ send_buffer(GstDspBase *self,
 
 	msg_data = tmp->data;
 
-	if (port->send_cb) {
+	if (port->send_cb)
 		port->send_cb(self, port, param, buffer);
-		if (id == 0 && param)
-			dmm_buffer_clean(param, param->size);
-	}
-	if (port->recv_cb)
-		if (id == 1 && param)
-			dmm_buffer_invalidate(param, param->size);
+
+	if (param)
+		dmm_buffer_begin(param, param->size);
 
 	memset(msg_data, 0, sizeof(*msg_data));
 
@@ -855,7 +853,7 @@ send_buffer(GstDspBase *self,
 		msg_data->param_virt = (uint32_t) param;
 	}
 
-	dmm_buffer_clean(tmp, sizeof(*msg_data));
+	dmm_buffer_begin(tmp, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
 			 0x0600 | id, (uint32_t) tmp->map, 0);
@@ -869,7 +867,7 @@ gstdsp_send_alg_ctrl(GstDspBase *self,
 		     dmm_buffer_t *b)
 {
 	self->alg_ctrl = b;
-	dmm_buffer_clean(b, b->size);
+	dmm_buffer_begin(b, b->size);
 	dsp_send_message(self->dsp_handle, node,
 			 0x0400, 3, (uint32_t) b->map);
 }

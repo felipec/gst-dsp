@@ -108,6 +108,26 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 }
 
 static inline void
+dmm_buffer_begin(dmm_buffer_t *b,
+		 size_t len)
+{
+	pr_debug(NULL, "%p", b);
+	if (b->dir == DMA_FROM_DEVICE)
+		dsp_invalidate(b->handle, b->proc, b->data, len);
+	else
+		dsp_flush(b->handle, b->proc, b->data, len, 1);
+}
+
+static inline void
+dmm_buffer_end(dmm_buffer_t *b,
+	       size_t len)
+{
+	pr_debug(NULL, "%p", b);
+	if (b->dir != DMA_TO_DEVICE)
+		dsp_invalidate(b->handle, b->proc, b->data, len);
+}
+
+static inline void
 dmm_buffer_clean(dmm_buffer_t *b,
 		 size_t len)
 {
