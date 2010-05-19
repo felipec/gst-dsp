@@ -9,11 +9,9 @@ override CFLAGS += -D_GNU_SOURCE
 GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10)
 GST_LIBS := $(shell pkg-config --libs gstreamer-0.10)
 
-ifdef NEW
-  override CFLAGS += -DDSP_API=1
-else
-  override CFLAGS += -DDSP_API=0
-endif
+DSP_API := 1
+
+override CFLAGS += -DDSP_API=$(DSP_API)
 
 all:
 
