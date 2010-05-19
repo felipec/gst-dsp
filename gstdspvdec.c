@@ -230,11 +230,9 @@ setup_mp4vparams_in(GstDspBase *base)
 	struct mp4vdec_in_params *in_param;
 	dmm_buffer_t *tmp;
 
-	tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-	dmm_buffer_allocate(tmp, sizeof(*in_param));
+	tmp = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*in_param));
 
 	in_param = tmp->data;
-	memset(in_param, 0, sizeof(*in_param));
 	in_param->performance_mode = 2;
 
 	return tmp;
@@ -252,13 +250,8 @@ setup_mp4vdec_params(GstDspBase *base)
 		p->params[i] = setup_mp4vparams_in(base);
 
 	p = base->ports[1];
-	for (i = 0; i < p->num_buffers; i++) {
-		dmm_buffer_t *tmp;
-		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-		dmm_buffer_allocate(tmp, sizeof(*out_param));
-		memset(tmp->data, 0, sizeof(*out_param));
-		p->params[i] = tmp;
-	}
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*out_param));
 	p->send_cb = mp4vdec_out_send_cb;
 	p->recv_cb = mp4vdec_out_recv_cb;
 }
@@ -557,11 +550,9 @@ wmvdec_send_params(GstDspBase *base,
 	dmm_buffer_t *b;
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
-	b = dmm_buffer_new(base->dsp_handle, base->proc);
-	dmm_buffer_allocate(b, sizeof(*params));
+	b = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*params));
 
 	params = b->data;
-	memset(params, 0, sizeof(*params));
 	params->size = (int32_t) sizeof(*params);
 	params->stream_format = self->wmv_is_vc1 ? 1 : 2;
 	dmm_buffer_clean(b, sizeof(*params));
@@ -580,23 +571,13 @@ setup_wmvparams(GstDspBase *base)
 	du_port_t *p;
 
 	p = base->ports[0];
-	for (i = 0; i < p->num_buffers; i++) {
-		dmm_buffer_t *tmp;
-		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-		dmm_buffer_allocate(tmp, sizeof(*in_param));
-		memset(tmp->data, 0, sizeof(*in_param));
-		p->params[i] = tmp;
-	}
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*in_param));
 	p->send_cb = wmvdec_in_send_cb;
 
 	p = base->ports[1];
-	for (i = 0; i < p->num_buffers; i++) {
-		dmm_buffer_t *tmp;
-		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-		dmm_buffer_allocate(tmp, sizeof(*out_param));
-		memset(tmp->data, 0, sizeof(*out_param));
-		p->params[i] = tmp;
-	}
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*out_param));
 	p->send_cb = wmvdec_out_send_cb;
 	p->recv_cb = wmvdec_out_recv_cb;
 }
@@ -827,13 +808,8 @@ setup_h264params(GstDspBase *base)
 	p->send_cb = h264dec_in_send_cb;
 
 	p = base->ports[1];
-	for (i = 0; i < p->num_buffers; i++) {
-		dmm_buffer_t *tmp;
-		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-		dmm_buffer_allocate(tmp, sizeof(*out_param));
-		memset(tmp->data, 0, sizeof(*out_param));
-		p->params[i] = tmp;
-	}
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*out_param));
 	p->send_cb = h264dec_out_send_cb;
 	p->recv_cb = h264dec_out_recv_cb;
 }

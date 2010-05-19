@@ -27,6 +27,7 @@
 
 #include <stdlib.h> /* for calloc, free */
 #include <unistd.h> /* for getpagesize */
+#include <string.h> /* for memset */
 
 #include "dsp_bridge.h"
 #include "log.h"
@@ -173,6 +174,18 @@ dmm_buffer_use(dmm_buffer_t *b,
 	b->data = data;
 	dmm_buffer_reserve(b, size);
 	dmm_buffer_map(b);
+}
+
+static inline dmm_buffer_t *
+dmm_buffer_calloc(int handle,
+		  void *proc,
+		  size_t size)
+{
+	dmm_buffer_t *tmp;
+	tmp = dmm_buffer_new(handle, proc);
+	dmm_buffer_allocate(tmp, size);
+	memset(tmp->data, 0, size);
+	return tmp;
 }
 
 #endif /* DMM_BUFFER_H */
