@@ -479,18 +479,14 @@ jpegenc_send_params(GstDspBase *base)
 	dmm_buffer_allocate(b, sizeof(*params));
 
 	params = b->data;
-	params->num_au = 0;
+	memset(params, 0, sizeof(*params));
 	params->size = sizeof(*params);
 	params->color_format = 4;
 	params->width = self->width;
 	params->height = self->height;
 	params->capture_width = self->width;
 	params->capture_height = self->height;
-	params->gen_header = 0;
 	params->quality = self->quality;
-	params->dri_interval = 0;
-	params->huffman_table = 0;
-	params->quant_table = 0;
 	dmm_buffer_clean(b, sizeof(*params));
 
 	base->alg_ctrl = b;
@@ -712,6 +708,7 @@ setup_h264params_in(GstDspBase *base)
 	dmm_buffer_allocate(tmp, sizeof(*in_param));
 
 	in_param = tmp->data;
+	memset(in_param, 0, sizeof(*in_param));
 	in_param->params_size = sizeof(*in_param);
 	in_param->input_height = self->height;
 	in_param->input_width = self->width;
@@ -719,56 +716,14 @@ setup_h264params_in(GstDspBase *base)
 	in_param->target_framerate = self->framerate * 1000;
 	in_param->target_bitrate = self->bitrate;
 	in_param->intra_frame_interval = self->framerate;
-	in_param->generate_header = 0;
-	in_param->capture_width = 0;
-	in_param->force_i_frame = 0;
 
 	in_param->qp_intra = 0x1c;
 	in_param->qp_inter = 0x1c;
 	in_param->qp_max = 0x33;
-	in_param->qp_min = 0;
-	in_param->lf_disable_idc = 0;
-	in_param->quarter_pel_disable = 0;
-	in_param->air_mb_period = 0;
 	in_param->max_mbs_per_slice = 3620;
 	in_param->max_bytes_per_slice = 327680;
-	in_param->slice_refresh_row_start_number = 0;
-	in_param->slice_refresh_row_number = 0;
-	in_param->filter_offset_a = 0;
-	in_param->filter_offset_b = 0;
-	in_param->log2MaxFNumMinus4 = 0;
-	in_param->chroma_qpi_index_offset = 0;
-	in_param->constrained_intra_pred_enable = 0;
-	in_param->pic_order_count_type = 0;
 	in_param->max_mv_per_mb = 4;
 	in_param->intra_4x4_enable_idc = 2;
-	in_param->mv_data_enable = 0;
-	in_param->hier_coding_enable = 0;
-	in_param->stream_format = 0; /* byte stream */
-	in_param->intra_refresh_method = 0;
-	in_param->perceptual_quant = 0;
-	in_param->scene_change_det = 0;
-
-	in_param->nal_callback_func = NULL;
-	in_param->context = NULL;
-	in_param->num_slice_aso = 0;
-	{
-		int i;
-		for (i = 0; i < 8; i++)
-			in_param->aso_slice_order[i] = 0; /* MAXNUMSLCGPS = 8 */
-	}
-	in_param->num_slice_groups = 0;
-	in_param->slice_group_map_type = 0;
-	in_param->slice_group_change_direction_flag = 0;
-	in_param->slice_group_change_rate = 0;
-	in_param->slice_group_change_cycle = 0;
-	{
-		int i;
-		for (i = 0; i < 8; i++)
-			in_param->slice_group_params[i] = 0; /* MAXNUMSLCGPS = 8 */
-	}
-
-	in_param->frame_index = 0;
 
 	dmm_buffer_clean(tmp, sizeof(*in_param));
 
@@ -790,6 +745,7 @@ setup_h264params(GstDspBase *base)
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		memset(tmp->data, 0, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
 	base->ports[1]->send_cb = h264venc_out_send_cb;
@@ -885,37 +841,24 @@ setup_mp4param_in(GstDspBase *base)
 	dmm_buffer_allocate(tmp, sizeof(*in_param));
 
 	in_param = tmp->data;
-	in_param->frame_index = 0;
+	memset(in_param, 0, sizeof(*in_param));
 	in_param->framerate = self->framerate;
 	in_param->bitrate = self->bitrate;
 	in_param->i_frame_interval = self->framerate;
-	in_param->generate_header = 0;
-	in_param->force_i_frame = 0;
 	in_param->air_rate = 10;
-	in_param->mir_rate = 0;
 	in_param->qp_intra = 8;
 	in_param->f_code = 6;
 	in_param->half_pel = 1;
-	in_param->mv = 0;
-	in_param->mv_data_enable = 0;
-	in_param->resync_data_enable = 0;
 	in_param->qp_inter = 8;
-	in_param->last_frame = 0;
-	in_param->width = 0;
 
 	if (base->alg == GSTDSP_MP4VENC)
 		in_param->ac_pred = 1;
-	else
-		in_param->ac_pred = 0;
 
 	if (self->mode == 0) {
-		in_param->resync_interval = 0;
-		in_param->hec_interval = 0;
 		in_param->use_umv = 1;
 	} else {
 		in_param->resync_interval = 1024;
 		in_param->hec_interval = 3;
-		in_param->use_umv = 0;
 	}
 
 	dmm_buffer_clean(tmp, sizeof(*in_param));
@@ -937,6 +880,7 @@ setup_mp4params(GstDspBase *base)
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		memset(tmp->data, 0, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
 	base->ports[1]->send_cb = mp4venc_out_send_cb;

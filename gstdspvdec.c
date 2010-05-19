@@ -478,11 +478,8 @@ wmvdec_send_params(GstDspBase *base,
 	dmm_buffer_allocate(b, sizeof(*params));
 
 	params = b->data;
+	memset(params, 0, sizeof(*params));
 	params->size = (int32_t) sizeof(*params);
-	params->decode_header = 0;
-	params->display_width = 0;
-	params->frame_skip_mode = 0;
-	params->pp_type = 0;
 	params->stream_format = self->wmv_is_vc1 ? 1 : 2;
 	dmm_buffer_clean(b, sizeof(*params));
 
@@ -502,6 +499,7 @@ setup_wmvparams(GstDspBase *base)
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*in_param));
+		memset(tmp->data, 0, sizeof(*in_param));
 		base->ports[0]->params[i] = tmp;
 	}
 	base->ports[0]->send_cb = wmvdec_in_send_cb;
@@ -510,6 +508,7 @@ setup_wmvparams(GstDspBase *base)
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		memset(tmp->data, 0, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
 	base->ports[1]->send_cb = wmvdec_out_send_cb;
@@ -748,6 +747,7 @@ setup_h264params(GstDspBase *base)
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*in_param));
+		memset(tmp->data, 0, sizeof(*in_param));
 		base->ports[0]->params[i] = tmp;
 	}
 	base->ports[0]->send_cb = h264dec_in_send_cb;
@@ -756,6 +756,7 @@ setup_h264params(GstDspBase *base)
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
+		memset(tmp->data, 0, sizeof(*out_param));
 		base->ports[1]->params[i] = tmp;
 	}
 	base->ports[1]->send_cb = h264dec_out_send_cb;
