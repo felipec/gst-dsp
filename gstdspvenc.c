@@ -40,9 +40,11 @@ enum {
     ARG_BITRATE,
     ARG_MODE,
     ARG_KEYFRAME_INTERVAL,
+    ARG_MAX_BITRATE,
 };
 
 #define DEFAULT_BITRATE 0
+#define DEFAULT_MAX_BITRATE 0
 #define DEFAULT_MODE 0
 #define DEFAULT_KEYFRAME_INTERVAL 1
 
@@ -303,7 +305,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.reserved = 0,
 		.width = self->width,
 		.height = self->height,
-		.bitrate = self->bitrate,
+		.bitrate = self->max_bitrate ? self->max_bitrate : self->bitrate,
 		.bitstream_buf_size = base->output_buffer_size,
 		.intra_frame_period = self->framerate,
 		.framerate = self->framerate * 1000,
@@ -1099,6 +1101,9 @@ set_property(GObject *obj,
 	case ARG_KEYFRAME_INTERVAL:
 		g_atomic_int_set(&self->keyframe_interval, g_value_get_int(value));
 		break;
+	case ARG_MAX_BITRATE:
+		g_atomic_int_set(&self->max_bitrate, g_value_get_uint(value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;
@@ -1124,6 +1129,9 @@ get_property(GObject *obj,
 		break;
 	case ARG_KEYFRAME_INTERVAL:
 		g_value_set_int(value, g_atomic_int_get(&self->keyframe_interval));
+		break;
+	case ARG_MAX_BITRATE:
+		g_value_set_uint(value, g_atomic_int_get(&self->max_bitrate));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
@@ -1208,6 +1216,12 @@ class_init(gpointer g_class,
 					g_param_spec_int("keyframe-interval", "Keyframe interval",
 							 "Generate keyframes at every specified intervals (seconds)",
 							 0, G_MAXINT, DEFAULT_KEYFRAME_INTERVAL, G_PARAM_READWRITE));
+
+	g_object_class_install_property(gobject_class, ARG_MAX_BITRATE,
+					g_param_spec_uint("max-bitrate", "Maximum Bit-rate",
+							  "Maximum Encoding bit-rate (0 for auto)",
+							  0, G_MAXUINT, DEFAULT_MAX_BITRATE,
+							  G_PARAM_READWRITE));
 
 	gobject_class->finalize = finalize;
 

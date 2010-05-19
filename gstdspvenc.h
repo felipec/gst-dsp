@@ -53,6 +53,7 @@ enum {
 struct GstDspVEnc {
 	GstDspBase element;
 	gint width, height;
+	gint max_bitrate;
 	gint bitrate;
 	gint framerate;
 	gint quality;
