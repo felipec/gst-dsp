@@ -10,8 +10,9 @@ GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10)
 GST_LIBS := $(shell pkg-config --libs gstreamer-0.10)
 
 DSP_API := 1
+SN_API := 1
 
-override CFLAGS += -DDSP_API=$(DSP_API)
+override CFLAGS += -DDSP_API=$(DSP_API) -DSN_API=$(SN_API)
 
 all:
 
