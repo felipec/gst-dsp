@@ -35,7 +35,7 @@
 
 typedef struct {
 	int handle;
-	dsp_node_t *node;
+	void *proc;
 	void *data;
 	void *allocated_data;
 	size_t size;
@@ -51,14 +51,14 @@ typedef struct {
 
 static inline dmm_buffer_t *
 dmm_buffer_new(int handle,
-	       dsp_node_t *node)
+	       void *proc)
 {
 	dmm_buffer_t *b;
 	b = calloc(1, sizeof(*b));
 
 	pr_debug(NULL, "%p", b);
 	b->handle = handle;
-	b->node = node;
+	b->proc = proc;
 	b->alignment = 128;
 
 	return b;
@@ -71,9 +71,9 @@ dmm_buffer_free(dmm_buffer_t *b)
 	if (!b)
 		return;
 	if (b->map)
-		dsp_unmap(b->handle, b->node, b->map);
+		dsp_unmap(b->handle, b->proc, b->map);
 	if (b->reserve)
-		dsp_unreserve(b->handle, b->node, b->reserve);
+		dsp_unreserve(b->handle, b->proc, b->reserve);
 	free(b->allocated_data);
 	free(b);
 }
@@ -83,8 +83,8 @@ dmm_buffer_map(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
 	if (b->map)
-		dsp_unmap(b->handle, b->node, b->map);
-	dsp_map(b->handle, b->node, b->data, b->size, b->reserve, &b->map, 0);
+		dsp_unmap(b->handle, b->proc, b->map);
+	dsp_map(b->handle, b->proc, b->data, b->size, b->reserve, &b->map, 0);
 }
 
 static inline void
@@ -93,7 +93,7 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 	pr_debug(NULL, "%p", b);
 	if (!b->map)
 		return;
-	dsp_unmap(b->handle, b->node, b->map);
+	dsp_unmap(b->handle, b->proc, b->map);
 	b->map = NULL;
 }
 
@@ -104,7 +104,7 @@ dmm_buffer_clean(dmm_buffer_t *b,
 	pr_debug(NULL, "%p", b);
 	if (G_UNLIKELY(len > b->size))
 		g_error("wrong cache flush");
-	dsp_flush(b->handle, b->node, b->data, len, 1);
+	dsp_flush(b->handle, b->proc, b->data, len, 1);
 }
 
 static inline void
@@ -114,7 +114,7 @@ dmm_buffer_invalidate(dmm_buffer_t *b,
 	pr_debug(NULL, "%p", b);
 	if (G_UNLIKELY(len > b->size))
 		g_error("wrong cache flush");
-	dsp_invalidate(b->handle, b->node, b->data, len);
+	dsp_invalidate(b->handle, b->proc, b->data, len);
 }
 
 static inline void
@@ -124,7 +124,7 @@ dmm_buffer_flush(dmm_buffer_t *b,
 	pr_debug(NULL, "%p", b);
 	if (G_UNLIKELY(len > b->size))
 		g_error("wrong cache flush");
-	dsp_flush(b->handle, b->node, b->data, len, 0);
+	dsp_flush(b->handle, b->proc, b->data, len, 0);
 }
 
 static inline void
@@ -137,10 +137,10 @@ dmm_buffer_reserve(dmm_buffer_t *b,
 	if (b->reserve) {
 		if (ROUND_UP(size, page_size) <= ROUND_UP(b->size, page_size))
 			goto leave;
-		dsp_unreserve(b->handle, b->node, b->reserve);
+		dsp_unreserve(b->handle, b->proc, b->reserve);
 	}
 	to_reserve = ROUND_UP(size, page_size) + page_size;
-	dsp_reserve(b->handle, b->node, to_reserve, &b->reserve);
+	dsp_reserve(b->handle, b->proc, to_reserve, &b->reserve);
 leave:
 	b->size = size;
 }
