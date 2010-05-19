@@ -224,34 +224,27 @@ mp4vdec_out_recv_cb(GstDspBase *base,
 		param->error_code, param->frame_index, param->frame_type);
 }
 
-static inline dmm_buffer_t *
-setup_mp4vparams_in(GstDspBase *base)
+static void
+setup_mp4vparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 {
 	struct mp4vdec_in_params *in_param;
-	dmm_buffer_t *tmp;
-
-	tmp = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*in_param));
 
 	in_param = tmp->data;
 	in_param->performance_mode = 2;
-
-	return tmp;
 }
 
 static inline void
 setup_mp4vdec_params(GstDspBase *base)
 {
+	struct mp4vdec_in_params *in_param;
 	struct mp4vdec_out_params *out_param;
-	unsigned i;
 	du_port_t *p;
 
 	p = base->ports[0];
-	for (i = 0; i < p->num_buffers; i++)
-		p->params[i] = setup_mp4vparams_in(base);
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_mp4vparams_in);
 
 	p = base->ports[1];
-	for (i = 0; i < p->num_buffers; i++)
-		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*out_param));
+	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 	p->send_cb = mp4vdec_out_send_cb;
 	p->recv_cb = mp4vdec_out_recv_cb;
 }
@@ -567,17 +560,14 @@ setup_wmvparams(GstDspBase *base)
 {
 	struct wmvdec_in_params *in_param;
 	struct wmvdec_out_params *out_param;
-	unsigned i;
 	du_port_t *p;
 
 	p = base->ports[0];
-	for (i = 0; i < p->num_buffers; i++)
-		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*in_param));
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), NULL);
 	p->send_cb = wmvdec_in_send_cb;
 
 	p = base->ports[1];
-	for (i = 0; i < p->num_buffers; i++)
-		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*out_param));
+	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 	p->send_cb = wmvdec_out_send_cb;
 	p->recv_cb = wmvdec_out_recv_cb;
 }
@@ -801,15 +791,13 @@ static inline void
 setup_h264params(GstDspBase *base)
 {
 	struct h264dec_out_stream_params *out_param;
-	unsigned i;
 	du_port_t *p;
 
 	p = base->ports[0];
 	p->send_cb = h264dec_in_send_cb;
 
 	p = base->ports[1];
-	for (i = 0; i < p->num_buffers; i++)
-		p->params[i] = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*out_param));
+	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 	p->send_cb = h264dec_out_send_cb;
 	p->recv_cb = h264dec_out_recv_cb;
 }

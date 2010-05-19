@@ -114,6 +114,24 @@ gboolean gstdsp_send_codec_data(GstDspBase *self, GstBuffer *buf);
 void gstdsp_got_error(GstDspBase *self, guint id, const char *message);
 void gstdsp_post_error(GstDspBase *self, const char *message);
 
+typedef void (*gstdsp_setup_params_func)(GstDspBase *base, dmm_buffer_t *b);
+
+static inline void gstdsp_port_setup_params(GstDspBase *self,
+					    du_port_t *p,
+					    size_t size,
+					    gstdsp_setup_params_func func)
+{
+	unsigned i;
+	for (i = 0; i < p->num_buffers; i++) {
+		dmm_buffer_t *b;
+		b = dmm_buffer_calloc(self->dsp_handle,
+				      self->proc, size);
+		if (func)
+			func(self, b);
+		p->params[i] = b;
+	}
+}
+
 G_END_DECLS
 
 #endif /* GST_DSP_BASE_H */
