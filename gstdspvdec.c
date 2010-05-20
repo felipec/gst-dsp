@@ -198,17 +198,6 @@ struct mp4vdec_out_params {
 };
 
 static void
-mp4vdec_out_send_cb(GstDspBase *base,
-		   du_port_t *port,
-		   dmm_buffer_t *p,
-		   dmm_buffer_t *b)
-{
-	struct mp4vdec_out_params *param;
-	param = p->data;
-	dmm_buffer_invalidate(p, sizeof(*param));
-}
-
-static void
 mp4vdec_out_recv_cb(GstDspBase *base,
 		   du_port_t *port,
 		   dmm_buffer_t *p,
@@ -245,7 +234,6 @@ setup_mp4vdec_params(GstDspBase *base)
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->send_cb = mp4vdec_out_send_cb;
 	p->recv_cb = mp4vdec_out_recv_cb;
 }
 
@@ -502,18 +490,6 @@ wmvdec_in_send_cb(GstDspBase *base,
 		wmvdec_prefix_vc1(self, b);
 
 	param->buf_count = g_atomic_int_exchange_and_add(&self->frame_index, 1);
-	dmm_buffer_clean(p, sizeof(*param));
-}
-
-static void
-wmvdec_out_send_cb(GstDspBase *base,
-		   du_port_t *port,
-		   dmm_buffer_t *p,
-		   dmm_buffer_t *b)
-{
-	struct wmvdec_out_params *param;
-	param = p->data;
-	dmm_buffer_invalidate(p, sizeof(*param));
 }
 
 static void
@@ -565,7 +541,6 @@ setup_wmvparams(GstDspBase *base)
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->send_cb = wmvdec_out_send_cb;
 	p->recv_cb = wmvdec_out_recv_cb;
 }
 
@@ -739,17 +714,6 @@ struct h264dec_out_stream_params {
 };
 
 static void
-h264dec_out_send_cb(GstDspBase *base,
-		    du_port_t *port,
-		    dmm_buffer_t *p,
-		    dmm_buffer_t *b)
-{
-	struct h264dec_out_stream_params *param;
-	param = p->data;
-	dmm_buffer_invalidate(p, sizeof(*param));
-}
-
-static void
 h264dec_out_recv_cb(GstDspBase *base,
 		    du_port_t *port,
 		    dmm_buffer_t *p,
@@ -795,7 +759,6 @@ setup_h264params(GstDspBase *base)
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->send_cb = h264dec_out_send_cb;
 	p->recv_cb = h264dec_out_recv_cb;
 }
 

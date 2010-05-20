@@ -823,8 +823,14 @@ send_buffer(GstDspBase *self,
 
 	msg_data = tmp->data;
 
-	if (port->send_cb)
+	if (port->send_cb) {
 		port->send_cb(self, port, param, buffer);
+		if (id == 0 && param)
+			dmm_buffer_clean(param, param->size);
+	}
+	if (port->recv_cb)
+		if (id == 1 && param)
+			dmm_buffer_invalidate(param, param->size);
 
 	memset(msg_data, 0, sizeof(*msg_data));
 
