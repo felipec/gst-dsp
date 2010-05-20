@@ -34,6 +34,12 @@
 
 #define ROUND_UP(num, scale) (((num) + ((scale) - 1)) & ~((scale) - 1))
 
+enum dma_data_direction {
+	DMA_BIDIRECTIONAL,
+	DMA_TO_DEVICE,
+	DMA_FROM_DEVICE,
+};
+
 typedef struct {
 	int handle;
 	void *proc;
@@ -48,11 +54,13 @@ typedef struct {
 	void *user_data;
 	bool used;
 	bool keyframe;
+	int dir;
 } dmm_buffer_t;
 
 static inline dmm_buffer_t *
 dmm_buffer_new(int handle,
-	       void *proc)
+	       void *proc,
+	       int dir)
 {
 	dmm_buffer_t *b;
 	b = calloc(1, sizeof(*b));
@@ -61,6 +69,7 @@ dmm_buffer_new(int handle,
 	b->handle = handle;
 	b->proc = proc;
 	b->alignment = 128;
+	b->dir = dir;
 
 	return b;
 }
@@ -179,10 +188,11 @@ dmm_buffer_use(dmm_buffer_t *b,
 static inline dmm_buffer_t *
 dmm_buffer_calloc(int handle,
 		  void *proc,
-		  size_t size)
+		  size_t size,
+		  int dir)
 {
 	dmm_buffer_t *tmp;
-	tmp = dmm_buffer_new(handle, proc);
+	tmp = dmm_buffer_new(handle, proc, dir);
 	dmm_buffer_allocate(tmp, size);
 	memset(tmp->data, 0, size);
 	return tmp;

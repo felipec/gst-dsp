@@ -43,7 +43,8 @@ map_buffer(GstDspBase *self,
 
 du_port_t *
 du_port_new(guint index,
-	    guint num_buffers)
+	    guint num_buffers,
+	    int dir)
 {
 	du_port_t *p;
 	p = calloc(1, sizeof(*p));
@@ -54,6 +55,7 @@ du_port_new(guint index,
 	p->comm = calloc(num_buffers, sizeof(**p->comm));
 	p->buffers = calloc(num_buffers, sizeof(**p->comm));
 	p->params = calloc(num_buffers, sizeof(**p->params));
+	p->dir = dir;
 
 	return p;
 }
@@ -241,14 +243,14 @@ setup_buffers(GstDspBase *self)
 
 	p = self->ports[0];
 	for (i = 0; i < p->num_buffers; i++) {
-		p->buffers[i] = b = dmm_buffer_new(self->dsp_handle, self->proc);
+		p->buffers[i] = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
 		b->alignment = 0;
 		async_queue_push(p->queue, b);
 	}
 
 	p = self->ports[1];
 	for (i = 0; i < p->num_buffers; i++) {
-		b = dmm_buffer_new(self->dsp_handle, self->proc);
+		b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
 		p->buffers[i] = b;
 
 		if (self->use_pad_alloc) {
@@ -588,7 +590,7 @@ dsp_init(GstDspBase *self)
 		du_port_t *p = self->ports[i];
 		guint j;
 		for (j = 0; j < p->num_buffers; j++) {
-			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc);
+			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
 			dmm_buffer_allocate(p->comm[j], sizeof(dsp_comm_t));
 		}
 	}

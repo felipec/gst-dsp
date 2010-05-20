@@ -56,6 +56,7 @@ struct du_port_t {
 	AsyncQueue *queue;
 	port_buffer_cb_t send_cb;
 	port_buffer_cb_t recv_cb;
+	int dir;
 };
 
 struct GstDspBase {
@@ -106,7 +107,7 @@ struct GstDspBaseClass {
 
 GType gst_dsp_base_get_type(void);
 
-du_port_t *du_port_new(guint index, guint num_buffers);
+du_port_t *du_port_new(guint index, guint num_buffers, int dir);
 void du_port_free(du_port_t *p);
 
 gboolean gstdsp_start(GstDspBase *self);
@@ -126,7 +127,7 @@ static inline void gstdsp_port_setup_params(GstDspBase *self,
 	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *b;
 		b = dmm_buffer_calloc(self->dsp_handle,
-				      self->proc, size);
+				      self->proc, size, p->dir);
 		if (func)
 			func(self, b);
 		p->params[i] = b;

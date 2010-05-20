@@ -194,8 +194,8 @@ dsp_start(GstDspDummy *self)
 
 	GST_INFO("dsp node running");
 
-	self->in_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
-	self->out_buffer = dmm_buffer_new(self->dsp_handle, self->proc);
+	self->in_buffer = dmm_buffer_new(self->dsp_handle, self->proc, DMA_TO_DEVICE);
+	self->out_buffer = dmm_buffer_new(self->dsp_handle, self->proc, DMA_FROM_DEVICE);
 
 	self->in_buffer->alignment = 0;
 

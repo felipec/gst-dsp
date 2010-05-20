@@ -519,7 +519,8 @@ wmvdec_send_params(GstDspBase *base,
 	dmm_buffer_t *b;
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
-	b = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*params));
+	b = dmm_buffer_calloc(base->dsp_handle, base->proc,
+			      sizeof(*params), DMA_TO_DEVICE);
 
 	params = b->data;
 	params->size = (int32_t) sizeof(*params);
@@ -1070,8 +1071,8 @@ instance_init(GTypeInstance *instance,
 	base->use_pad_alloc = TRUE;
 	base->create_node = create_node;
 
-	base->ports[0] = du_port_new(0, 2);
-	base->ports[1] = du_port_new(1, 2);
+	base->ports[0] = du_port_new(0, 2, DMA_TO_DEVICE);
+	base->ports[1] = du_port_new(1, 2, DMA_FROM_DEVICE);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 }

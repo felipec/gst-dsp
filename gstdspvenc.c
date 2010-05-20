@@ -475,7 +475,8 @@ jpegenc_send_params(GstDspBase *base)
 	dmm_buffer_t *b;
 
 	GstDspVEnc *self = GST_DSP_VENC(base);
-	b = dmm_buffer_calloc(base->dsp_handle, base->proc, sizeof(*params));
+	b = dmm_buffer_calloc(base->dsp_handle, base->proc,
+			      sizeof(*params), DMA_TO_DEVICE);
 
 	params = b->data;
 	params->size = sizeof(*params);
@@ -1124,8 +1125,8 @@ instance_init(GTypeInstance *instance,
 	base = GST_DSP_BASE(instance);
 	self = GST_DSP_VENC(instance);
 
-	base->ports[0] = du_port_new(0, 2);
-	base->ports[1] = du_port_new(1, 2);
+	base->ports[0] = du_port_new(0, 2, DMA_TO_DEVICE);
+	base->ports[1] = du_port_new(1, 2, DMA_FROM_DEVICE);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 
