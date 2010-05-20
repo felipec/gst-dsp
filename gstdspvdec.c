@@ -754,12 +754,6 @@ fail:
 	return;
 }
 
-struct h264dec_in_stream_params {
-	int32_t count;
-	uint32_t num_of_nalu;
-	uint32_t nalu[1200];
-};
-
 struct h264dec_out_stream_params {
 	uint32_t display_id;
 	uint32_t bytes_consumed;
@@ -819,17 +813,9 @@ h264dec_in_send_cb(GstDspBase *base,
 static inline void
 setup_h264params(GstDspBase *base)
 {
-	struct h264dec_in_stream_params *in_param;
 	struct h264dec_out_stream_params *out_param;
 	guint i;
 
-	for (i = 0; i < base->ports[0]->num_buffers; i++) {
-		dmm_buffer_t *tmp;
-		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
-		dmm_buffer_allocate(tmp, sizeof(*in_param));
-		memset(tmp->data, 0, sizeof(*in_param));
-		base->ports[0]->params[i] = tmp;
-	}
 	base->ports[0]->send_cb = h264dec_in_send_cb;
 
 	for (i = 0; i < base->ports[1]->num_buffers; i++) {
