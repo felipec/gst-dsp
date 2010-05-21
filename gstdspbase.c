@@ -132,6 +132,11 @@ typedef struct {
 	uint32_t silly_buf_state;
 	uint32_t silly_buf_active;
 	uint32_t silly_buf_id;
+#if SN_API >= 2
+	uint32_t nb_available_buf;
+	uint32_t donot_flush_buf;
+	uint32_t donot_invalidate_buf;
+#endif
 	uint32_t reserved;
 	uint32_t msg_virt;
 	uint32_t buffer_virt;
