@@ -26,13 +26,13 @@
 #define DMM_BUFFER_H
 
 #include <stdlib.h> /* for calloc, free */
-#include <unistd.h> /* for getpagesize */
 #include <string.h> /* for memset */
 
 #include "dsp_bridge.h"
 #include "log.h"
 
 #define ROUND_UP(num, scale) (((num) + ((scale) - 1)) & ~((scale) - 1))
+#define PAGE_SIZE 0x1000
 
 enum dma_data_direction {
 	DMA_BIDIRECTIONAL,
@@ -152,14 +152,16 @@ dmm_buffer_reserve(dmm_buffer_t *b,
 		   size_t size)
 {
 	size_t to_reserve;
-	size_t page_size;
-	page_size = getpagesize();
 	if (b->reserve) {
-		if (ROUND_UP(size, page_size) <= ROUND_UP(b->size, page_size))
+		if (ROUND_UP(size, PAGE_SIZE) <= ROUND_UP(b->size, PAGE_SIZE))
 			goto leave;
 		dsp_unreserve(b->handle, b->proc, b->reserve);
 	}
-	to_reserve = ROUND_UP(size, page_size) + page_size;
+	/**
+	 * @todo What exactly do we want to do here? Shouldn't the driver
+	 * calculate this?
+	 */
+	to_reserve = ROUND_UP(size, PAGE_SIZE) + PAGE_SIZE;
 	dsp_reserve(b->handle, b->proc, to_reserve, &b->reserve);
 leave:
 	b->size = size;
