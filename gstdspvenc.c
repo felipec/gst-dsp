@@ -732,21 +732,24 @@ static inline void
 setup_h264params(GstDspBase *base)
 {
 	struct h264venc_out_stream_params *out_param;
-	unsigned int i;
+	unsigned i;
+	du_port_t *p;
 
-	for (i = 0; i < base->ports[0]->num_buffers; i++)
-		base->ports[0]->params[i] = setup_h264params_in(base);
-	base->ports[0]->send_cb = h264venc_in_send_cb;
+	p = base->ports[0];
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = setup_h264params_in(base);
+	p->send_cb = h264venc_in_send_cb;
 
-	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+	p = base->ports[1];
+	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		memset(tmp->data, 0, sizeof(*out_param));
-		base->ports[1]->params[i] = tmp;
+		p->params[i] = tmp;
 	}
-	base->ports[1]->send_cb = h264venc_out_send_cb;
-	base->ports[1]->recv_cb = h264venc_out_recv_cb;
+	p->send_cb = h264venc_out_send_cb;
+	p->recv_cb = h264venc_out_recv_cb;
 }
 
 struct mp4venc_in_stream_params {
@@ -865,21 +868,24 @@ static inline void
 setup_mp4params(GstDspBase *base)
 {
 	struct mp4venc_out_stream_params *out_param;
-	unsigned int i;
+	unsigned i;
+	du_port_t *p;
 
-	for (i = 0; i < base->ports[0]->num_buffers; i++)
-		base->ports[0]->params[i] = setup_mp4param_in(base);
-	base->ports[0]->send_cb = mp4venc_in_send_cb;
+	p = base->ports[0];
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = setup_mp4param_in(base);
+	p->send_cb = mp4venc_in_send_cb;
 
-	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+	p = base->ports[1];
+	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		memset(tmp->data, 0, sizeof(*out_param));
-		base->ports[1]->params[i] = tmp;
+		p->params[i] = tmp;
 	}
-	base->ports[1]->send_cb = mp4venc_out_send_cb;
-	base->ports[1]->recv_cb = mp4venc_out_recv_cb;
+	p->send_cb = mp4venc_out_send_cb;
+	p->recv_cb = mp4venc_out_recv_cb;
 }
 
 static inline int calculate_bitrate(GstDspVEnc *self)

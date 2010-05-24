@@ -245,19 +245,22 @@ setup_mp4vdec_params(GstDspBase *base)
 {
 	struct mp4vdec_out_params *out_param;
 	unsigned i;
+	du_port_t *p;
 
-	for (i = 0; i < base->ports[0]->num_buffers; i++)
-		base->ports[0]->params[i] = setup_mp4vparams_in(base);
+	p = base->ports[0];
+	for (i = 0; i < p->num_buffers; i++)
+		p->params[i] = setup_mp4vparams_in(base);
 
-	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+	p = base->ports[1];
+	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		memset(tmp->data, 0, sizeof(*out_param));
-		base->ports[1]->params[i] = tmp;
+		p->params[i] = tmp;
 	}
-	base->ports[1]->send_cb = mp4vdec_out_send_cb;
-	base->ports[1]->recv_cb = mp4vdec_out_recv_cb;
+	p->send_cb = mp4vdec_out_send_cb;
+	p->recv_cb = mp4vdec_out_recv_cb;
 }
 
 struct h264vdec_args {
@@ -573,26 +576,29 @@ setup_wmvparams(GstDspBase *base)
 {
 	struct wmvdec_in_params *in_param;
 	struct wmvdec_out_params *out_param;
-	guint i;
+	unsigned i;
+	du_port_t *p;
 
-	for (i = 0; i < base->ports[0]->num_buffers; i++) {
+	p = base->ports[0];
+	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*in_param));
 		memset(tmp->data, 0, sizeof(*in_param));
-		base->ports[0]->params[i] = tmp;
+		p->params[i] = tmp;
 	}
-	base->ports[0]->send_cb = wmvdec_in_send_cb;
+	p->send_cb = wmvdec_in_send_cb;
 
-	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+	p = base->ports[1];
+	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		memset(tmp->data, 0, sizeof(*out_param));
-		base->ports[1]->params[i] = tmp;
+		p->params[i] = tmp;
 	}
-	base->ports[1]->send_cb = wmvdec_out_send_cb;
-	base->ports[1]->recv_cb = wmvdec_out_recv_cb;
+	p->send_cb = wmvdec_out_send_cb;
+	p->recv_cb = wmvdec_out_recv_cb;
 }
 
 static GstBuffer *
@@ -814,19 +820,22 @@ static inline void
 setup_h264params(GstDspBase *base)
 {
 	struct h264dec_out_stream_params *out_param;
-	guint i;
+	unsigned i;
+	du_port_t *p;
 
-	base->ports[0]->send_cb = h264dec_in_send_cb;
+	p = base->ports[0];
+	p->send_cb = h264dec_in_send_cb;
 
-	for (i = 0; i < base->ports[1]->num_buffers; i++) {
+	p = base->ports[1];
+	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *tmp;
 		tmp = dmm_buffer_new(base->dsp_handle, base->proc);
 		dmm_buffer_allocate(tmp, sizeof(*out_param));
 		memset(tmp->data, 0, sizeof(*out_param));
-		base->ports[1]->params[i] = tmp;
+		p->params[i] = tmp;
 	}
-	base->ports[1]->send_cb = h264dec_out_send_cb;
-	base->ports[1]->recv_cb = h264dec_out_recv_cb;
+	p->send_cb = h264dec_out_send_cb;
+	p->recv_cb = h264dec_out_recv_cb;
 }
 
 static void *

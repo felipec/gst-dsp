@@ -293,12 +293,14 @@ output_loop(gpointer data)
 	gboolean got_eos = FALSE;
 	gboolean keyframe = FALSE;
 	GstEvent *event;
+	du_port_t *p;
 
 	pad = data;
 	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
+	p = self->ports[1];
 
 	pr_debug(self, "begin");
-	b = async_queue_pop(self->ports[1]->queue);
+	b = async_queue_pop(p->queue);
 
 	/*
 	 * queue might have been disabled above, so perhaps b == NULL,
@@ -313,7 +315,7 @@ output_loop(gpointer data)
 
 	ret = check_status(self);
 	if (ret != GST_FLOW_OK) {
-		async_queue_push(self->ports[1]->queue, b);
+		async_queue_push(p->queue, b);
 		goto end;
 	}
 
@@ -380,7 +382,7 @@ output_loop(gpointer data)
 
 		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
-			async_queue_push(self->ports[1]->queue, b);
+			async_queue_push(p->queue, b);
 			goto leave;
 		}
 
