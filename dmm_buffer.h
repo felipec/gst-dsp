@@ -89,15 +89,6 @@ dmm_buffer_free(dmm_buffer_t *b)
 }
 
 static inline void
-dmm_buffer_map(dmm_buffer_t *b)
-{
-	pr_debug(NULL, "%p", b);
-	if (b->map)
-		dsp_unmap(b->handle, b->proc, b->map);
-	dsp_map(b->handle, b->proc, b->data, b->size, b->reserve, &b->map, 0);
-}
-
-static inline void
 dmm_buffer_begin(dmm_buffer_t *b,
 		 size_t len)
 {
@@ -148,19 +139,21 @@ dmm_buffer_flush(dmm_buffer_t *b,
 }
 
 static inline void
-dmm_buffer_reserve(dmm_buffer_t *b,
-		   size_t size)
+dmm_buffer_map(dmm_buffer_t *b)
 {
 	size_t to_reserve;
+	pr_debug(NULL, "%p", b);
+	if (b->map)
+		dsp_unmap(b->handle, b->proc, b->map);
 	if (b->reserve)
 		dsp_unreserve(b->handle, b->proc, b->reserve);
 	/**
 	 * @todo What exactly do we want to do here? Shouldn't the driver
 	 * calculate this?
 	 */
-	to_reserve = ROUND_UP(size, PAGE_SIZE) + PAGE_SIZE;
+	to_reserve = ROUND_UP(b->size, PAGE_SIZE) + PAGE_SIZE;
 	dsp_reserve(b->handle, b->proc, to_reserve, &b->reserve);
-	b->size = size;
+	dsp_map(b->handle, b->proc, b->data, b->size, b->reserve, &b->map, 0);
 }
 
 static inline void
@@ -176,7 +169,7 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 	}
 	else
 		b->data = b->allocated_data = malloc(size);
-	dmm_buffer_reserve(b, size);
+	b->size = size;
 	dmm_buffer_map(b);
 }
 
@@ -187,7 +180,7 @@ dmm_buffer_use(dmm_buffer_t *b,
 {
 	pr_debug(NULL, "%p", b);
 	b->data = data;
-	dmm_buffer_reserve(b, size);
+	b->size = size;
 	dmm_buffer_map(b);
 }
 
