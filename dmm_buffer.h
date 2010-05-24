@@ -109,36 +109,6 @@ dmm_buffer_end(dmm_buffer_t *b,
 }
 
 static inline void
-dmm_buffer_clean(dmm_buffer_t *b,
-		 size_t len)
-{
-	pr_debug(NULL, "%p", b);
-	if (G_UNLIKELY(len > b->size))
-		g_error("wrong cache flush");
-	dsp_flush(b->handle, b->proc, b->data, len, 1);
-}
-
-static inline void
-dmm_buffer_invalidate(dmm_buffer_t *b,
-		      size_t len)
-{
-	pr_debug(NULL, "%p", b);
-	if (G_UNLIKELY(len > b->size))
-		g_error("wrong cache flush");
-	dsp_invalidate(b->handle, b->proc, b->data, len);
-}
-
-static inline void
-dmm_buffer_flush(dmm_buffer_t *b,
-		 size_t len)
-{
-	pr_debug(NULL, "%p", b);
-	if (G_UNLIKELY(len > b->size))
-		g_error("wrong cache flush");
-	dsp_flush(b->handle, b->proc, b->data, len, 0);
-}
-
-static inline void
 dmm_buffer_map(dmm_buffer_t *b)
 {
 	size_t to_reserve;
