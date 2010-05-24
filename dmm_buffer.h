@@ -157,6 +157,20 @@ dmm_buffer_map(dmm_buffer_t *b)
 }
 
 static inline void
+dmm_buffer_unmap(dmm_buffer_t *b)
+{
+	pr_debug(NULL, "%p", b);
+	if (b->map) {
+		dsp_unmap(b->handle, b->proc, b->map);
+		b->map = NULL;
+	}
+	if (b->reserve) {
+		dsp_unreserve(b->handle, b->proc, b->reserve);
+		b->reserve = NULL;
+	}
+}
+
+static inline void
 dmm_buffer_allocate(dmm_buffer_t *b,
 		    size_t size)
 {

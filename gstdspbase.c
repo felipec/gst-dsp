@@ -189,6 +189,8 @@ got_message(GstDspBase *self,
 			if (G_UNLIKELY(b->len > b->size))
 				g_error("wrong buffer size");
 
+			dmm_buffer_unmap(b);
+
 			param = (void *) msg_data->param_virt;
 			if (param)
 				dmm_buffer_end(param, param->size);
