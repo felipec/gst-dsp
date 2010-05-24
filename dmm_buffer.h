@@ -152,18 +152,14 @@ dmm_buffer_reserve(dmm_buffer_t *b,
 		   size_t size)
 {
 	size_t to_reserve;
-	if (b->reserve) {
-		if (ROUND_UP(size, PAGE_SIZE) <= ROUND_UP(b->size, PAGE_SIZE))
-			goto leave;
+	if (b->reserve)
 		dsp_unreserve(b->handle, b->proc, b->reserve);
-	}
 	/**
 	 * @todo What exactly do we want to do here? Shouldn't the driver
 	 * calculate this?
 	 */
 	to_reserve = ROUND_UP(size, PAGE_SIZE) + PAGE_SIZE;
 	dsp_reserve(b->handle, b->proc, to_reserve, &b->reserve);
-leave:
 	b->size = size;
 }
 
