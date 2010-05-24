@@ -1004,7 +1004,7 @@ pad_chain(GstPad *pad,
 		goto leave;
 	}
 
-	if (self->input_buffer_size <= GST_BUFFER_SIZE(buf))
+	if (GST_BUFFER_SIZE(buf) >= self->input_buffer_size)
 		map_buffer(self, buf, b);
 	else {
 		dmm_buffer_allocate(b, self->input_buffer_size);
