@@ -170,7 +170,6 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 	else
 		b->data = b->allocated_data = malloc(size);
 	b->size = size;
-	dmm_buffer_map(b);
 }
 
 static inline void
@@ -181,7 +180,6 @@ dmm_buffer_use(dmm_buffer_t *b,
 	pr_debug(NULL, "%p", b);
 	b->data = data;
 	b->size = size;
-	dmm_buffer_map(b);
 }
 
 static inline dmm_buffer_t *

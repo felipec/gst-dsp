@@ -130,6 +130,7 @@ static inline void gstdsp_port_setup_params(GstDspBase *self,
 				      self->proc, size, p->dir);
 		if (func)
 			func(self, b);
+		dmm_buffer_map(b);
 		p->params[i] = b;
 	}
 }

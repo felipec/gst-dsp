@@ -593,6 +593,7 @@ dsp_init(GstDspBase *self)
 		for (j = 0; j < p->num_buffers; j++) {
 			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
 			dmm_buffer_allocate(p->comm[j], sizeof(dsp_comm_t));
+			dmm_buffer_map(p->comm[j]);
 		}
 	}
 
@@ -838,6 +839,8 @@ send_buffer(GstDspBase *self,
 	if (param)
 		dmm_buffer_begin(param, param->size);
 
+	dmm_buffer_map(buffer);
+
 	memset(msg_data, 0, sizeof(*msg_data));
 
 	msg_data->buffer_data = (uint32_t) buffer->map;
@@ -867,7 +870,7 @@ gstdsp_send_alg_ctrl(GstDspBase *self,
 		     dmm_buffer_t *b)
 {
 	self->alg_ctrl = b;
-	dmm_buffer_begin(b, b->size);
+	dmm_buffer_map(b);
 	dsp_send_message(self->dsp_handle, node,
 			 0x0400, 3, (uint32_t) b->map);
 }
@@ -999,7 +1002,6 @@ gstdsp_send_codec_data(GstDspBase *self,
 
 	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
 	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
-	dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 
 	send_buffer(self, b, 0);
 
@@ -1048,7 +1050,6 @@ pad_chain(GstPad *pad,
 	if (b->need_copy) {
 		pr_info(self, "copy");
 		memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
-		dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 	}
 
 	g_mutex_lock(self->ts_mutex);

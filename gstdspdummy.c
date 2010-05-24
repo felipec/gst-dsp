@@ -345,8 +345,8 @@ pad_chain(GstPad *pad,
 	{
 		dsp_msg_t msg;
 
-		dmm_buffer_clean(self->in_buffer, self->in_buffer->size);
-		dmm_buffer_invalidate(self->out_buffer, self->out_buffer->size);
+		dmm_buffer_map(self->in_buffer);
+		dmm_buffer_map(self->out_buffer);
 		msg.cmd = 1;
 		msg.arg_1 = self->in_buffer->size;
 		dsp_node_put_message(self->dsp_handle, self->node, &msg, -1);

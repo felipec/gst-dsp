@@ -470,9 +470,6 @@ wmvdec_prefix_vc1(GstDspVDec *self,
 		b->user_data = NULL;
 	}
 	g_free(alloc_data);
-
-	/* buffer contents have been modified */
-	dmm_buffer_clean(b, b->size);
 	return;
 }
 
@@ -694,9 +691,6 @@ h264dec_transform_nal_encoding(GstDspVDec *self,
 		}
 		free(alloc_data);
 	}
-
-	/* we have been poking around in the data */
-	dmm_buffer_clean(b, b->size);
 	return;
 
 fail:
