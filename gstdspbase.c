@@ -34,8 +34,7 @@
 static inline bool
 send_buffer(GstDspBase *self,
 	    dmm_buffer_t *buffer,
-	    unsigned int id,
-	    size_t len);
+	    unsigned int id);
 
 static inline void
 map_buffer(GstDspBase *self,
@@ -266,7 +265,7 @@ setup_buffers(GstDspBase *self)
 		else
 			dmm_buffer_allocate(b, self->output_buffer_size);
 
-		send_buffer(self, b, 1, 0);
+		send_buffer(self, b, 1);
 	}
 }
 
@@ -452,7 +451,7 @@ leave:
 	else {
 		if (!b->data)
 			dmm_buffer_allocate(b, self->output_buffer_size);
-		send_buffer(self, b, 1, 0);
+		send_buffer(self, b, 1);
 	}
 
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
@@ -784,8 +783,7 @@ map_buffer(GstDspBase *self,
 static inline bool
 send_buffer(GstDspBase *self,
 	    dmm_buffer_t *buffer,
-	    unsigned int id,
-	    size_t len)
+	    unsigned int id)
 {
 	dsp_comm_t *msg_data;
 	dmm_buffer_t *tmp = NULL, *param = NULL;
@@ -794,7 +792,7 @@ send_buffer(GstDspBase *self,
 
 	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
 
-	buffer->len = len;
+	buffer->len = buffer->size;
 
 	port = self->ports[id];
 
@@ -820,7 +818,7 @@ send_buffer(GstDspBase *self,
 	msg_data->buffer_data = (uint32_t) buffer->map;
 	msg_data->buffer_size = buffer->size;
 	msg_data->stream_id = id;
-	msg_data->buffer_len = buffer->len;
+	msg_data->buffer_len = id == 0 ? buffer->len : 0;
 
 	msg_data->user_data = (uint32_t) buffer;
 
@@ -967,7 +965,7 @@ gstdsp_send_codec_data(GstDspBase *self,
 	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 	dmm_buffer_clean(b, GST_BUFFER_SIZE(buf));
 
-	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
+	send_buffer(self, b, 0);
 
 	return TRUE;
 }
@@ -1023,7 +1021,7 @@ pad_chain(GstPad *pad,
 	self->ts_count++;
 	g_mutex_unlock(self->ts_mutex);
 
-	send_buffer(self, b, 0, GST_BUFFER_SIZE(buf));
+	send_buffer(self, b, 0);
 
 leave:
 
