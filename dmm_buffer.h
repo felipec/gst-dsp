@@ -98,16 +98,6 @@ dmm_buffer_map(dmm_buffer_t *b)
 }
 
 static inline void
-dmm_buffer_unmap(dmm_buffer_t *b)
-{
-	pr_debug(NULL, "%p", b);
-	if (!b->map)
-		return;
-	dsp_unmap(b->handle, b->proc, b->map);
-	b->map = NULL;
-}
-
-static inline void
 dmm_buffer_begin(dmm_buffer_t *b,
 		 size_t len)
 {
@@ -180,7 +170,6 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 		    size_t size)
 {
 	pr_debug(NULL, "%p", b);
-	dmm_buffer_unmap(b);
 	free(b->allocated_data);
 	if (b->alignment != 0) {
 		if (posix_memalign(&b->allocated_data, b->alignment, ROUND_UP(size, b->alignment)) != 0)
@@ -199,7 +188,6 @@ dmm_buffer_use(dmm_buffer_t *b,
 	       size_t size)
 {
 	pr_debug(NULL, "%p", b);
-	dmm_buffer_unmap(b);
 	b->data = data;
 	dmm_buffer_reserve(b, size);
 	dmm_buffer_map(b);
