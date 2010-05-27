@@ -748,6 +748,37 @@ setup_h264params(GstDspBase *base)
 	p->recv_cb = h264venc_out_recv_cb;
 }
 
+struct jpegenc_in_stream_params {
+	uint32_t size;
+};
+
+struct jpegenc_out_stream_params {
+	uint32_t errorcode;
+};
+
+static void
+setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
+{
+	struct jpegenc_in_stream_params *in_param;
+
+	in_param = tmp->data;
+	in_param->size = sizeof(*in_param);
+}
+
+static inline void
+setup_jpegparams(GstDspBase *base)
+{
+	struct jpegenc_in_stream_params *in_param;
+	struct jpegenc_out_stream_params *out_param;
+	du_port_t *p;
+
+	p = base->ports[0];
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_jpegparams_in);
+
+	p = base->ports[1];
+	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
+}
+
 struct mp4venc_in_stream_params {
 	uint32_t frame_index;
 	uint32_t framerate;
@@ -1039,6 +1070,8 @@ sink_setcaps(GstPad *pad,
 	case GSTDSP_H264ENC:
 		setup_h264params(base);
 		break;
+	case GSTDSP_JPEGENC:
+		setup_jpegparams(base);
 	default:
 		break;
 	}
