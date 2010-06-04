@@ -383,7 +383,7 @@ output_loop(gpointer data)
 		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
 			async_queue_push(p->queue, b);
-			goto leave;
+			goto nok;
 		}
 
 		if (b->user_data) {
@@ -456,6 +456,7 @@ leave:
 		send_buffer(self, b, 1);
 	}
 
+nok:
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 		g_atomic_int_set(&self->status, ret);
 		gst_pad_pause_task(self->srcpad);
