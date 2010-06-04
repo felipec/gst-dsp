@@ -379,8 +379,8 @@ struct wmvdec_rcv_struct {
 };
 
 static inline void
-wmvdec_create_rcv_buffer(GstDspBase *base,
-			 GstBuffer **buf)
+wmvdec_send_rcv_buffer(GstDspBase *base,
+			 GstBuffer *buf)
 {
 	GstDspVDec *self;
 	GstBuffer *rcv_buf;
@@ -391,7 +391,7 @@ wmvdec_create_rcv_buffer(GstDspBase *base,
 
 	rcv_buf = gst_buffer_new_and_alloc(sizeof(*rcv_struct));
 	rcv_struct = (struct wmvdec_rcv_struct *) GST_BUFFER_DATA(rcv_buf);
-	codec_data = GST_BUFFER_DATA(*buf);
+	codec_data = GST_BUFFER_DATA(buf);
 
 	rcv_struct->num_frames = 0xFFFFFF;
 	rcv_struct->frame_type = 0x85;
@@ -403,7 +403,8 @@ wmvdec_create_rcv_buffer(GstDspBase *base,
 	rcv_struct->height = self->height;
 	rcv_struct->width = self->width;
 
-	gst_buffer_replace(buf, rcv_buf);
+	gstdsp_send_codec_data(base, rcv_buf);
+	gst_buffer_unref(rcv_buf);
 }
 
 static inline void
@@ -1107,13 +1108,11 @@ handle_codec_data(GstDspVDec *self,
 		base->skip_hack++;
 		break;
 	case GSTDSP_WMVDEC:
-		if (!self->wmv_is_vc1) {
-			wmvdec_create_rcv_buffer(base, &buf);
-		} else {
+		if (self->wmv_is_vc1)
 			self->codec_data = gst_buffer_ref(buf);
-			return TRUE;
-		}
-		break;
+		else
+			wmvdec_send_rcv_buffer(base, buf);
+		return TRUE;
 	case GSTDSP_H264DEC:
 		buf = h264dec_transform_codec_data(self, buf);
 		if (!buf) {
