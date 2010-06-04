@@ -517,9 +517,12 @@ wmvdec_send_params(GstDspBase *base,
 static inline void
 setup_wmvparams(GstDspBase *base)
 {
+	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct wmvdec_in_params *in_param;
 	struct wmvdec_out_params *out_param;
 	du_port_t *p;
+
+	self->frame_index = 1;
 
 	p = base->ports[0];
 	gstdsp_port_setup_params(base, p, sizeof(*in_param), NULL);
