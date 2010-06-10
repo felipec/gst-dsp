@@ -26,10 +26,10 @@
 
 #include <string.h> /* for memcpy */
 
+#include "util.h"
 #include "log.h"
 
 #define GST_CAT_DEFAULT gstdsp_debug
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 static inline bool
 send_buffer(GstDspBase *self,

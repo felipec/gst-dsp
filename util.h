@@ -29,4 +29,6 @@ bool gstdsp_register(int dsp_handle,
 		     int type,
 		     const char *filename);
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #endif /* UTIL_H */
