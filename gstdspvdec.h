@@ -46,6 +46,7 @@ struct GstDspVDec {
 	gint width, height;
 	gint frame_index;
 	gboolean wmv_is_vc1;
+	gboolean jpeg_is_interlaced;
 	GstBuffer *codec_data;
 	gboolean codec_data_sent;
 	guint32 color_format;

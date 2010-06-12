@@ -39,6 +39,7 @@ enum {
 	GSTDSP_H264DEC,
 	GSTDSP_H263DEC,
 	GSTDSP_WMVDEC,
+	GSTDSP_JPEGDEC,
 };
 
 static GstDspBaseClass *parent_class;
@@ -87,6 +88,12 @@ generate_sink_template(void)
 
 	struc = gst_structure_new("video/x-wmv",
 				  "wmvversion", G_TYPE_INT, 3,
+				  NULL);
+
+	gst_caps_append_structure(caps, struc);
+
+	struc = gst_structure_new("image/jpeg",
+				  "parsed", G_TYPE_BOOLEAN, TRUE,
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
@@ -747,6 +754,136 @@ setup_h264params(GstDspBase *base)
 	p->recv_cb = h264dec_out_recv_cb;
 }
 
+struct jpegdec_args {
+	uint16_t num_streams;
+
+	uint16_t in_id;
+	uint16_t in_type;
+	uint16_t in_count;
+
+	uint16_t out_id;
+	uint16_t out_type;
+	uint16_t out_count;
+
+	uint16_t max_height;
+	uint16_t max_width;
+	uint16_t progressive;
+
+	uint16_t color_format;
+	uint16_t unknown;
+	uint16_t sections_input;
+	uint16_t sections_output;
+
+	uint16_t is_argb32;
+};
+
+struct jpegdec_in_params {
+	int32_t buf_count;
+	uint32_t frame_count;
+	uint32_t frame_align;
+	uint32_t frame_size;
+	uint32_t display_width;
+	uint32_t reserved_0;
+	uint32_t reserved_1;
+	uint32_t reserved_2;
+	uint32_t reserved_3;
+	uint32_t resize_option;
+	uint32_t num_mcu;
+	uint32_t decode_header;
+	uint32_t max_height;
+	uint32_t max_width;
+	uint32_t max_scans;
+	uint32_t endianness;
+	uint32_t color_format;
+	uint32_t rgb_format;
+	uint32_t num_mcu_row;
+	uint32_t x_org;
+	uint32_t y_org;
+	uint32_t x_lenght;
+	uint32_t y_length;
+	uint32_t argb;
+	uint32_t total_size;
+};
+
+struct jpegdec_out_params {
+	int32_t buf_count;
+	uint32_t frame_count;
+	uint32_t frame_align;
+	uint32_t frame_size;
+	uint32_t img_format;
+	uint32_t width;
+	uint32_t height;
+	uint32_t progressive;
+	uint32_t error_code;
+	uint32_t reserved_0;
+	uint32_t reserved_1;
+	uint32_t reserved_2;
+	uint32_t last_mcu;
+	uint32_t stride[3];
+	uint32_t output_height;
+	uint32_t output_width;
+	uint32_t total_au;
+	uint32_t bytes_consumed;
+	uint32_t current_au;
+	uint32_t current_scan;
+	int32_t dsp_error;
+};
+
+static inline void *
+get_jpeg_args(GstDspVDec *self)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+
+	struct jpegdec_args args = {
+		.num_streams = 2,
+		.in_id = 0,
+		.in_type = 0,
+		.in_count = base->ports[0]->num_buffers,
+		.out_id = 1,
+		.out_type = 0,
+		.out_count = base->ports[1]->num_buffers,
+		.max_height = self->height,
+		.max_width = self->width,
+		.progressive = self->jpeg_is_interlaced ? 1 : 0,
+		.color_format = 4,
+	};
+
+	struct foo_data *cb_data;
+
+	cb_data = malloc(sizeof(*cb_data));
+	cb_data->size = sizeof(args);
+	memcpy(&cb_data->data, &args, sizeof(args));
+
+	return cb_data;
+}
+
+static void
+setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
+{
+	struct jpegdec_in_params *in_param;
+
+	in_param = tmp->data;
+	in_param->frame_count = 1;
+	in_param->frame_align = 4;
+	in_param->display_width = 1600;
+	in_param->color_format = 4;
+	in_param->rgb_format = 9;
+}
+
+static inline void
+setup_jpegdec_params(GstDspBase *base)
+{
+	struct jpegdec_in_params *in_param;
+	struct jpegdec_out_params *out_param;
+	du_port_t *p;
+
+	p = base->ports[0];
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_jpegparams_in);
+
+	p = base->ports[1];
+	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
+}
+
 static void *
 create_node(GstDspBase *base)
 {
@@ -769,6 +906,9 @@ create_node(GstDspBase *base)
 
 	const dsp_uuid_t wmv_dec_uuid = { 0x609DAB97, 0x3DFC, 0x471F, 0x8A, 0xB9,
 		{ 0x4E, 0x56, 0xE8, 0x34, 0x50, 0x1B } };
+
+	const dsp_uuid_t jpeg_dec_uuid = { 0x5D9CB711, 0x4645, 0x11d6, 0xb0, 0xdc,
+		{ 0x00, 0xc0, 0x4f, 0x1f, 0xc0, 0x36 } };
 
 	const dsp_uuid_t conversions_uuid = { 0x722DD0DA, 0xF532, 0x4238, 0xB8, 0x46,
 		{ 0xAB, 0xFF, 0x5D, 0xA4, 0xBA, 0x02 } };
@@ -799,6 +939,10 @@ create_node(GstDspBase *base)
 	case GSTDSP_WMVDEC:
 		alg_uuid = &wmv_dec_uuid;
 		alg_fn = "wmv9dec_sn.dll64P";
+		break;
+	case GSTDSP_JPEGDEC:
+		alg_uuid = &jpeg_dec_uuid;
+		alg_fn = "jpegdec_sn.dll64P";
 		break;
 	default:
 		pr_err(self, "unknown algorithm");
@@ -861,6 +1005,33 @@ create_node(GstDspBase *base)
 				attrs.profile_id = 1;
 			cb_data = get_wmv_args(self);
 			break;
+		case GSTDSP_JPEGDEC:
+			if (self->jpeg_is_interlaced) {
+				if (self->width * self->height > 2560 * 2048)
+					attrs.profile_id = 9;
+				else if (self->width * self->height > 2560 * 1600)
+					attrs.profile_id = 8;
+				else if (self->width * self->height > 2048 * 1536)
+					attrs.profile_id = 7;
+				else if (self->width * self->height > 1920 * 1200)
+					attrs.profile_id = 6;
+				else if (self->width * self->height > 1280 * 1024)
+					attrs.profile_id = 5;
+				else if (self->width * self->height > 800 * 600)
+					attrs.profile_id = 4;
+				else if (self->width * self->height > 640 * 480)
+					attrs.profile_id = 3;
+				else if (self->width * self->height > 352 * 288)
+					attrs.profile_id = 2;
+				else if (self->width * self->height > 176 * 144)
+					attrs.profile_id = 1;
+				else
+					attrs.profile_id = 0;
+			}
+			else
+				attrs.profile_id = -1;
+			cb_data = get_jpeg_args(self);
+			break;
 		default:
 			cb_data = NULL;
 			break;
@@ -893,6 +1064,9 @@ create_node(GstDspBase *base)
 	case GSTDSP_MPEG4VDEC:
 	case GSTDSP_H263DEC:
 		setup_mp4vdec_params(base);
+		break;
+	case GSTDSP_JPEGDEC:
+		setup_jpegdec_params(base);
 		break;
 	default:
 		break;
@@ -1003,11 +1177,26 @@ sink_setcaps(GstPad *pad,
 				self->wmv_is_vc1 = FALSE;
 		}
 	}
+	else if (strcmp(name, "image/jpeg") == 0) {
+		base->alg = GSTDSP_JPEGDEC;
+		base->use_eos_align = TRUE;
+
+		gst_structure_get_boolean(in_struc, "interlaced",
+					  &self->jpeg_is_interlaced);
+	}
 	else
 		base->alg = GSTDSP_MPEG4VDEC;
 
-	du_port_alloc_buffers(base->ports[0], 2);
-	du_port_alloc_buffers(base->ports[1], 2);
+	switch (base->alg) {
+	case GSTDSP_JPEGDEC:
+		du_port_alloc_buffers(base->ports[0], 1);
+		du_port_alloc_buffers(base->ports[1], 1);
+		break;
+	default:
+		du_port_alloc_buffers(base->ports[0], 2);
+		du_port_alloc_buffers(base->ports[1], 2);
+		break;
+	}
 
 	out_caps = gst_caps_new_empty();
 
