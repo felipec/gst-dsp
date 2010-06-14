@@ -599,7 +599,6 @@ static gboolean
 dsp_init(GstDspBase *self)
 {
 	int dsp_handle;
-	guint i;
 
 	self->dsp_handle = dsp_handle = dsp_open();
 
@@ -611,16 +610,6 @@ dsp_init(GstDspBase *self)
 	if (!dsp_attach(dsp_handle, 0, NULL, &self->proc)) {
 		pr_err(self, "dsp attach failed");
 		goto fail;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
-		du_port_t *p = self->ports[i];
-		guint j;
-		for (j = 0; j < p->num_buffers; j++) {
-			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
-			dmm_buffer_allocate(p->comm[j], sizeof(dsp_comm_t));
-			dmm_buffer_map(p->comm[j]);
-		}
 	}
 
 	return TRUE;
@@ -683,6 +672,18 @@ leave:
 gboolean
 gstdsp_start(GstDspBase *self)
 {
+	guint i;
+
+	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
+		du_port_t *p = self->ports[i];
+		guint j;
+		for (j = 0; j < p->num_buffers; j++) {
+			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
+			dmm_buffer_allocate(p->comm[j], sizeof(dsp_comm_t));
+			dmm_buffer_map(p->comm[j]);
+		}
+	}
+
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node run failed");
 		return FALSE;
