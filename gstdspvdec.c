@@ -1006,6 +1006,9 @@ sink_setcaps(GstPad *pad,
 	else
 		base->alg = GSTDSP_MPEG4VDEC;
 
+	du_port_alloc_buffers(base->ports[0], 2);
+	du_port_alloc_buffers(base->ports[1], 2);
+
 	out_caps = gst_caps_new_empty();
 
 	out_struc = gst_structure_new("video/x-raw-yuv",
@@ -1073,8 +1076,8 @@ instance_init(GTypeInstance *instance,
 	base->use_pad_alloc = TRUE;
 	base->create_node = create_node;
 
-	base->ports[0] = du_port_new(0, 2, DMA_TO_DEVICE);
-	base->ports[1] = du_port_new(1, 2, DMA_FROM_DEVICE);
+	base->ports[0] = du_port_new(0, DMA_TO_DEVICE);
+	base->ports[1] = du_port_new(1, DMA_FROM_DEVICE);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 }

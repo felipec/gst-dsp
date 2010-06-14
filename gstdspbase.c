@@ -43,7 +43,6 @@ map_buffer(GstDspBase *self,
 
 du_port_t *
 du_port_new(guint index,
-	    guint num_buffers,
 	    int dir)
 {
 	du_port_t *p;
@@ -52,8 +51,6 @@ du_port_new(guint index,
 	p->index = index;
 	p->queue = async_queue_new();
 	p->dir = dir;
-
-	du_port_alloc_buffers(p, num_buffers);
 
 	return p;
 }

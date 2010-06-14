@@ -999,6 +999,17 @@ sink_setcaps(GstPad *pad,
 		break;
 	}
 
+	switch (base->alg) {
+	case GSTDSP_JPEGENC:
+		du_port_alloc_buffers(base->ports[0], 1);
+		du_port_alloc_buffers(base->ports[1], 1);
+		break;
+	default:
+		du_port_alloc_buffers(base->ports[0], 2);
+		du_port_alloc_buffers(base->ports[1], 2);
+		break;
+	}
+
 	self->width = width;
 	self->height = height;
 
@@ -1205,8 +1216,8 @@ instance_init(GTypeInstance *instance,
 	base = GST_DSP_BASE(instance);
 	self = GST_DSP_VENC(instance);
 
-	base->ports[0] = du_port_new(0, 2, DMA_TO_DEVICE);
-	base->ports[1] = du_port_new(1, 2, DMA_FROM_DEVICE);
+	base->ports[0] = du_port_new(0, DMA_TO_DEVICE);
+	base->ports[1] = du_port_new(1, DMA_FROM_DEVICE);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 

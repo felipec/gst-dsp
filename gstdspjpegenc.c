@@ -52,11 +52,6 @@ instance_init(GTypeInstance *instance,
 	GstDspBase *base = GST_DSP_BASE(instance);
 	base->alg = GSTDSP_JPEGENC;
 
-	du_port_free(base->ports[0]);
-	du_port_free(base->ports[1]);
-	base->ports[0] = du_port_new(0, 1, DMA_TO_DEVICE);
-	base->ports[1] = du_port_new(1, 1, DMA_FROM_DEVICE);
-
 	base->use_eos_align = TRUE;
 }
 
