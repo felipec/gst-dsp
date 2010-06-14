@@ -51,11 +51,9 @@ du_port_new(guint index,
 
 	p->index = index;
 	p->queue = async_queue_new();
-	p->num_buffers = num_buffers;
-	p->comm = calloc(num_buffers, sizeof(**p->comm));
-	p->buffers = calloc(num_buffers, sizeof(**p->comm));
-	p->params = calloc(num_buffers, sizeof(**p->params));
 	p->dir = dir;
+
+	du_port_alloc_buffers(p, num_buffers);
 
 	return p;
 }
@@ -72,6 +70,15 @@ du_port_free(du_port_t *p)
 	async_queue_free(p->queue);
 
 	free(p);
+}
+
+void
+du_port_alloc_buffers(du_port_t *p, guint num_buffers)
+{
+	p->num_buffers = num_buffers;
+	p->comm = calloc(num_buffers, sizeof(**p->comm));
+	p->buffers = calloc(num_buffers, sizeof(**p->comm));
+	p->params = calloc(num_buffers, sizeof(**p->params));
 }
 
 static inline void

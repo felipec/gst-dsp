@@ -109,6 +109,7 @@ GType gst_dsp_base_get_type(void);
 
 du_port_t *du_port_new(guint index, guint num_buffers, int dir);
 void du_port_free(du_port_t *p);
+void du_port_alloc_buffers(du_port_t *p, guint num_buffers);
 
 gboolean gstdsp_start(GstDspBase *self);
 gboolean gstdsp_send_codec_data(GstDspBase *self, GstBuffer *buf);
