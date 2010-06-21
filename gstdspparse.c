@@ -36,14 +36,16 @@ set_framesize(GstDspBase *base,
 		GstStructure *struc;
 
 		out_caps = base->tmp_caps;
-		struc = gst_caps_get_structure(out_caps, 0);
-		gst_structure_set(struc,
-				"width", G_TYPE_INT, w,
-				"height", G_TYPE_INT, h, NULL);
-		if (par_num && par_den)
+		if (out_caps) {
+			struc = gst_caps_get_structure(out_caps, 0);
 			gst_structure_set(struc,
-					"pixel-aspect-ratio", GST_TYPE_FRACTION,
-					par_num, par_den, NULL);
+					"width", G_TYPE_INT, w,
+					"height", G_TYPE_INT, h, NULL);
+			if (par_num && par_den)
+				gst_structure_set(struc,
+						"pixel-aspect-ratio", GST_TYPE_FRACTION,
+						par_num, par_den, NULL);
+		}
 		vdec->crop_width = w;
 		vdec->crop_height = h;
 	}
