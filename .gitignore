@@ -1,3 +1,5 @@
 *.[od]
 *.so
 *.a
+
+gst-dsp-parse

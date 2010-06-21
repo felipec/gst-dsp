@@ -43,13 +43,20 @@ $(gst_plugin): override LIBS += $(GST_LIBS)
 
 targets += $(gst_plugin)
 
+gst-dsp-parse: parse-test.o gstdspbuffer.o gstdspparse.o gstdspvdec.o \
+	gstdspbase.o util.o dsp_bridge.o async_queue.o log.o \
+	tidsp.a
+gst-dsp-parse: override CFLAGS += $(GST_CFLAGS) -D DSPDIR='"$(dspdir)"'
+gst-dsp-parse: override LIBS += $(GST_LIBS) $(AVP_LIBS)
+bins += gst-dsp-parse
+
 doc: $(gst_plugin)
 	$(MAKE) -C doc
 
 doc-install: doc
 	$(MAKE) -C doc install
 
-all: $(targets)
+all: $(targets) $(bins)
 
 # pretty print
 ifndef V
@@ -60,11 +67,15 @@ endif
 
 .PHONY: doc doc-install
 
-install: $(targets)
+install: $(targets) $(bins)
 	install -m 755 -D libgstdsp.so $(D)$(prefix)/lib/gstreamer-0.10/libgstdsp.so
+	install -m 755 -D gst-dsp-parse $(D)$(prefix)/bin/gst-dsp-parse
 
 %.o:: %.c
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
+
+$(bins):
+	$(QUIET_LINK)$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 %.so::
 	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS)
@@ -73,7 +84,7 @@ install: $(targets)
 	$(QUIET_LINK)$(AR) rcs $@ $^
 
 clean:
-	$(QUIET_CLEAN)$(RM) -v $(targets) *.o *.d tidsp/*.d tidsp/*.o
+	$(QUIET_CLEAN)$(RM) -v $(targets) $(bins) *.o *.d tidsp/*.d tidsp/*.o
 
 dist: base := gst-dsp-$(version)
 dist:
