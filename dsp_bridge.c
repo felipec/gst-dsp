@@ -80,7 +80,7 @@
 #define DB_IOC(module, num) \
 	(((module) & DB_MODULE_MASK) | ((num) & DB_IOC_MASK))
 
-#elif DSP_API
+#else
 
 #define DB_MGR  1
 #define DB_PROC 7
