@@ -34,6 +34,26 @@
 
 #define DEFAULT_BYTESTREAM TRUE
 
+/*
+ * H.264 supported levels
+ * Source http://www.itu.int/rec/T-REC-H.264-201003-I/ page 294 - Annex A table A-1
+ * the bitrates of the last 2 levels is not up to standard due to encdoder
+ * limitations.
+ */
+
+static struct gstdsp_codec_level levels[] = {
+	{10,  1485 ,   64000 },         /* Level 1 -     QCIF@15fps  */
+	{10,  1485 ,  128000 },         /* Level 1b -     QCIF@15fps */
+	{11,  3000 ,  192000 },         /* Level 1.1 -    QCIF@30fps */
+	{12,  6000 ,  384000 },         /* Level 1.2 -     CIF@15fps */
+	{13, 11880 ,  768000 },         /* Level 1.3-      CIF@30fps */
+	{20, 11880 , 2000000 },         /* Level 2  -      CIF@30fps */
+	{21, 19800 , 4000000 },         /* Level 2.1 - 352x480@30fps */
+	{22, 20250 , 4000000 },         /* Level 2.2 - 720x480@15fps */
+	{30, 40500 , 8000000 },         /* Level 3 -   720x480@30fps --> 10Mbps */
+	{31, 47700 , 8000000 },         /* Max supported - WVGA@30fps */
+};
+
 enum {
 	ARG_0,
 	ARG_BYTESTREAM,
@@ -64,6 +84,8 @@ instance_init(GTypeInstance *instance,
 	base->alg = GSTDSP_H264ENC;
 
 	self->priv.h264.bytestream = DEFAULT_BYTESTREAM;
+	self->supported_levels = levels;
+	self->nr_supported_levels = ARRAY_SIZE(levels);
 }
 
 static void

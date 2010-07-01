@@ -43,6 +43,12 @@ union venc_priv_data {
 	} h264;
 };
 
+struct gstdsp_codec_level {
+	gint id;
+	gint mbps; /* macroblocks per second */
+	gint bitrate;
+};
+
 enum {
 	GSTDSP_JPEGENC,
 	GSTDSP_H263ENC,
@@ -57,6 +63,8 @@ struct GstDspVEnc {
 	gint bitrate;
 	gint framerate;
 	gint quality;
+	struct gstdsp_codec_level *supported_levels;
+	guint nr_supported_levels;
 	union venc_priv_data priv;
 	gint frame_index;
 	GstEvent *keyframe_event;

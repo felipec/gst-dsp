@@ -29,6 +29,23 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
+/*
+ * MPEG4-SP supported levels
+ * source: ISO/IEC 14496-2:2004/Cor 3:2008
+ * Level 5 is not the one defined by the standard, this is the default for
+ * this particular encoder.
+ */
+
+static struct gstdsp_codec_level levels[] = {
+	{0,  1485,   64000 },        /* Level 0  - QCIF@15fps */
+	{0,  1485,  128000 },        /* Level 0b - CIF@15fps  */
+	{1,  1485,   64000 },        /* Level 1  - CIF@30fps  */
+	{2,  5940,  128000 },        /* Level 2  - CIF@30fps  */
+	{3, 11880,  384000 },        /* Level 3  - QCIF@15fps */
+	{4, 36000, 4000000 },        /* Level 4a - VGA@30fps  */
+	{5, 47700, 5000000 },        /* Level 5  - WVGA@30fps */
+};
+
 static inline GstCaps *
 generate_src_template(void)
 {
@@ -52,7 +69,11 @@ instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
+	GstDspVEnc *self = GST_DSP_VENC(instance);
+
 	base->alg = GSTDSP_MP4VENC;
+	self->supported_levels = levels;
+	self->nr_supported_levels = ARRAY_SIZE(levels);
 }
 
 static void

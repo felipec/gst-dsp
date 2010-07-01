@@ -29,6 +29,22 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
+/*
+ * H.263 supported levels
+ * source: http://www.itu.int/rec/T-REC-H.263/  , page 208- table of levels.
+ */
+
+static struct gstdsp_codec_level levels[] = {
+	{10,  1485,    64000 },        /* Level 10 - QCIF@15fps */
+	{20,  5940,   128000 },        /* Level 20 - CIF@15fps */
+	{30, 11880,   384000 },        /* Level 30 - CIF@30fps */
+	{40, 11880,  2048000 },        /* Level 40 - CIF@30fps */
+	{45,  1485,   128000 },        /* Level 45 - QCIF@15fps */
+	{50, 19800,  4096000 },        /* Level 50 - CIF@50fps */
+	{60, 40500,  8192000 },        /* Level 60 - 720x288@50fps */
+	{70, 81000, 16384000 },        /* Level 70 - 4CIF@50fps */
+};
+
 static inline GstCaps *
 generate_src_template(void)
 {
@@ -51,7 +67,11 @@ instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
+	GstDspVEnc *self = GST_DSP_VENC(instance);
 	base->alg = GSTDSP_H263ENC;
+
+	self->supported_levels = levels;
+	self->nr_supported_levels = ARRAY_SIZE(levels);
 }
 
 static void
