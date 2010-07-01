@@ -748,6 +748,49 @@ setup_jpegparams(GstDspBase *base)
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 }
 
+static void
+mp4venc_try_extract_codec_data(GstDspBase *base, dmm_buffer_t *b)
+{
+	GstDspVEnc *self = GST_DSP_VENC(base);
+	guint8 gov[] = { 0x0, 0x0, 0x1, 0xB3 };
+	guint8 vop[] = { 0x0, 0x0, 0x1, 0xB6 };
+	guint8 *data;
+	GstBuffer *codec_buf;
+
+	if (G_LIKELY(self->priv.mpeg4.codec_data_done))
+		return;
+
+	if (!b->len)
+		return;
+
+	/* only mind codec-data for storage */
+	if (self->mode)
+		goto done;
+
+	/*
+	 * Codec data expected in first frame,
+	 * and runs from VOSH to GOP (not including); so locate the latter one.
+	 */
+	data = memmem(b->data, b->len, gov, 4);
+
+	if (!data) {
+		/* maybe no GOP is in the stream, look for first VOP */
+		data = memmem(b->data, b->len, vop, 4);
+	}
+
+	if (!data) {
+		pr_err(self, "failed to extract mpeg4 codec-data");
+		goto done;
+	}
+
+	codec_buf = gst_buffer_new();
+	GST_BUFFER_DATA(codec_buf) = b->data;
+	GST_BUFFER_SIZE(codec_buf) = data - (guint8 *) b->data;
+	gst_dsp_set_codec_data_caps(base, codec_buf);
+done:
+	self->priv.mpeg4.codec_data_done = TRUE;
+}
+
 struct mp4venc_in_stream_params {
 	uint32_t frame_index;
 	uint32_t framerate;
@@ -800,6 +843,7 @@ mp4venc_out_recv_cb(GstDspBase *base,
 	struct mp4venc_out_stream_params *param;
 	param = p->data;
 	b->keyframe = (param->frame_type == 1);
+	mp4venc_try_extract_codec_data(base, b);
 }
 
 static void

@@ -30,6 +30,9 @@ union venc_priv_data {
 		gboolean sps_received, pps_received, codec_data_done;
 		GstBuffer *sps, *pps, *codec_data;
 	} h264;
+	struct {
+		gboolean codec_data_done;
+	} mpeg4;
 };
 
 struct gstdsp_codec_level {
