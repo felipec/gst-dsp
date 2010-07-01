@@ -112,6 +112,7 @@
 #define PROC_ENUMNODE		_IOWR(DB, DB_IOC(DB_PROC, 3), unsigned long)
 #define PROC_STOP               _IOWR(DB, DB_IOC(DB_PROC, 15), unsigned long)
 #define PROC_LOAD               _IOW(DB, DB_IOC(DB_PROC, 7), unsigned long)
+#define PROC_START              _IOW(DB, DB_IOC(DB_PROC, 9), unsigned long)
 
 /* NODE Module */
 #define NODE_REGISTERNOTIFY	_IOWR(DB, DB_IOC(DB_NODE, 11), unsigned long)
@@ -211,6 +212,16 @@ bool dsp_register_notify(int handle,
 struct proc_start {
 	void *proc_handle;
 };
+
+bool dsp_start(int handle,
+	       void *proc_handle)
+{
+	struct proc_start arg = {
+		.proc_handle = proc_handle,
+	};
+
+	return DSP_SUCCEEDED(ioctl(handle, PROC_START, &arg));
+}
 
 bool dsp_stop(int handle,
 	      void *proc_handle)
