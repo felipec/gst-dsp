@@ -79,7 +79,8 @@ pr_helper(unsigned int level,
 
 	va_start(args, fmt);
 
-	vasprintf(&tmp, fmt, args);
+	if (vasprintf(&tmp, fmt, args) < 0)
+		goto leave;
 
 	if (level <= 1) {
 #ifdef SYSLOG
@@ -107,5 +108,6 @@ pr_helper(unsigned int level,
 
 	free(tmp);
 
+leave:
 	va_end(args);
 }

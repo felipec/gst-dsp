@@ -346,7 +346,7 @@ bool dsp_wait_for_events(int handle,
 bool dsp_enum(int handle,
 	      unsigned int num,
 	      struct dsp_ndb_props *info,
-	      unsigned int info_size,
+	      size_t info_size,
 	      unsigned int *ret_num);
 
 bool dsp_register(int handle,
