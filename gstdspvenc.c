@@ -842,37 +842,61 @@ setup_mp4params(GstDspBase *base)
 	p->recv_cb = mp4venc_out_recv_cb;
 }
 
-static inline int calculate_bitrate(GstDspVEnc *self)
+static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	float coeff, scale;
-	int bitrate, ref_bitrate;
-	const int reference_fps = 15;
-	const float twiddle = 1.2;
+	GstCaps *allowed_caps;
+	guint i;
+	gint tgt_mbps, tgt_level, tgt_bitrate;
+	struct gstdsp_codec_level *cur, *level;
 
-	switch (base->alg) {
-	case GSTDSP_MP4VENC:
-		coeff = 0.2;
-		break;
-	case GSTDSP_H263ENC:
-		coeff = 0.3;
-		break;
-	case GSTDSP_H264ENC:
-		coeff = 0.35;
-		break;
-	default:
-		coeff = 0.1;
-		break;
+	if (!self->supported_levels)
+		return;
+
+	tgt_level = -1;
+	tgt_bitrate = self->max_bitrate;
+	tgt_mbps = (self->width / 16 * self->height / 16) * self->framerate;
+
+	/* see if downstream caps express something */
+	allowed_caps = gst_pad_get_allowed_caps(base->srcpad);
+	if (allowed_caps) {
+		if (gst_caps_get_size(allowed_caps) > 0) {
+			GstStructure *s;
+			s = gst_caps_get_structure(allowed_caps, 0);
+			gst_structure_get_int(s, "level", &tgt_level);
+		}
+		gst_caps_unref(allowed_caps);
 	}
 
-	ref_bitrate = (self->width * self->height) / coeff;
-	scale = 1 + ((float) self->framerate / reference_fps - 1) * twiddle;
+	level = cur = self->supported_levels;
 
-	bitrate = ref_bitrate * scale;
+	for (i = 0; i < self->nr_supported_levels; i++, cur++) {
+		bool ok = false;
 
-	pr_info(self, "bitrate: %d", bitrate);
+		/* is this the level we want? */
+		if (tgt_level > 0 && tgt_level != cur->id)
+			continue;
 
-	return bitrate;
+		/* is the bitrate enough? (and doesn't overshoot) */
+		if (tgt_bitrate && cur->bitrate >= tgt_bitrate && level->bitrate < tgt_bitrate)
+			ok = true;
+
+		/* are the mbps enough? (and don't overshoot) */
+		if (cur->mbps >= tgt_mbps && level->mbps < tgt_mbps)
+			ok = true;
+
+		if (!ok)
+			continue;
+
+		/* we got a winner */
+		level = cur;
+	}
+
+	if (!self->max_bitrate)
+		self->max_bitrate = level->bitrate;
+
+	pr_info(self, "max bitrate: %d", self->max_bitrate);
+	pr_info(self, "level: %d", level->id);
 }
 
 static gboolean
@@ -961,8 +985,10 @@ sink_setcaps(GstPad *pad,
 		}
 	}
 
+	check_supported_levels(self, caps);
+
 	if (self->bitrate == 0)
-		self->bitrate = calculate_bitrate(self);
+		self->bitrate = self->max_bitrate;
 
 	gst_caps_append_structure(out_caps, out_struc);
 
