@@ -247,6 +247,11 @@ bool dsp_detach(int handle,
 bool dsp_stop(int handle,
 	      void *proc_handle);
 
+bool dsp_load(int handle,
+	      void *proc_handle,
+	      int argc, char **argv,
+	      char **env);
+
 bool dsp_node_allocate(int handle,
 		       void *proc_handle,
 		       const dsp_uuid_t *node_uuid,
