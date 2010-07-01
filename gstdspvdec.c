@@ -817,6 +817,8 @@ create_node(GstDspBase *base)
 		return NULL;
 	}
 
+	pr_info(base, "algo=%s", alg_fn);
+
 #if SN_API >= 1
 	if (!gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P")) {
 		pr_err(self, "failed to register conversions node library");
