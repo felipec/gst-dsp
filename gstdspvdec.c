@@ -107,6 +107,11 @@ generate_src_template(void)
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
+	struc = gst_structure_new("video/x-raw-yuv",
+				  "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('I', '4', '2', '0'),
+				  NULL);
+
+	gst_caps_append_structure(caps, struc);
 
 	return caps;
 }
@@ -157,7 +162,7 @@ get_mp4v_args(GstDspVDec *self)
 		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
-		.color_format = 4,
+		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1,
 		.max_framerate = 1,
 		.max_bitrate = 1,
 		.endianness = 1,
@@ -279,7 +284,7 @@ get_h264_args(GstDspVDec *self)
 		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
-		.color_format = 1,
+		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 1 : 0,
 		.max_framerate = 0,
 		.max_bitrate = -1,
 		.endianness = 1,
@@ -342,7 +347,7 @@ get_wmv_args(GstDspVDec *self)
 		.out_count = base->ports[1]->num_buffers,
 		.max_width = self->width,
 		.max_height = self->height,
-		.color_format = 4,
+		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1,
 		.max_framerate = 0,
 		.max_bitrate = 0,
 		.endianness = 1,
@@ -980,7 +985,7 @@ sink_setcaps(GstPad *pad,
 	GstDspVDec *self;
 	GstDspBase *base;
 	GstStructure *in_struc;
-	GstCaps *out_caps;
+	GstCaps *out_caps, *peer_caps;
 	GstStructure *out_struc;
 	const char *name;
 	gboolean ret;
@@ -1033,6 +1038,23 @@ sink_setcaps(GstPad *pad,
 		gst_structure_set(out_struc, "height", G_TYPE_INT, self->height, NULL);
 
 	base->output_buffer_size = self->width * self->height * 2;
+	self->color_format = GST_MAKE_FOURCC('U', 'Y', 'V', 'Y');
+
+	peer_caps = gst_pad_get_allowed_caps(base->srcpad);
+	if (peer_caps) {
+		GstStructure *peer_struc;
+		guint32 color_format;
+		peer_struc = gst_caps_get_structure(peer_caps, 0);
+		if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
+			if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')) {
+				self->color_format = color_format;
+				base->output_buffer_size = self->width * self->height * 3 / 2;
+				gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
+							GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
+			}
+		}
+		gst_caps_unref(peer_caps);
+	}
 
 	{
 		const GValue *framerate = NULL;

@@ -44,7 +44,10 @@ set_framesize(GstDspBase *base,
 				  "height", G_TYPE_INT, height, NULL);
 	}
 
-	base->output_buffer_size = width * height * 2;
+	if (vdec->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'))
+		base->output_buffer_size = width * height * 2;
+	else
+		base->output_buffer_size = width * height * 3 / 2;
 	vdec->width = width;
 	vdec->height = height;
 }

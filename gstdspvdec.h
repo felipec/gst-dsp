@@ -48,6 +48,7 @@ struct GstDspVDec {
 	gboolean wmv_is_vc1;
 	GstBuffer *codec_data;
 	gboolean codec_data_sent;
+	guint32 color_format;
 
 	union vdec_priv_data priv;
 };
