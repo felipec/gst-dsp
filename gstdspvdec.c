@@ -166,11 +166,7 @@ get_mp4v_args(GstDspVDec *self)
 		.max_framerate = 1,
 		.max_bitrate = 1,
 		.endianness = 1,
-		.profile = 0,
 		.max_level = -1,
-		.mode = 0,
-		.preroll = 0,
-		.display_width = 0,
 	};
 
 	if (base->alg == GSTDSP_H263DEC)
@@ -285,15 +281,9 @@ get_h264_args(GstDspVDec *self)
 		.max_width = self->width,
 		.max_height = self->height,
 		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 1 : 0,
-		.max_framerate = 0,
 		.max_bitrate = -1,
 		.endianness = 1,
-		.profile = 0,
 		.max_level = -1,
-		.mode = 0,
-		.preroll = 0,
-		.stream_format = 0,
-		.display_width = 0,
 	};
 
 	struct foo_data *cb_data;
@@ -348,15 +338,10 @@ get_wmv_args(GstDspVDec *self)
 		.max_width = self->width,
 		.max_height = self->height,
 		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1,
-		.max_framerate = 0,
-		.max_bitrate = 0,
 		.endianness = 1,
 		.profile = -1,
 		.max_level = -1,
-		.process_mode = 0,
-		.preroll = 0,
 		.stream_format = self->wmv_is_vc1 ? 1 : 2, /* 1 = wvc1, 2 = wmv3 */
-		.stride_width = 0,
 	};
 
 	struct foo_data *cb_data;
@@ -840,8 +825,6 @@ create_node(GstDspBase *base)
 			.cb = sizeof(attrs),
 			.priority = 5,
 			.timeout = 1000,
-			.heap_size = 0,
-			.gpp_va = 0,
 		};
 		void *cb_data;
 

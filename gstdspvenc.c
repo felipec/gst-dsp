@@ -135,18 +135,6 @@ get_jpegenc_args(GstDspVEnc *self)
 		.max_width = JPEGENC_MAX_WIDTH + 32,
 		.max_height = JPEGENC_MAX_HEIGHT + 32,
 		.color_format = 1,
-		.max_app0_width = 0,
-		.max_app0_height = 0,
-		.max_app1_width = 0,
-		.max_app1_height = 0,
-		.max_app13_width = 0,
-		.max_app13_height = 0,
-		.scans = 0,
-
-		/* SN_API >= 1 */
-		.convert = 0,
-		.max_app5_width = 0,
-		.max_app5_height = 0,
 	};
 
 	struct foo_data *cb_data;
@@ -213,26 +201,18 @@ get_mp4venc_args(GstDspVEnc *self)
 		.out_id = 1,
 		.out_type = 0,
 		.out_count = base->ports[1]->num_buffers,
-		.reserved = 0,
 		.width = self->width,
 		.height = self->height,
 		.bitrate = self->bitrate,
 		.vbv_size = 112,
 		.color_format = 2,
-		.data_part = 0,
-		.reversible_vlc = 0,
 		.unrestricted_mv = 1,
 		.framerate = self->framerate,
 		.qp_first = 12,
 		.profile = 1,
 		.max_delay = 300,
 		.vbv_enable = 1,
-		.h263_slice_mode = 0,
-		.use_gov = 0,
 		.use_vos = 1,
-		.h263_annex_i = 0,
-		.h263_annex_j = 0,
-		.h263_annex_t = 0,
 	};
 
 	args.is_mpeg4 = base->alg == GSTDSP_MP4VENC ? 1 : 0;
@@ -312,7 +292,6 @@ get_h264venc_args(GstDspVEnc *self)
 		.out_id = 1,
 		.out_type = 0,
 		.out_count = base->ports[1]->num_buffers,
-		.reserved = 0,
 		.width = self->width,
 		.height = self->height,
 		.bitrate = self->max_bitrate ? self->max_bitrate : self->bitrate,
@@ -320,10 +299,8 @@ get_h264venc_args(GstDspVEnc *self)
 		.intra_frame_period = self->framerate,
 		.framerate = self->framerate * 1000,
 		.yuv_format = 2,
-		.unrestricted_mv = 0, /* not supported */
 		.num_ref_frames = 1, /* not supported */
 		.rc_algorithm = 1, /* 0 = var, 1 == constant, 2 == none */
-		.idr_enable = 0, /* not used */
 		.deblocking_enable = 1,
 		.mv_range = 64,
 		.qpi_frame = 28,
@@ -331,7 +308,6 @@ get_h264venc_args(GstDspVEnc *self)
 		.level = 13,
 		.nal_mode = self->priv.h264.bytestream ? 0 : 1, /* 0 == bytestream, 1 == NALU */
 		.encoding_preset = 3,
-		.rc_algo = 0,
 	};
 
 	if (self->mode == 0)
@@ -420,8 +396,6 @@ create_node(GstDspVEnc *self)
 			.cb = sizeof(attrs),
 			.priority = 5,
 			.timeout = 1000,
-			.heap_size = 0,
-			.gpp_va = 0,
 		};
 		void *cb_data;
 
