@@ -29,9 +29,9 @@ gst_plugin := libgstdsp.so
 $(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o \
 	gstdspvenc.o gstdsph263enc.o gstdspmp4venc.o gstdspjpegenc.o \
 	dsp_bridge.o util.o log.o gstdspparse.o async_queue.o gstdsph264enc.o
-$(gst_plugin): CFLAGS := $(CFLAGS) $(UTIL_CFLAGS) $(GST_CFLAGS) -fPIC \
+$(gst_plugin): override CFLAGS += $(GST_CFLAGS) -fPIC \
 	-D VERSION='"$(version)"' -D DSPDIR='"$(dspdir)"'
-$(gst_plugin): LIBS := $(UTIL_LIBS) $(GST_LIBS)
+$(gst_plugin): override LIBS += $(GST_LIBS)
 
 targets += $(gst_plugin)
 
@@ -45,8 +45,7 @@ QUIET_CLEAN = @echo '   CLEAN      '$@;
 endif
 
 install: $(targets)
-	mkdir -p $(D)$(prefix)/lib/gstreamer-0.10
-	install -m 644 libgstdsp.so $(D)$(prefix)/lib/gstreamer-0.10
+	install -m 755 -D libgstdsp.so $(D)$(prefix)/lib/gstreamer-0.10/libgstdsp.so
 
 %.o:: %.c
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
