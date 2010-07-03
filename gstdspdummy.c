@@ -399,16 +399,14 @@ base_init(gpointer g_class)
 {
 	GstElementClass *element_class;
 	GstPadTemplate *template;
-	GstElementDetails details;
 
 	element_class = GST_ELEMENT_CLASS(g_class);
 
-	details.longname = "DSP dummy element";
-	details.klass = "None";
-	details.description = "Copies the input to the output";
-	details.author = "Felipe Contreras";
-
-	gst_element_class_set_details(element_class, &details);
+	gst_element_class_set_details_simple(element_class,
+					     "DSP dummy element",
+					     "None",
+					     "Copies the input to the output",
+					     "Felipe Contreras");
 
 	template = gst_pad_template_new("src", GST_PAD_SRC,
 					GST_PAD_ALWAYS,

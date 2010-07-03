@@ -79,16 +79,14 @@ base_init(gpointer g_class)
 {
 	GstElementClass *element_class;
 	GstPadTemplate *template;
-	GstElementDetails details;
 
 	element_class = GST_ELEMENT_CLASS(g_class);
 
-	details.longname = "DSP video encoder";
-	details.klass = "Codec/Encoder/Video";
-	details.description = "Encodes H.263 video with TI's DSP algorithms";
-	details.author = "Felipe Contreras";
-
-	gst_element_class_set_details(element_class, &details);
+	gst_element_class_set_details_simple(element_class,
+					     "DSP video encoder",
+					     "Codec/Encoder/Video",
+					     "Encodes H.263 video with TI's DSP algorithms",
+					     "Felipe Contreras");
 
 	template = gst_pad_template_new("src", GST_PAD_SRC,
 					GST_PAD_ALWAYS,
