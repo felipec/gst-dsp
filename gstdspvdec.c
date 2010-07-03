@@ -863,6 +863,7 @@ create_node(GstDspBase *base)
 			break;
 		default:
 			cb_data = NULL;
+			break;
 		}
 
 		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, cb_data, &attrs, &node)) {
