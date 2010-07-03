@@ -749,10 +749,10 @@ struct mp4venc_in_stream_params {
 	uint32_t qp_inter;
 	uint32_t last_frame;
 	uint32_t width;
-#if SN_API >= 1
+
+	/* SN_API >= 1 */
 	uint32_t qp_max;
 	uint32_t qp_min;
-#endif
 };
 
 struct mp4venc_out_stream_params {
@@ -762,10 +762,10 @@ struct mp4venc_out_stream_params {
 	uint32_t num_packets;
 	uint8_t mv_data[12960];
 	uint8_t resync_data[6480];
-#if SN_API >= 1
+
+	/* SN_API >= 1 */
 	uint32_t frame_index;
 	uint32_t error_code;
-#endif
 };
 
 static void
