@@ -30,7 +30,7 @@ void pr_helper(unsigned int level,
 	       const char *function,
 	       unsigned int line,
 	       const char *fmt,
-	       ...);
+	       ...) __attribute__((format(printf, 6, 7)));
 
 #define pr_base(level, object, ...) pr_helper(level, object, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
@@ -42,8 +42,8 @@ void pr_helper(unsigned int level,
 #define pr_info(object, ...) pr_base(3, object, __VA_ARGS__)
 #define pr_debug(object, ...) pr_base(4, object, __VA_ARGS__)
 #else
-#define pr_info(object, ...) {}
-#define pr_debug(object, ...) {}
+#define pr_info(object, ...) ({ if (0) pr_base(3, object, __VA_ARGS__); })
+#define pr_debug(object, ...) ({ if (0) pr_base(4, object, __VA_ARGS__); })
 #endif
 
 #endif /* LOG_H */
