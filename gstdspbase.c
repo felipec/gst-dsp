@@ -1231,6 +1231,9 @@ instance_init(GTypeInstance *instance,
 	element_class = GST_ELEMENT_CLASS(g_class);
 	self = GST_DSP_BASE(instance);
 
+	self->ports[0] = du_port_new(0, DMA_TO_DEVICE);
+	self->ports[1] = du_port_new(1, DMA_FROM_DEVICE);
+
 	self->sinkpad =
 		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "sink"), "sink");
 

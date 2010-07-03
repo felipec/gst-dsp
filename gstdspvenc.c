@@ -1216,9 +1216,6 @@ instance_init(GTypeInstance *instance,
 	base = GST_DSP_BASE(instance);
 	self = GST_DSP_VENC(instance);
 
-	base->ports[0] = du_port_new(0, DMA_TO_DEVICE);
-	base->ports[1] = du_port_new(1, DMA_FROM_DEVICE);
-
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 
 	self->bitrate = DEFAULT_BITRATE;
