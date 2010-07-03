@@ -707,7 +707,7 @@ h264dec_out_recv_cb(GstDspBase *base,
 	struct h264dec_out_stream_params *param;
 	param = p->data;
 
-	pr_debug(base, "receive %d/%d",
+	pr_debug(base, "receive %d/%ld",
 		 b->len, base->output_buffer_size);
 	pr_debug(base, "error: 0x%x, frame type: %d",
 		 param->error_code, param->frame_type);
