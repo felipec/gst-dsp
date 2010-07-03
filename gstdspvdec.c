@@ -989,6 +989,7 @@ sink_setcaps(GstPad *pad,
 	GstStructure *out_struc;
 	const char *name;
 	gboolean ret;
+	const GValue *aspect_ratio;
 
 	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -1036,6 +1037,10 @@ sink_setcaps(GstPad *pad,
 		gst_structure_set(out_struc, "width", G_TYPE_INT, self->width, NULL);
 	if (gst_structure_get_int(in_struc, "height", &self->height))
 		gst_structure_set(out_struc, "height", G_TYPE_INT, self->height, NULL);
+
+	aspect_ratio = gst_structure_get_value(in_struc, "pixel-aspect-ratio");
+	if (aspect_ratio)
+		gst_structure_set_value(out_struc, "pixel-aspect-ratio", aspect_ratio);
 
 	base->output_buffer_size = self->width * self->height * 2;
 	self->color_format = GST_MAKE_FOURCC('U', 'Y', 'V', 'Y');
