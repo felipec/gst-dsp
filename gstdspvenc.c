@@ -455,11 +455,13 @@ struct jpegenc_dyn_params {
 	uint32_t gen_header;
 	uint32_t quality;
 
-	/* SN_API == 0 */
 	uint32_t capture_height;
 	uint32_t dri_interval;
 	uint32_t huffman_table;
 	uint32_t quant_table;
+
+	/* SN_API == 1; apparently only sizes 32 and 52 work. */
+	uint32_t resize;
 };
 
 static inline void
@@ -480,7 +482,6 @@ jpegenc_send_params(GstDspBase *base)
 	params->capture_width = self->width;
 	params->quality = self->quality;
 
-	/* SN_API == 0 */
 	params->capture_height = self->height;
 
 	gstdsp_send_alg_ctrl(base, base->node, b);
