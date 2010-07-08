@@ -345,6 +345,13 @@ output_loop(gpointer data)
 	}
 	g_mutex_unlock(self->ts_mutex);
 
+	/* a pending reallocation from the previous run */
+	if (G_UNLIKELY(!b->data)) {
+		dmm_buffer_allocate(b, self->output_buffer_size);
+		send_buffer(self, b, 1);
+		goto end;
+	}
+
 	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");
@@ -453,6 +460,15 @@ leave:
 		pr_info(self, "got eos");
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		ret = GST_FLOW_UNEXPECTED;
+		/*
+		 * We don't want to allocate data unnecessarily; postpone after
+		 * EOS and flush.
+		 */
+		if (b->data)
+			send_buffer(self, b, 1);
+		else
+			/* we'll need to allocate on the next run */
+			async_queue_push(p->queue, b);
 	}
 	else {
 		if (!b->data)
