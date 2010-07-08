@@ -81,6 +81,12 @@ generate_sink_template(void)
 
 	gst_caps_append_structure(caps, struc);
 
+	struc = gst_structure_new("video/x-raw-yuv",
+				  "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('I', '4', '2', '0'),
+				  NULL);
+
+	gst_caps_append_structure(caps, struc);
+
 	return caps;
 }
 
@@ -205,7 +211,7 @@ get_mp4venc_args(GstDspVEnc *self)
 		.height = self->height,
 		.bitrate = self->bitrate,
 		.vbv_size = 112,
-		.color_format = 2,
+		.color_format = (self->color_format == GST_MAKE_FOURCC('U','Y','V','Y') ? 2 : 0),
 		.unrestricted_mv = 1,
 		.framerate = self->framerate,
 		.qp_first = 12,
@@ -298,7 +304,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.bitstream_buf_size = base->output_buffer_size,
 		.intra_frame_period = self->framerate,
 		.framerate = self->framerate * 1000,
-		.yuv_format = 2,
+		.yuv_format = (self->color_format == GST_MAKE_FOURCC('U','Y','V','Y') ? 2 : 0),
 		.num_ref_frames = 1, /* not supported */
 		.rc_algorithm = 1, /* 0 = var, 1 == constant, 2 == none */
 		.deblocking_enable = 1,
@@ -479,7 +485,7 @@ jpegenc_send_params(GstDspBase *base)
 
 	params = b->data;
 	params->size = sizeof(*params);
-	params->color_format = 4;
+	params->color_format = (self->color_format == GST_MAKE_FOURCC('U','Y','V','Y') ? 4 : 1);
 	params->width = self->width;
 	params->height = self->height;
 	params->capture_width = self->width;
@@ -979,6 +985,7 @@ sink_setcaps(GstPad *pad,
 		gst_structure_set(out_struc, "width", G_TYPE_INT, width, NULL);
 	if (gst_structure_get_int(in_struc, "height", &height))
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
+	gst_structure_get_fourcc(in_struc, "format", &self->color_format);
 
 	switch (base->alg) {
 	case GSTDSP_H263ENC:
@@ -987,7 +994,10 @@ sink_setcaps(GstPad *pad,
 		base->output_buffer_size = width * height / 2;
 		break;
 	case GSTDSP_JPEGENC:
-		base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
+		if (self->color_format == GST_MAKE_FOURCC('I', '4', '2', '0'))
+			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 3 / 2;
+		else
+			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 		base->output_buffer_size = width * height;
 		self->quality = 90;
 		if (self->quality < 10)
