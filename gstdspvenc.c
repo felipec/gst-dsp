@@ -396,7 +396,7 @@ create_node(GstDspVEnc *self)
 
 		switch (base->alg) {
 		case GSTDSP_JPEGENC:
-			attrs.profile_id = 10;
+			attrs.profile_id = 1;
 			cb_data = get_jpegenc_args(self);
 			break;
 		case GSTDSP_H263ENC:
