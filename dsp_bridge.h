@@ -355,7 +355,7 @@ bool dsp_register(int handle,
 		  const char *path);
 
 bool dsp_unregister(int handle,
-		    dsp_uuid_t *uuid,
+		    const dsp_uuid_t *uuid,
 		    enum dsp_dcd_object_type type);
 
 bool dsp_proc_get_info(int handle,

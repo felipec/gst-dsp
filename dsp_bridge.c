@@ -319,12 +319,12 @@ bool dsp_register(int handle,
 }
 
 struct unregister_object {
-	dsp_uuid_t *uuid;
+	const dsp_uuid_t *uuid;
 	enum dsp_dcd_object_type type;
 };
 
 bool dsp_unregister(int handle,
-		    dsp_uuid_t *uuid,
+		    const dsp_uuid_t *uuid,
 		    enum dsp_dcd_object_type type)
 {
 	struct unregister_object arg = {
