@@ -645,12 +645,8 @@ h264venc_out_recv_cb(GstDspBase *base,
 		return;
 
 	if (G_LIKELY(self->priv.h264.codec_data_done)) {
-		/* prefix the NALU with a lenght field, don't count the start code */
-		uint32_t len = b->len - 4;
-		((uint8_t *)b->data)[3] = len & 0xff;
-		((uint8_t *)b->data)[2] = (len >> 8) & 0xff;
-		((uint8_t *)b->data)[1] = (len >> 16) & 0xff;
-		((uint8_t *)b->data)[0] = (len >> 24) & 0xff;
+		/* prefix the NALU with a lenght field, not counting the start code */
+		*(uint32_t*)b->data = GINT_TO_BE(b->len - 4);
 	}
 	else {
 		if (!self->priv.h264.sps_received) {
