@@ -62,7 +62,8 @@ struct GstDspBase {
 	unsigned long input_buffer_size;
 	unsigned long output_buffer_size;
 	GThread *dsp_thread, *out_thread;
-	gboolean done, eos;
+	gboolean done;
+	int deferred_eos;
 
 	du_port_t *ports[2];
 	dmm_buffer_t *alg_ctrl;

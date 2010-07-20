@@ -438,7 +438,7 @@ output_loop(gpointer data)
 	self->ts_count--;
 
 	if (self->use_eos_align) {
-		if (G_UNLIKELY(self->eos) && self->ts_count == 0)
+		if (G_UNLIKELY(g_atomic_int_get(&self->deferred_eos)) && self->ts_count == 0)
 			got_eos = TRUE;
 	}
 #ifdef TS_COUNT
@@ -489,7 +489,7 @@ nok:
 		 */
 		g_mutex_lock(self->ts_mutex);
 		g_atomic_int_set(&self->status, ret);
-		got_eos = !got_eos && (self->use_eos_align && self->eos);
+		got_eos = !got_eos && (self->use_eos_align && g_atomic_int_get(&self->deferred_eos));
 		g_mutex_unlock(self->ts_mutex);
 		pr_info(self, "pausing task; reason %s", gst_flow_get_name(ret));
 		gst_pad_pause_task(self->srcpad);
@@ -930,7 +930,7 @@ change_state(GstElement *element,
 		self->done = FALSE;
 		async_queue_enable(self->ports[0]->queue);
 		async_queue_enable(self->ports[1]->queue);
-		self->eos = FALSE;
+		self->deferred_eos = false;
 		break;
 
 	case GST_STATE_CHANGE_PAUSED_TO_READY:
@@ -1113,7 +1113,7 @@ sink_event(GstDspBase *self,
 
 		g_mutex_lock(self->ts_mutex);
 		do_push = (g_atomic_int_get(&self->status) != GST_FLOW_OK) || !self->use_eos_align;
-		self->eos = self->use_eos_align;
+		g_atomic_int_set(&self->deferred_eos, self->use_eos_align);
 		g_mutex_unlock(self->ts_mutex);
 
 		if (do_push) {
@@ -1126,7 +1126,7 @@ sink_event(GstDspBase *self,
 			ret = gst_pad_push_event(self->srcpad, event);
 		}
 		else {
-			self->eos = TRUE;
+			g_atomic_int_set(&self->deferred_eos, true);
 			gst_event_unref(event);
 		}
 		g_mutex_unlock(self->ts_mutex);
@@ -1150,7 +1150,7 @@ sink_event(GstDspBase *self,
 		self->ts_push_pos = self->ts_in_pos;
 		pr_debug(self, "flushing next %u buffer(s)",
 			 self->ts_push_pos - self->ts_out_pos);
-		self->eos = FALSE;
+		g_atomic_int_set(&self->deferred_eos, false);
 		g_mutex_unlock(self->ts_mutex);
 
 		g_atomic_int_set(&self->status, GST_FLOW_OK);
