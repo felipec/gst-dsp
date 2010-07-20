@@ -273,15 +273,34 @@ setup_buffers(GstDspBase *self)
 	}
 }
 
+static inline void
+pause_task(GstDspBase *self, GstFlowReturn status)
+{
+	bool deferred_eos;
+
+	/* synchronize to ensure we are not dropping the EOS event */
+	g_mutex_lock(self->ts_mutex);
+	g_atomic_int_compare_and_exchange(&self->status, GST_FLOW_OK, status);
+	deferred_eos = g_atomic_int_compare_and_exchange(&self->deferred_eos, true, false);
+	g_mutex_unlock(self->ts_mutex);
+
+	pr_info(self, "pausing task; reason %s", gst_flow_get_name(status));
+	gst_pad_pause_task(self->srcpad);
+
+	/* there's a pending deferred EOS, it's now or never */
+	if (deferred_eos) {
+		pr_info(self, "send elapsed eos");
+		gst_pad_push_event(self->srcpad, gst_event_new_eos());
+	}
+}
+
 static inline GstFlowReturn
 check_status(GstDspBase *self)
 {
 	GstFlowReturn ret;
 	ret = g_atomic_int_get(&self->status);
-	if (ret != GST_FLOW_OK) {
-		pr_info(self, "status: %s", gst_flow_get_name(ret));
-		gst_pad_pause_task(self->srcpad);
-	}
+	if (ret != GST_FLOW_OK)
+		pause_task(self, ret);
 	return ret;
 }
 
@@ -476,25 +495,8 @@ leave:
 	}
 
 nok:
-	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-		bool deferred_eos;
-
-		/* synchronize to ensure we are not dropping the EOS event */
-		g_mutex_lock(self->ts_mutex);
-		g_atomic_int_set(&self->status, ret);
-		deferred_eos =
-			g_atomic_int_compare_and_exchange(&self->deferred_eos, true, false);
-		g_mutex_unlock(self->ts_mutex);
-
-		pr_info(self, "pausing task; reason %s", gst_flow_get_name(ret));
-		gst_pad_pause_task(self->srcpad);
-
-		/* there's a pending deferred EOS, it's now or never */
-		if (deferred_eos) {
-			pr_info(self, "task pausing; sending eos");
-			gst_pad_push_event(self->srcpad, gst_event_new_eos());
-		}
-	}
+	if (G_UNLIKELY(ret != GST_FLOW_OK))
+		pause_task(self, ret);
 
 end:
 	pr_debug(self, "end");
