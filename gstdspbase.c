@@ -457,6 +457,7 @@ leave:
 	if (G_UNLIKELY(got_eos)) {
 		pr_info(self, "got eos");
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
+		g_atomic_int_set(&self->deferred_eos, false);
 		ret = GST_FLOW_UNEXPECTED;
 		/*
 		 * We don't want to allocate data unnecessarily; postpone after
@@ -476,22 +477,20 @@ leave:
 
 nok:
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-		/*
-		 * we plan to shutdown, synchronize to ensure passing on EOS,
-		 * so we don't hang the pipeline in the rare case that downstream
-		 * returned an error, while upstream reached EOS
-		 * (so the downstream error will not pass upstream anymore).
-		 * In all other cases, error will be passed upstream, or whatever
-		 * is responsible for stopping/pausing the task should take proper
-		 * action not to hang pipeline anyway (e.g. post message).
-		 */
+		bool deferred_eos;
+
+		/* synchronize to ensure we are not dropping the EOS event */
 		g_mutex_lock(self->ts_mutex);
 		g_atomic_int_set(&self->status, ret);
-		got_eos = !got_eos && g_atomic_int_get(&self->deferred_eos);
+		deferred_eos =
+			g_atomic_int_compare_and_exchange(&self->deferred_eos, true, false);
 		g_mutex_unlock(self->ts_mutex);
+
 		pr_info(self, "pausing task; reason %s", gst_flow_get_name(ret));
 		gst_pad_pause_task(self->srcpad);
-		if (got_eos) {
+
+		/* there's a pending deferred EOS, it's now or never */
+		if (deferred_eos) {
 			pr_info(self, "task pausing; sending eos");
 			gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		}
