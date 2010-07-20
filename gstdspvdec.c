@@ -1131,6 +1131,66 @@ handle_codec_data(GstDspVDec *self,
 	return gstdsp_send_codec_data(base, buf);
 }
 
+static inline void
+configure_caps(GstDspVDec *self,
+	       GstCaps *in,
+	       GstCaps *out)
+{
+	GstDspBase *base;
+	GstCaps *peer_caps;
+	GstStructure *out_struc, *in_struc;
+	const GValue *aspect_ratio;
+
+	base = GST_DSP_BASE(self);
+
+	in_struc = gst_caps_get_structure(in, 0);
+
+	out_struc = gst_structure_new("video/x-raw-yuv",
+				      "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'),
+				      NULL);
+
+	if (gst_structure_get_int(in_struc, "width", &self->width))
+		gst_structure_set(out_struc, "width", G_TYPE_INT, self->width, NULL);
+	if (gst_structure_get_int(in_struc, "height", &self->height))
+		gst_structure_set(out_struc, "height", G_TYPE_INT, self->height, NULL);
+
+	aspect_ratio = gst_structure_get_value(in_struc, "pixel-aspect-ratio");
+	if (aspect_ratio)
+		gst_structure_set_value(out_struc, "pixel-aspect-ratio", aspect_ratio);
+
+	base->output_buffer_size = self->width * self->height * 2;
+	self->color_format = GST_MAKE_FOURCC('U', 'Y', 'V', 'Y');
+
+	peer_caps = gst_pad_get_allowed_caps(base->srcpad);
+	if (peer_caps) {
+		GstStructure *peer_struc;
+		guint32 color_format;
+		peer_struc = gst_caps_get_structure(peer_caps, 0);
+		if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
+			if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')) {
+				self->color_format = color_format;
+				base->output_buffer_size = self->width * self->height * 3 / 2;
+				gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
+						  GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
+			}
+		}
+		gst_caps_unref(peer_caps);
+	}
+
+	{
+		const GValue *framerate = NULL;
+		framerate = gst_structure_get_value(in_struc, "framerate");
+		if (framerate)
+			gst_structure_set_value(out_struc, "framerate", framerate);
+		else
+			/* FIXME this is a workaround for xvimagesink */
+			gst_structure_set(out_struc, "framerate",
+					  GST_TYPE_FRACTION, 0, 1, NULL);
+	}
+
+	gst_caps_append_structure(out, out_struc);
+}
+
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -1138,11 +1198,9 @@ sink_setcaps(GstPad *pad,
 	GstDspVDec *self;
 	GstDspBase *base;
 	GstStructure *in_struc;
-	GstCaps *out_caps, *peer_caps;
-	GstStructure *out_struc;
+	GstCaps *out_caps;
 	const char *name;
 	gboolean ret;
-	const GValue *aspect_ratio;
 
 	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -1199,51 +1257,7 @@ sink_setcaps(GstPad *pad,
 	}
 
 	out_caps = gst_caps_new_empty();
-
-	out_struc = gst_structure_new("video/x-raw-yuv",
-				      "format", GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'),
-				      NULL);
-
-	if (gst_structure_get_int(in_struc, "width", &self->width))
-		gst_structure_set(out_struc, "width", G_TYPE_INT, self->width, NULL);
-	if (gst_structure_get_int(in_struc, "height", &self->height))
-		gst_structure_set(out_struc, "height", G_TYPE_INT, self->height, NULL);
-
-	aspect_ratio = gst_structure_get_value(in_struc, "pixel-aspect-ratio");
-	if (aspect_ratio)
-		gst_structure_set_value(out_struc, "pixel-aspect-ratio", aspect_ratio);
-
-	base->output_buffer_size = self->width * self->height * 2;
-	self->color_format = GST_MAKE_FOURCC('U', 'Y', 'V', 'Y');
-
-	peer_caps = gst_pad_get_allowed_caps(base->srcpad);
-	if (peer_caps) {
-		GstStructure *peer_struc;
-		guint32 color_format;
-		peer_struc = gst_caps_get_structure(peer_caps, 0);
-		if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
-			if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')) {
-				self->color_format = color_format;
-				base->output_buffer_size = self->width * self->height * 3 / 2;
-				gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
-							GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
-			}
-		}
-		gst_caps_unref(peer_caps);
-	}
-
-	{
-		const GValue *framerate = NULL;
-		framerate = gst_structure_get_value(in_struc, "framerate");
-		if (framerate)
-			gst_structure_set_value(out_struc, "framerate", framerate);
-		else
-			/* FIXME this is a workaround for xvimagesink */
-			gst_structure_set(out_struc, "framerate",
-					  GST_TYPE_FRACTION, 0, 1, NULL);
-	}
-
-	gst_caps_append_structure(out_caps, out_struc);
+	configure_caps(self, caps, out_caps);
 	base->tmp_caps = out_caps;
 
 	ret = gst_pad_set_caps(pad, caps);
