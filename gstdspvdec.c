@@ -1176,10 +1176,10 @@ configure_caps(GstDspVDec *self,
 	allowed_caps = gst_pad_get_allowed_caps(base->srcpad);
 	if (allowed_caps) {
 		if (gst_caps_get_size(allowed_caps) > 0) {
-			GstStructure *peer_struc;
+			GstStructure *s;
 			guint32 color_format;
-			peer_struc = gst_caps_get_structure(allowed_caps, 0);
-			if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
+			s = gst_caps_get_structure(allowed_caps, 0);
+			if (gst_structure_get_fourcc(s, "format", &color_format)) {
 				if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')
 				    && i420_is_valid) {
 					self->color_format = color_format;
