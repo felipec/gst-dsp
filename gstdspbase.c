@@ -1109,27 +1109,22 @@ sink_event(GstDspBase *self,
 	switch (GST_EVENT_TYPE(event)) {
 	case GST_EVENT_EOS:
 	{
-		gboolean do_push;
+		bool defer_eos = false;
 
-		g_mutex_lock(self->ts_mutex);
-		do_push = (g_atomic_int_get(&self->status) != GST_FLOW_OK) || !self->use_eos_align;
-		g_atomic_int_set(&self->deferred_eos, self->use_eos_align);
-		g_mutex_unlock(self->ts_mutex);
-
-		if (do_push) {
-			ret = gst_pad_push_event(self->srcpad, event);
-			break;
+		if (self->use_eos_align) {
+			g_mutex_lock(self->ts_mutex);
+			if (self->ts_count != 0)
+				defer_eos = true;
+			if (g_atomic_int_get(&self->status) != GST_FLOW_OK)
+				defer_eos = false;
+			g_atomic_int_set(&self->deferred_eos, defer_eos);
+			g_mutex_unlock(self->ts_mutex);
 		}
 
-		g_mutex_lock(self->ts_mutex);
-		if (self->ts_count == 0) {
-			ret = gst_pad_push_event(self->srcpad, event);
-		}
-		else {
-			g_atomic_int_set(&self->deferred_eos, true);
+		if (defer_eos)
 			gst_event_unref(event);
-		}
-		g_mutex_unlock(self->ts_mutex);
+		else
+			ret = gst_pad_push_event(self->srcpad, event);
 		break;
 	}
 	case GST_EVENT_FLUSH_START:
