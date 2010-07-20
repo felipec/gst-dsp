@@ -638,7 +638,8 @@ h264venc_out_recv_cb(GstDspBase *base,
 	struct h264venc_out_stream_params *param;
 	param = p->data;
 
-	b->keyframe = (param->frame_type == 1);
+	pr_debug(base, "frame type: %d", param->frame_type);
+	b->keyframe = (param->frame_type == 1 || param->frame_type == 4);
 
 	if (b->len == 0 || self->priv.h264.bytestream)
 		return;
