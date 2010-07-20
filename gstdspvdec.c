@@ -1139,7 +1139,7 @@ configure_caps(GstDspVDec *self,
 	       GstCaps *out)
 {
 	GstDspBase *base;
-	GstCaps *peer_caps;
+	GstCaps *allowed_caps;
 	GstStructure *out_struc, *in_struc;
 	const GValue *aspect_ratio;
 	bool i420_is_valid = true;
@@ -1173,12 +1173,12 @@ configure_caps(GstDspVDec *self,
 			i420_is_valid = false; /* we don't know the chroma */
 	}
 
-	peer_caps = gst_pad_get_allowed_caps(base->srcpad);
-	if (peer_caps) {
-		if (gst_caps_get_size(peer_caps) > 0) {
+	allowed_caps = gst_pad_get_allowed_caps(base->srcpad);
+	if (allowed_caps) {
+		if (gst_caps_get_size(allowed_caps) > 0) {
 			GstStructure *peer_struc;
 			guint32 color_format;
-			peer_struc = gst_caps_get_structure(peer_caps, 0);
+			peer_struc = gst_caps_get_structure(allowed_caps, 0);
 			if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
 				if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')
 				    && i420_is_valid) {
@@ -1189,7 +1189,7 @@ configure_caps(GstDspVDec *self,
 				}
 			}
 		}
-		gst_caps_unref(peer_caps);
+		gst_caps_unref(allowed_caps);
 	}
 
 	{
