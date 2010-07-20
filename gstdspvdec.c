@@ -845,7 +845,7 @@ get_jpeg_args(GstDspVDec *self)
 		.max_height = self->height,
 		.max_width = self->width,
 		.progressive = self->jpeg_is_interlaced ? 1 : 0,
-		.color_format = 4,
+		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1,
 	};
 
 	struct foo_data *cb_data;
@@ -861,12 +861,14 @@ static void
 setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 {
 	struct jpegdec_in_params *in_param;
+	GstDspVDec *self;
 
+	self = GST_DSP_VDEC(base);
 	in_param = tmp->data;
 	in_param->frame_count = 1;
 	in_param->frame_align = 4;
 	in_param->display_width = 1600;
-	in_param->color_format = 4;
+	in_param->color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1;
 	in_param->rgb_format = 9;
 }
 
@@ -1140,6 +1142,7 @@ configure_caps(GstDspVDec *self,
 	GstCaps *peer_caps;
 	GstStructure *out_struc, *in_struc;
 	const GValue *aspect_ratio;
+	bool i420_is_valid = true;
 
 	base = GST_DSP_BASE(self);
 
@@ -1161,13 +1164,23 @@ configure_caps(GstDspVDec *self,
 	base->output_buffer_size = self->width * self->height * 2;
 	self->color_format = GST_MAKE_FOURCC('U', 'Y', 'V', 'Y');
 
+	/* in jpegdec I420 is only possible if the image has that chroma */
+	if (base->alg == GSTDSP_JPEGDEC) {
+		guint32 color_format;
+		if (gst_structure_get_fourcc(in_struc, "format", &color_format))
+			i420_is_valid = (color_format == GST_MAKE_FOURCC('I', '4', '2', '0'));
+		else
+			i420_is_valid = false; /* we don't know the chroma */
+	}
+
 	peer_caps = gst_pad_get_allowed_caps(base->srcpad);
 	if (peer_caps) {
 		GstStructure *peer_struc;
 		guint32 color_format;
 		peer_struc = gst_caps_get_structure(peer_caps, 0);
 		if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
-			if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')) {
+			if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')
+			    && i420_is_valid) {
 				self->color_format = color_format;
 				base->output_buffer_size = self->width * self->height * 3 / 2;
 				gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
