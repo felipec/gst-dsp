@@ -76,7 +76,6 @@ struct GstDspBase {
 	guint alg;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
-	gboolean use_eos_align; /**< Wait for all buffers before EOS. */
 	guint dsp_error;
 
 	void *(*create_node)(GstDspBase *base);

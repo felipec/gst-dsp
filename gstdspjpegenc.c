@@ -40,8 +40,6 @@ instance_init(GTypeInstance *instance,
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
 	base->alg = GSTDSP_JPEGENC;
-
-	base->use_eos_align = TRUE;
 }
 
 static void

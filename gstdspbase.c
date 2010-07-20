@@ -1114,15 +1114,13 @@ sink_event(GstDspBase *self,
 	{
 		bool defer_eos = false;
 
-		if (self->use_eos_align) {
-			g_mutex_lock(self->ts_mutex);
-			if (self->ts_count != 0)
-				defer_eos = true;
-			if (g_atomic_int_get(&self->status) != GST_FLOW_OK)
-				defer_eos = false;
-			g_atomic_int_set(&self->deferred_eos, defer_eos);
-			g_mutex_unlock(self->ts_mutex);
-		}
+		g_mutex_lock(self->ts_mutex);
+		if (self->ts_count != 0)
+			defer_eos = true;
+		if (self->status != GST_FLOW_OK)
+			defer_eos = false;
+		g_atomic_int_set(&self->deferred_eos, defer_eos);
+		g_mutex_unlock(self->ts_mutex);
 
 		if (defer_eos)
 			gst_event_unref(event);

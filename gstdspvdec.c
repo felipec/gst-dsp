@@ -1241,8 +1241,6 @@ sink_setcaps(GstPad *pad,
 	}
 	else if (strcmp(name, "image/jpeg") == 0) {
 		base->alg = GSTDSP_JPEGDEC;
-		base->use_eos_align = TRUE;
-
 		gst_structure_get_boolean(in_struc, "interlaced",
 					  &self->jpeg_is_interlaced);
 	}
