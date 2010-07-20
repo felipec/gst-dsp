@@ -437,10 +437,8 @@ output_loop(gpointer data)
 	self->ts_push_pos = self->ts_out_pos;
 	self->ts_count--;
 
-	if (self->use_eos_align) {
-		if (G_UNLIKELY(g_atomic_int_get(&self->deferred_eos)) && self->ts_count == 0)
-			got_eos = TRUE;
-	}
+	if (G_UNLIKELY(g_atomic_int_get(&self->deferred_eos)) && self->ts_count == 0)
+		got_eos = TRUE;
 #ifdef TS_COUNT
 	if (self->ts_count > 2 || self->ts_count < 1)
 		pr_info(self, "tsc=%lu", self->ts_count);
@@ -489,7 +487,7 @@ nok:
 		 */
 		g_mutex_lock(self->ts_mutex);
 		g_atomic_int_set(&self->status, ret);
-		got_eos = !got_eos && (self->use_eos_align && g_atomic_int_get(&self->deferred_eos));
+		got_eos = !got_eos && g_atomic_int_get(&self->deferred_eos);
 		g_mutex_unlock(self->ts_mutex);
 		pr_info(self, "pausing task; reason %s", gst_flow_get_name(ret));
 		gst_pad_pause_task(self->srcpad);
