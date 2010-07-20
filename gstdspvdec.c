@@ -1175,16 +1175,18 @@ configure_caps(GstDspVDec *self,
 
 	peer_caps = gst_pad_get_allowed_caps(base->srcpad);
 	if (peer_caps) {
-		GstStructure *peer_struc;
-		guint32 color_format;
-		peer_struc = gst_caps_get_structure(peer_caps, 0);
-		if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
-			if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')
-			    && i420_is_valid) {
-				self->color_format = color_format;
-				base->output_buffer_size = self->width * self->height * 3 / 2;
-				gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
-						  GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
+		if (gst_caps_get_size(peer_caps) > 0) {
+			GstStructure *peer_struc;
+			guint32 color_format;
+			peer_struc = gst_caps_get_structure(peer_caps, 0);
+			if (gst_structure_get_fourcc(peer_struc, "format", &color_format)) {
+				if (color_format == GST_MAKE_FOURCC('I', '4', '2', '0')
+				    && i420_is_valid) {
+					self->color_format = color_format;
+					base->output_buffer_size = self->width * self->height * 3 / 2;
+					gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
+							  GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
+				}
 			}
 		}
 		gst_caps_unref(peer_caps);
