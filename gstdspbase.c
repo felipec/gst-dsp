@@ -1112,7 +1112,7 @@ sink_event(GstDspBase *self,
 		gboolean do_push;
 
 		g_mutex_lock(self->ts_mutex);
-		do_push = (self->status != GST_FLOW_OK) || !self->use_eos_align;
+		do_push = (g_atomic_int_get(&self->status) != GST_FLOW_OK) || !self->use_eos_align;
 		self->eos = self->use_eos_align;
 		g_mutex_unlock(self->ts_mutex);
 
