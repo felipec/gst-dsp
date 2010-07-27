@@ -301,7 +301,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.qpi_frame = 28,
 		.profile = 66, /* Baseline profile */
 		.level = 13,
-		.nal_mode = self->priv.h264.bytestream ? 0 : 1, /* 0 == bytestream, 1 == NALU */
+		.nal_mode = self->priv.h264.bytestream ? 2 : 1, /* 0 == bytestream, 1 == NALU, 2 == bytestream, with NALU sizes */
 		.encoding_preset = 3,
 	};
 
@@ -635,6 +635,41 @@ gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 }
 
 static void
+h264venc_strip_sps_pps_header(GstDspBase *base,
+			      dmm_buffer_t *b,
+			      struct h264venc_out_stream_params *param)
+{
+	GstDspVEnc *self = GST_DSP_VENC(base);
+	char *data = b->data;
+	unsigned i;
+
+	if (param->nalus_per_frame <= 1)
+		return;
+
+	if (!self->priv.h264.sps_received) {
+		self->priv.h264.sps_received = TRUE;
+		return;
+	}
+
+	for (i = 0; i < param->nalus_per_frame; i++) {
+		if ((data[4] & 0x1f) == 7 || (data[4] & 0x1f) == 8) {
+			data += param->nalu_sizes[i];
+			b->data = data;
+			b->len -= param->nalu_sizes[i];
+		}
+	}
+}
+
+static void
+h264venc_ignore_sps_pps_header(GstDspBase *base, dmm_buffer_t *b)
+{
+	char *data = b->data;
+
+	if ((data[4] & 0x1f) == 7 || (data[4] & 0x1f) == 8)
+		base->skip_hack_2++;
+}
+
+static void
 h264venc_out_recv_cb(GstDspBase *base,
 		     du_port_t *port,
 		     dmm_buffer_t *p,
@@ -647,12 +682,20 @@ h264venc_out_recv_cb(GstDspBase *base,
 	pr_debug(base, "frame type: %d", param->frame_type);
 	b->keyframe = (param->frame_type == 1 || param->frame_type == 4);
 
-	if (b->len == 0 || self->priv.h264.bytestream)
+	if (b->len == 0)
 		return;
+
+	if (self->priv.h264.bytestream) {
+		if (self->mode == 1)
+			h264venc_strip_sps_pps_header(base, b, param);
+		return;
+	}
 
 	if (G_LIKELY(self->priv.h264.codec_data_done)) {
 		/* prefix the NALU with a lenght field, not counting the start code */
 		*(uint32_t*)b->data = GINT_TO_BE(b->len - 4);
+		if (self->mode == 1)
+			h264venc_ignore_sps_pps_header(base, b);
 	}
 	else {
 		if (!self->priv.h264.sps_received) {
