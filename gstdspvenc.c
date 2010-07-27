@@ -690,7 +690,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 		return;
 
 	if (self->priv.h264.bytestream) {
-		if (self->mode == 1)
+		if (self->mode == 1 && b->keyframe)
 			h264venc_strip_sps_pps_header(base, b, param);
 		return;
 	}
