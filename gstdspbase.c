@@ -303,7 +303,7 @@ check_status(GstDspBase *self)
 {
 	GstFlowReturn ret;
 	ret = g_atomic_int_get(&self->status);
-	if (ret != GST_FLOW_OK)
+	if (G_UNLIKELY(ret != GST_FLOW_OK))
 		pause_task(self, ret);
 	return ret;
 }
@@ -341,7 +341,7 @@ output_loop(gpointer data)
 	}
 
 	ret = check_status(self);
-	if (ret != GST_FLOW_OK) {
+	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 		async_queue_push(p->queue, b);
 		goto end;
 	}
