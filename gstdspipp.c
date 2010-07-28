@@ -15,6 +15,92 @@
 
 static GstDspBaseClass *parent_class;
 
+struct ipp_name_string {
+	int8_t str[25];
+	uint32_t size;
+};
+
+static inline dmm_buffer_t *ipp_calloc(GstDspIpp *self, size_t size, int dir)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+	return dmm_buffer_calloc(base->dsp_handle, base->proc, size, dir);
+}
+
+/* star algo */
+
+struct ipp_star_algo_create_params {
+	uint32_t size;
+	int32_t num_in_bufs;
+	int32_t num_out_bufs;
+};
+
+static struct ipp_algo *
+get_star_params(GstDspIpp *self)
+{
+	struct ipp_algo *algo;
+	dmm_buffer_t *tmp;
+	struct ipp_star_algo_create_params *params;
+
+	algo = calloc(1, sizeof(*algo));
+	if (!algo)
+		return NULL;
+
+	tmp = ipp_calloc(self, sizeof(*params), DMA_TO_DEVICE);
+	params = tmp->data;
+	params->size = sizeof(*params);
+	params->num_in_bufs = 3;
+	dmm_buffer_map(tmp);
+
+	algo->create_params = tmp;
+	algo->fxn = "STAR_ALG";
+
+	return algo;
+}
+
+/* yuv conversion */
+
+struct ipp_crcbs_yuv_algo_create_params {
+	uint32_t size;
+	int32_t max_width;
+	int32_t max_height;
+	int32_t error_code;
+};
+
+static struct ipp_algo *
+get_yuvc_params(GstDspIpp *self)
+{
+	struct ipp_algo *algo;
+	dmm_buffer_t *tmp;
+	struct ipp_crcbs_yuv_algo_create_params *params;
+
+	algo = calloc(1, sizeof(*algo));
+	if (!algo)
+		return NULL;
+
+	tmp = ipp_calloc(self, sizeof(*params), DMA_TO_DEVICE);
+	params = tmp->data;
+	params->size = sizeof(*params);
+	params->max_width = self->width;
+	params->max_height = self->height;
+	dmm_buffer_map(tmp);
+
+	algo->create_params = tmp;
+	algo->fxn = "YUVCONVERT_IYUVCONVERT";
+	algo->dma_fxn = "YUVCONVERT_TI_IDMA3";
+
+	return algo;
+}
+
+static bool setup_ipp_params(GstDspIpp *self)
+{
+	int i = 0;
+	self->algos[i++] = get_star_params(self);
+	self->algos[i++] = get_yuvc_params(self);
+	self->nr_algos = i;
+
+	return true;
+}
+
 static inline GstCaps *generate_sink_template(void)
 {
 	GstCaps *caps;
@@ -95,6 +181,8 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	GstStructure *in_struc;
 	GstCaps *out_caps;
 	GstStructure *out_struc;
+	int width = 0;
+	int height = 0;
 
 	self = GST_DSP_IPP(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -102,6 +190,15 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	in_struc = gst_caps_get_structure(caps, 0);
 	out_caps = gst_caps_new_empty();
 	out_struc = gst_structure_new("video/x-raw-yuv", NULL);
+
+	if (gst_structure_get_int(in_struc, "width", &width))
+		gst_structure_set(out_struc, "width", G_TYPE_INT, width, NULL);
+
+	if (gst_structure_get_int(in_struc, "height", &height))
+		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
+
+	self->width = width;
+	self->height = height;
 
 	gst_caps_append_structure(out_caps, out_struc);
 
@@ -114,6 +211,10 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 		pr_err(self, "dsp node creation failed");
 		return FALSE;
 	}
+
+	if (!setup_ipp_params(self))
+		return FALSE;
+
 	return true;
 }
 
