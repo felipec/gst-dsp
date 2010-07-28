@@ -101,6 +101,25 @@ static bool setup_ipp_params(GstDspIpp *self)
 	return true;
 }
 
+static void got_message(GstDspBase *base, dsp_msg_t *msg)
+{
+}
+
+static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
+{
+	return true;
+}
+
+static bool send_play_message(GstDspBase *base)
+{
+	return true;
+};
+
+static bool send_stop_message(GstDspBase *base)
+{
+	return true;
+};
+
 static inline GstCaps *generate_sink_template(void)
 {
 	GstCaps *caps;
@@ -222,6 +241,10 @@ static void instance_init(GTypeInstance *instance, gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
 
+	base->got_message = got_message;
+	base->send_buffer = send_buffer;
+	base->send_play_message = send_play_message;
+	base->send_stop_message = send_stop_message;
 	du_port_alloc_buffers(base->ports[0], 1);
 	du_port_alloc_buffers(base->ports[1], 1);
 
