@@ -409,6 +409,53 @@ static bool start_processing(GstDspIpp *self)
 	return send_msg(self, DFGM_START_PROCESSING, NULL, NULL, NULL);
 }
 
+struct stop_processing_msg_elem_1 {
+	uint32_t size;
+	uint32_t reset_state;
+};
+
+static bool stop_processing(GstDspIpp *self)
+{
+	struct stop_processing_msg_elem_1 *arg_1;
+	dmm_buffer_t *b_arg_1;
+
+	b_arg_1 = ipp_calloc(self, sizeof(*arg_1), DMA_BIDIRECTIONAL);
+	arg_1 = b_arg_1->data;
+	arg_1->size = sizeof(*arg_1);
+	arg_1->reset_state = 1;
+	dmm_buffer_map(b_arg_1);
+
+	return send_msg(self, DFGM_STOP_PROCESSING, b_arg_1, NULL, NULL);
+}
+
+static bool destroy_pipe(GstDspIpp *self)
+{
+	return send_msg(self, DFGM_DESTROY_XBF_PIPE, NULL, NULL, NULL);
+}
+
+static bool clear_algorithm(GstDspIpp *self)
+{
+	return send_msg(self, DFGM_CLEAR_XBF_ALGS, NULL, NULL, NULL);
+}
+
+struct destroy_xbf_msg_elem_1 {
+	uint32_t size;
+	uint32_t plat_prms_ptr;
+};
+
+static bool destroy_xbf(GstDspIpp *self)
+{
+	struct destroy_xbf_msg_elem_1 *arg_1;
+	dmm_buffer_t *b_arg_1;
+
+	b_arg_1 = ipp_calloc(self, sizeof(*arg_1), DMA_BIDIRECTIONAL);
+	arg_1 = b_arg_1->data;
+	arg_1->size = sizeof(*arg_1);
+	dmm_buffer_map(b_arg_1);
+
+	return send_msg(self, DFGM_DESTROY_XBF, b_arg_1, NULL, NULL);
+}
+
 static bool init_pipe(GstDspBase *base)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
@@ -445,8 +492,50 @@ static bool send_play_message(GstDspBase *base)
 
 static bool send_stop_message(GstDspBase *base)
 {
-	return true;
-};
+	GstDspIpp *self = GST_DSP_IPP(base);
+	bool ok;
+	unsigned i;
+
+	ok = stop_processing(self);
+	if (!ok)
+		goto leave;
+
+	ok = destroy_pipe(self);
+	if (!ok)
+		goto leave;
+
+	ok = clear_algorithm(self);
+	if (!ok)
+		goto leave;
+
+	ok = destroy_xbf(self);
+	if (!ok)
+		goto leave;
+
+	/* let's wait for the previous msg to complete */
+	g_sem_down(self->msg_sem);
+
+	for (i = 0; i < self->nr_algos; i++) {
+		struct ipp_algo *algo = self->algos[i];
+		if (!algo)
+			break;
+		dmm_buffer_free(algo->create_params);
+		dmm_buffer_free(algo->b_algo_fxn);
+		dmm_buffer_free(algo->b_dma_fxn);
+		free(algo);
+		self->algos[i] = NULL;
+	}
+
+	if (self->flt_graph) {
+		dmm_buffer_free(self->flt_graph);
+		self->flt_graph = NULL;
+	}
+
+	g_sem_up(self->msg_sem);
+
+leave:
+	return ok;
+}
 
 static inline GstCaps *generate_sink_template(void)
 {
