@@ -294,7 +294,7 @@ setup_buffers(GstDspBase *self)
 		else
 			dmm_buffer_allocate(b, self->output_buffer_size);
 
-		send_buffer(self, b, 1);
+		self->send_buffer(self, b, 1);
 	}
 }
 
@@ -516,7 +516,7 @@ leave:
 	else {
 		if (!b->data)
 			dmm_buffer_allocate(b, self->output_buffer_size);
-		send_buffer(self, b, 1);
+		self->send_buffer(self, b, 1);
 	}
 
 nok:
@@ -593,7 +593,7 @@ dsp_thread(gpointer data)
 					break;
 				pr_debug(self, "got dsp message: 0x%0x 0x%0x 0x%0x",
 					 msg.cmd, msg.arg_1, msg.arg_2);
-				got_message(self, &msg);
+				self->got_message(self, &msg);
 			}
 		}
 		else if (index == 1) {
@@ -694,6 +694,12 @@ leave:
 	return ret;
 }
 
+static bool
+send_play_message(GstDspBase *self)
+{
+	return dsp_send_message(self->dsp_handle, self->node, 0x0100, 0, 0);
+};
+
 gboolean
 gstdsp_start(GstDspBase *self)
 {
@@ -747,13 +753,22 @@ gstdsp_start(GstDspBase *self)
 	self->dsp_thread = g_thread_create(dsp_thread, self, TRUE, NULL);
 	gst_pad_start_task(self->srcpad, output_loop, self->srcpad);
 
-	/* play */
-	dsp_send_message(self->dsp_handle, self->node, 0x0100, 0, 0);
+	self->send_play_message(self);
 
 	setup_buffers(self);
 
 	return TRUE;
 }
+
+static bool
+send_stop_message(GstDspBase *self)
+{
+	/* stop */
+	if (dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0))
+		g_sem_down(self->flush);
+	/** @todo find a way to stop wait_for_events */
+	return true;
+};
 
 static gboolean
 _dsp_stop(GstDspBase *self)
@@ -765,10 +780,7 @@ _dsp_stop(GstDspBase *self)
 		return TRUE;
 
 	if (!self->dsp_error) {
-		/* stop */
-		if (dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0))
-			g_sem_down(self->flush);
-		/** @todo find a way to stop wait_for_events */
+		self->send_stop_message(self);
 		self->done = TRUE;
 	}
 
@@ -1154,7 +1166,7 @@ pad_chain(GstPad *pad,
 	self->ts_count++;
 	g_mutex_unlock(self->ts_mutex);
 
-	send_buffer(self, b, 0);
+	self->send_buffer(self, b, 0);
 
 leave:
 
@@ -1301,6 +1313,10 @@ instance_init(GTypeInstance *instance,
 	self->ports[0] = du_port_new(0, DMA_TO_DEVICE);
 	self->ports[1] = du_port_new(1, DMA_FROM_DEVICE);
 
+	self->got_message = got_message;
+	self->send_buffer = send_buffer;
+	self->send_play_message = send_play_message;
+	self->send_stop_message = send_stop_message;
 	self->sinkpad =
 		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "sink"), "sink");
 
