@@ -87,12 +87,23 @@ struct ipp_star_algo_create_params {
 	int32_t num_out_bufs;
 };
 
+struct ipp_star_algo_in_args {
+	uint32_t size;
+};
+
+struct ipp_star_algo_out_args {
+	uint32_t size;
+	int32_t error;
+};
+
 static struct ipp_algo *
 get_star_params(GstDspIpp *self)
 {
 	struct ipp_algo *algo;
 	dmm_buffer_t *tmp;
 	struct ipp_star_algo_create_params *params;
+	struct ipp_star_algo_in_args *in_args;
+	struct ipp_star_algo_out_args *out_args;
 
 	algo = calloc(1, sizeof(*algo));
 	if (!algo)
@@ -107,6 +118,20 @@ get_star_params(GstDspIpp *self)
 	algo->create_params = tmp;
 	algo->fxn = "STAR_ALG";
 
+	tmp = ipp_calloc(self, sizeof(*in_args), DMA_TO_DEVICE);
+	in_args = tmp->data;
+	in_args->size = sizeof(*in_args);
+	dmm_buffer_map(tmp);
+
+	algo->in = tmp;
+
+	tmp = ipp_calloc(self, sizeof(*out_args), DMA_TO_DEVICE);
+	out_args = tmp->data;
+	out_args->size = sizeof(*out_args);
+	dmm_buffer_map(tmp);
+
+	algo->out = tmp;
+
 	return algo;
 }
 
@@ -119,12 +144,31 @@ struct ipp_crcbs_yuv_algo_create_params {
 	int32_t error_code;
 };
 
+struct ipp_yuvc_algo_in_args {
+	uint32_t size;
+	int32_t input_height;
+	int32_t input_width;
+	int32_t output_chroma_format;
+	int32_t input_chroma_format;
+};
+
+struct ipp_yuvc_algo_out_args {
+	uint32_t size;
+	int32_t extended_error;
+	int32_t output_chroma_format;
+	int32_t out_buf_size;
+	int32_t out_width;
+	int32_t out_height;
+};
+
 static struct ipp_algo *
 get_yuvc_params(GstDspIpp *self)
 {
 	struct ipp_algo *algo;
 	dmm_buffer_t *tmp;
 	struct ipp_crcbs_yuv_algo_create_params *params;
+	struct ipp_yuvc_algo_in_args *in_args;
+	struct ipp_yuvc_algo_out_args *out_args;
 
 	algo = calloc(1, sizeof(*algo));
 	if (!algo)
@@ -140,6 +184,24 @@ get_yuvc_params(GstDspIpp *self)
 	algo->create_params = tmp;
 	algo->fxn = "YUVCONVERT_IYUVCONVERT";
 	algo->dma_fxn = "YUVCONVERT_TI_IDMA3";
+
+	tmp = ipp_calloc(self, sizeof(*in_args), DMA_TO_DEVICE);
+	in_args = tmp->data;
+	in_args->size = sizeof(*in_args);
+	in_args->input_width = self->width;
+	in_args->input_height = self->height;
+	in_args->input_chroma_format = IPP_YUV_422ILE;
+	in_args->output_chroma_format = IPP_YUV_420P;
+	dmm_buffer_map(tmp);
+
+	algo->in = tmp;
+
+	tmp = ipp_calloc(self, sizeof(*out_args), DMA_TO_DEVICE);
+	out_args = tmp->data;
+	out_args->size = sizeof(*out_args);
+	dmm_buffer_map(tmp);
+
+	algo->out = tmp;
 
 	return algo;
 }
@@ -169,6 +231,14 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
 	int command_id = msg->cmd;
+
+	if (command_id == DFGM_FREE_BUFF) {
+		du_port_t *p = base->ports[1];
+
+		/* push the output buffer in to the queue. */
+		self->out_buf_ptr->len = base->output_buffer_size;
+		async_queue_push(p->queue, self->out_buf_ptr);
+	}
 
 	switch (command_id) {
 	case DFGM_CREATE_XBF_ACK:
@@ -409,6 +479,98 @@ static bool start_processing(GstDspIpp *self)
 	return send_msg(self, DFGM_START_PROCESSING, NULL, NULL, NULL);
 }
 
+struct queue_buff_msg_elem_1 {
+	uint32_t size;
+	uint32_t content_type;
+	uint32_t port_num;
+	uint32_t algo_index;
+	uint32_t content_ptr;
+	uint32_t reuse_allowed_flag;
+	uint32_t content_size_used;
+	uint32_t content_size;
+	uint32_t process_status;
+	uint32_t next_content_ptr;
+};
+
+static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer, int id)
+{
+	GstDspBase *base = GST_DSP_BASE(self);
+	struct queue_buff_msg_elem_1 *queue_msg1;
+	struct queue_buff_msg_elem_1 *msg_elem_list;
+	dmm_buffer_t *msg_elem_array;
+	int32_t cur_idx = 0;
+	int i = 0 ;
+	du_port_t *port;
+	int nr_algos = self->nr_algos;
+	int nr_buffers;
+	int nr_msgs;
+
+	nr_buffers = (nr_algos == 2) ? 2 : 3;
+	nr_msgs = nr_algos * 2 + nr_buffers;
+	msg_elem_array = ipp_calloc(self, nr_msgs * sizeof(*msg_elem_list), DMA_BIDIRECTIONAL);
+	msg_elem_list = msg_elem_array->data;
+	dmm_buffer_map(msg_elem_array);
+
+	queue_msg1 = &msg_elem_list[cur_idx];
+
+	for (i = 0; i < nr_buffers; i++) {
+		queue_msg1->size = sizeof(*queue_msg1);
+		queue_msg1->content_type = CONTENT_TYPE_BUFFER;
+		queue_msg1->port_num = i;
+		queue_msg1->reuse_allowed_flag = 0;
+		if (i == 0) {
+			queue_msg1->content_size_used = base->input_buffer_size;
+			queue_msg1->content_size = base->input_buffer_size;
+			queue_msg1->content_ptr = (uint32_t)in_buffer->map;
+		} else {
+			port = base->ports[1];
+			dmm_buffer_map(port->buffers[0]);
+			self->out_buf_ptr = port->buffers[0];
+			queue_msg1->content_size_used = base->output_buffer_size;
+			queue_msg1->content_size = base->output_buffer_size;
+			queue_msg1->content_ptr = (uint32_t)self->out_buf_ptr->map;
+		}
+		cur_idx++;
+		queue_msg1->next_content_ptr = (uint32_t)((char *)msg_elem_array->map) +
+			(cur_idx)*sizeof(*msg_elem_list);
+		queue_msg1 = &msg_elem_list[cur_idx];
+	}
+
+	for (i = 0; i < nr_algos; i++) {
+		queue_msg1->size = sizeof(*queue_msg1);
+		queue_msg1->content_type = CONTENT_TYPE_IN_ARGS;
+		queue_msg1->algo_index = i;
+		queue_msg1->content_size_used = self->algos[i]->in->size;
+		queue_msg1->content_size = queue_msg1->content_size_used;
+		queue_msg1->content_ptr = (uint32_t)self->algos[i]->in->map;
+		cur_idx++;
+		queue_msg1->next_content_ptr = (uint32_t)((char *)msg_elem_array->map) +
+			(cur_idx)*sizeof(*msg_elem_list);
+		queue_msg1 = &msg_elem_list[cur_idx];
+	}
+
+	for (i = 0; i < nr_algos; i++) {
+		queue_msg1->size = sizeof(*queue_msg1);
+		queue_msg1->content_type = CONTENT_TYPE_OUT_ARGS;
+		queue_msg1->algo_index = i;
+		queue_msg1->content_size_used = self->algos[i]->out->size;
+		queue_msg1->content_size = queue_msg1->content_size_used;
+		queue_msg1->content_ptr = (uint32_t)self->algos[i]->out->map;
+		cur_idx++;
+
+		if (i == nr_algos - 1) {
+			queue_msg1->next_content_ptr = 0 ;
+		}
+		else {
+			queue_msg1->next_content_ptr = (uint32_t)((char *)msg_elem_array->map) +
+				(cur_idx)*sizeof(*msg_elem_list);
+			queue_msg1 = &msg_elem_list[cur_idx];
+		}
+	}
+
+	return send_msg(self, DFGM_QUEUE_BUFF, msg_elem_array, NULL, NULL);
+}
+
 struct stop_processing_msg_elem_1 {
 	uint32_t size;
 	uint32_t reset_state;
@@ -482,7 +644,13 @@ leave:
 
 static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
 {
-	return true;
+	/* no need to send output buffer to dsp */
+	if (id == 1)
+		return true;
+
+	dmm_buffer_map(b);
+
+	return queue_buffer(GST_DSP_IPP(base), b, id);
 }
 
 static bool send_play_message(GstDspBase *base)
@@ -522,6 +690,8 @@ static bool send_stop_message(GstDspBase *base)
 		dmm_buffer_free(algo->create_params);
 		dmm_buffer_free(algo->b_algo_fxn);
 		dmm_buffer_free(algo->b_dma_fxn);
+		dmm_buffer_free(algo->in);
+		dmm_buffer_free(algo->out);
 		free(algo);
 		self->algos[i] = NULL;
 	}
@@ -635,6 +805,8 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	if (gst_structure_get_int(in_struc, "height", &height))
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
 
+	base->input_buffer_size = width * height * 2;
+	base->output_buffer_size = width * height * 2;
 	self->width = width;
 	self->height = height;
 

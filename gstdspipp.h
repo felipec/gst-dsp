@@ -31,6 +31,8 @@ struct ipp_algo {
 	dmm_buffer_t *create_params;
 	const char *fxn;
 	const char *dma_fxn;
+	dmm_buffer_t *in;
+	dmm_buffer_t *out;
 
 	/* TODO no need to keep these around */
 	dmm_buffer_t *b_algo_fxn;
@@ -46,6 +48,7 @@ struct GstDspIpp {
 
 	dmm_buffer_t *msg_ptr[3];
 	dmm_buffer_t *flt_graph;
+	dmm_buffer_t *out_buf_ptr;
 };
 
 struct GstDspIppClass {
