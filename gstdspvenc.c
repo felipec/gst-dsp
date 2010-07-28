@@ -665,9 +665,9 @@ h264venc_out_recv_cb(GstDspBase *base,
 			gst_dsp_h264venc_create_codec_data(base);
 			if (gst_dsp_set_codec_data_caps(base, self->priv.h264.codec_data)) {
 				self->priv.h264.codec_data_done = TRUE;
-				gst_buffer_unref(self->priv.h264.sps);
-				gst_buffer_unref(self->priv.h264.pps);
-				gst_buffer_unref(self->priv.h264.codec_data);
+				gst_buffer_replace(&self->priv.h264.sps, NULL);
+				gst_buffer_replace(&self->priv.h264.pps, NULL);
+				gst_buffer_replace(&self->priv.h264.codec_data, NULL);
 			}
 		}
 		base->skip_hack_2++;
@@ -1247,6 +1247,27 @@ get_property(GObject *obj,
 }
 
 static void
+reset(GstDspBase *base)
+{
+	GstDspVEnc *self;
+
+	self = GST_DSP_VENC(base);
+
+	pr_debug(self, "venc reset");
+
+	/* some cleanup */
+	if (base->alg == GSTDSP_H264ENC) {
+		self->priv.h264.codec_data_done = FALSE;
+		self->priv.h264.sps_received = FALSE;
+		self->priv.h264.pps_received = FALSE;
+		gst_buffer_replace(&self->priv.h264.sps, NULL);
+		gst_buffer_replace(&self->priv.h264.pps, NULL);
+		gst_buffer_replace(&self->priv.h264.codec_data, NULL);
+	} else
+		self->priv.mpeg4.codec_data_done = FALSE;
+}
+
+static void
 instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
@@ -1257,6 +1278,7 @@ instance_init(GTypeInstance *instance,
 	self = GST_DSP_VENC(instance);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
+	base->reset = reset;
 
 	self->bitrate = DEFAULT_BITRATE;
 	self->mode = DEFAULT_MODE;
