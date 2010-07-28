@@ -39,6 +39,55 @@ static inline GstCaps *generate_src_template(void)
 	return caps;
 }
 
+static void *create_node(GstDspIpp *self)
+{
+	GstDspBase *base;
+	int dsp_handle;
+	struct dsp_node *node = NULL;
+
+	const struct dsp_uuid dfgm_uuid = { 0xe57d1a99, 0xbc8d, 0x463c, 0xac, 0x93,
+		{ 0x49, 0xeA, 0x1A, 0xC0, 0x19, 0x53 } };
+
+	const struct dsp_uuid ipp_uuid = { 0x8ea1b508, 0x49be, 0x4cd0, 0xbb, 0x12,
+		{ 0xea, 0x95, 0x00, 0x58, 0xb3, 0x6b } };
+
+	struct dsp_node_attr_in attrs = {
+		.cb = sizeof(attrs),
+		.priority = 5,
+		.timeout = 1000,
+	};
+
+	base = GST_DSP_BASE(self);
+	dsp_handle = base->dsp_handle;
+
+	if (!gstdsp_register(dsp_handle, &dfgm_uuid, DSP_DCD_LIBRARYTYPE, "dfgm.dll64P")) {
+		pr_err(self, "failed to register usn node library");
+		return NULL;
+	}
+
+	if (!gstdsp_register(dsp_handle, &ipp_uuid, DSP_DCD_LIBRARYTYPE, "ipp_sn.dll64P")) {
+		pr_err(self, "failed to register algo node library");
+		return NULL;
+	}
+
+	if (!gstdsp_register(dsp_handle, &ipp_uuid, DSP_DCD_NODETYPE, "ipp_sn.dll64P")) {
+		pr_err(self, "failed to register algo node");
+		return NULL;
+	}
+
+	if (!dsp_node_allocate(dsp_handle, base->proc, &ipp_uuid, NULL, &attrs, &node)) {
+		pr_err(self, "dsp node allocate failed");
+		return NULL;
+	}
+
+	if (!dsp_node_create(dsp_handle, node)) {
+		pr_err(self, "dsp node create failed");
+		return NULL;
+	}
+
+	return node;
+}
+
 static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 {
 	GstDspIpp *self;
@@ -59,6 +108,12 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	if (!gst_pad_take_caps(base->srcpad, out_caps))
 		return FALSE;
 
+	base->node = create_node(self);
+
+	if (!base->node) {
+		pr_err(self, "dsp node creation failed");
+		return FALSE;
+	}
 	return true;
 }
 
