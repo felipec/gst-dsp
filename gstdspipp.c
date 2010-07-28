@@ -242,6 +242,30 @@ static void free_message_args(GstDspIpp *self)
 	}
 }
 
+static void ipp_buffer_begin(GstDspIpp *self)
+{
+	unsigned i;
+	dmm_buffer_t **c = self->msg_ptr;
+
+	for (i = 0; i < ARRAY_SIZE(self->msg_ptr); i++, c++) {
+		if (!*c)
+			continue;
+		dmm_buffer_begin(*c, (*c)->size);
+	}
+}
+
+static void ipp_buffer_end(GstDspIpp *self)
+{
+	unsigned i;
+	dmm_buffer_t **c = self->msg_ptr;
+
+	for (i = 0; i < ARRAY_SIZE(self->msg_ptr); i++, c++) {
+		if (!*c)
+			continue;
+		dmm_buffer_end(*c, (*c)->size);
+	}
+}
+
 struct xbf_msg_elem_2 {
 	uint32_t size;
 	uint32_t error_code;
@@ -254,6 +278,8 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	struct xbf_msg_elem_2 *msg_2;
 	int error_code = DFGM_ERROR_NONE;
 	dmm_buffer_t **msg_ptr = self->msg_ptr;
+
+	ipp_buffer_end(self);
 
 	if (msg_ptr[1]) {
 		msg_2 = msg_ptr[1]->data;
@@ -326,6 +352,8 @@ static bool send_msg(GstDspIpp *self, int id,
 	self->msg_ptr[0] = arg1;
 	self->msg_ptr[1] = arg2;
 	self->msg_ptr[2] = arg3;
+
+	ipp_buffer_begin(self);
 
 	return dsp_send_message(base->dsp_handle, base->node, id,
 				arg1 ? (uint32_t)arg1->map : 0,
