@@ -18,6 +18,8 @@ static GstDspBaseClass *parent_class;
 #define MAX_ALGS 16
 #define IPP_TIMEOUT (2000 * 1000)
 
+static bool send_stop_message(GstDspBase *base);
+
 enum {
 	IPP_YUV_420P = 1,
 	IPP_YUV_422P,
@@ -60,6 +62,19 @@ enum {
 	DFGM_FREE_BUFF,
 	DFGM_EVENT_ERROR,
 	DFGM_EXIT_ACK,
+};
+
+enum {
+	DFGM_ERROR_NONE = 0,
+	DFGM_ERROR_CREATE_XBF = 0x0100,
+	DFGM_ERROR_DESTROY_XBF = 0x0200,
+	DFGM_ERROR_SET_ALGS = 0x0400,
+	DFGM_ERROR_DESTROY_ALGS = 0x0800,
+	DFGM_ERROR_CREATE_XBF_PIPE = 0x2000,
+	DFGM_ERROR_DESTROY_XBF_PIPE = 0x4000,
+	DFGM_ERROR_CONTROL_PIPE = 0x8000,
+	DFGM_ERROR_QUEUE_BUFF = 0x10000,
+	DFGM_ERROR_INVALID_STATE = 0x80000
 };
 
 enum {
@@ -227,10 +242,24 @@ static void free_message_args(GstDspIpp *self)
 	}
 }
 
+struct xbf_msg_elem_2 {
+	uint32_t size;
+	uint32_t error_code;
+};
+
 static void got_message(GstDspBase *base, struct dsp_msg *msg)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
 	int command_id = msg->cmd;
+	struct xbf_msg_elem_2 *msg_2;
+	int error_code = DFGM_ERROR_NONE;
+	dmm_buffer_t **msg_ptr = self->msg_ptr;
+
+	if (msg_ptr[1]) {
+		msg_2 = msg_ptr[1]->data;
+		error_code = msg_2->error_code;
+		base->dsp_error = error_code;
+	}
 
 	if (command_id == DFGM_FREE_BUFF) {
 		du_port_t *p = base->ports[1];
@@ -252,8 +281,33 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	case DFGM_FREE_BUFF:
 		free_message_args(self);
 		break;
+	case DFGM_EVENT_ERROR:
+		free_message_args(self);
+		send_stop_message(base);
+		gstdsp_got_error(base, base->dsp_error, "DFGM Event Error");
+		base->done = TRUE;
+		break;
 	default:
 		pr_warning(self, "unhandled command 0x%x", command_id);
+		break;
+	}
+
+	switch (error_code) {
+	case DFGM_ERROR_NONE:
+		break;
+	case DFGM_ERROR_CONTROL_PIPE:
+	case DFGM_ERROR_QUEUE_BUFF:
+	case DFGM_ERROR_CREATE_XBF_PIPE:
+	case DFGM_ERROR_SET_ALGS:
+	case DFGM_ERROR_CREATE_XBF:
+		send_stop_message(base);
+		gstdsp_got_error(base, base->dsp_error, "DFGM algo error");
+		base->done = TRUE;
+		break;
+	default:
+		send_stop_message(base);
+		gstdsp_got_error(base, base->dsp_error, "DFGM unhandled error");
+		base->done = TRUE;
 		break;
 	}
 
@@ -276,6 +330,19 @@ static bool send_msg(GstDspIpp *self, int id,
 	return dsp_send_message(base->dsp_handle, base->node, id,
 				arg1 ? (uint32_t)arg1->map : 0,
 				arg2 ? (uint32_t)arg2->map : 0);
+}
+
+static dmm_buffer_t *get_msg_2(GstDspIpp *self)
+{
+	struct xbf_msg_elem_2 *msg_2;
+	dmm_buffer_t *tmp;
+
+	tmp = ipp_calloc(self, sizeof(*msg_2), DMA_BIDIRECTIONAL);
+	msg_2 = tmp->data;
+	msg_2->size = sizeof(*msg_2);
+	dmm_buffer_map(tmp);
+
+	return tmp;
 }
 
 struct create_xbf_msg_elem_1 {
@@ -306,7 +373,7 @@ static bool create_xbf(GstDspIpp *self)
 	create_xbf_msg1->string_size = plat_fxns_name.size;
 	dmm_buffer_map(b_arg_1);
 
-	return send_msg(self, DFGM_CREATE_XBF, b_arg_1, NULL, b_plat_fxn_string);
+	return send_msg(self, DFGM_CREATE_XBF, b_arg_1, get_msg_2(self), b_plat_fxn_string);
 }
 
 struct set_xbf_algs_msg_elem_1 {
@@ -471,12 +538,12 @@ static bool create_pipe(GstDspIpp *self)
 	arg_1->num_in_port = 2;
 	dmm_buffer_map(b_arg_1);
 
-	return send_msg(self, DFGM_CREATE_XBF_PIPE, b_arg_1, NULL, b_create_params);
+	return send_msg(self, DFGM_CREATE_XBF_PIPE, b_arg_1, get_msg_2(self), b_create_params);
 }
 
 static bool start_processing(GstDspIpp *self)
 {
-	return send_msg(self, DFGM_START_PROCESSING, NULL, NULL, NULL);
+	return send_msg(self, DFGM_START_PROCESSING, NULL, get_msg_2(self), NULL);
 }
 
 struct queue_buff_msg_elem_1 {
@@ -587,17 +654,17 @@ static bool stop_processing(GstDspIpp *self)
 	arg_1->reset_state = 1;
 	dmm_buffer_map(b_arg_1);
 
-	return send_msg(self, DFGM_STOP_PROCESSING, b_arg_1, NULL, NULL);
+	return send_msg(self, DFGM_STOP_PROCESSING, b_arg_1, get_msg_2(self), NULL);
 }
 
 static bool destroy_pipe(GstDspIpp *self)
 {
-	return send_msg(self, DFGM_DESTROY_XBF_PIPE, NULL, NULL, NULL);
+	return send_msg(self, DFGM_DESTROY_XBF_PIPE, NULL, get_msg_2(self), NULL);
 }
 
 static bool clear_algorithm(GstDspIpp *self)
 {
-	return send_msg(self, DFGM_CLEAR_XBF_ALGS, NULL, NULL, NULL);
+	return send_msg(self, DFGM_CLEAR_XBF_ALGS, NULL, get_msg_2(self), NULL);
 }
 
 struct destroy_xbf_msg_elem_1 {
@@ -615,7 +682,7 @@ static bool destroy_xbf(GstDspIpp *self)
 	arg_1->size = sizeof(*arg_1);
 	dmm_buffer_map(b_arg_1);
 
-	return send_msg(self, DFGM_DESTROY_XBF, b_arg_1, NULL, NULL);
+	return send_msg(self, DFGM_DESTROY_XBF, b_arg_1, get_msg_2(self), NULL);
 }
 
 static bool init_pipe(GstDspBase *base)
@@ -661,8 +728,11 @@ static bool send_play_message(GstDspBase *base)
 static bool send_stop_message(GstDspBase *base)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
-	bool ok;
+	bool ok = true;
 	unsigned i;
+
+	if (base->dsp_error)
+		goto cleanup;
 
 	ok = stop_processing(self);
 	if (!ok)
@@ -683,6 +753,7 @@ static bool send_stop_message(GstDspBase *base)
 	/* let's wait for the previous msg to complete */
 	g_sem_down(self->msg_sem);
 
+cleanup:
 	for (i = 0; i < self->nr_algos; i++) {
 		struct ipp_algo *algo = self->algos[i];
 		if (!algo)
