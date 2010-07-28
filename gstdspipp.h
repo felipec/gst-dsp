@@ -14,6 +14,7 @@
 #define GST_DSP_IPP_H
 
 #include "gstdspbase.h"
+#include "sem.h"
 
 G_BEGIN_DECLS
 
@@ -41,6 +42,10 @@ struct GstDspIpp {
 	int width, height;
 	struct ipp_algo *algos[IPP_MAX_NUM_OF_ALGOS];
 	unsigned nr_algos;
+	GSem *msg_sem;
+
+	dmm_buffer_t *msg_ptr[3];
+	dmm_buffer_t *flt_graph;
 };
 
 struct GstDspIppClass {
