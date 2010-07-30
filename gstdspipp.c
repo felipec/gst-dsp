@@ -295,12 +295,90 @@ get_crcbs_params(GstDspIpp *self)
 	return algo;
 }
 
+/* EENF: Edge Enhancement and Noise Filter */
+
+struct ipp_eenf_algo_create_params {
+	uint32_t size;
+	int32_t input_buffer_size_for_in_place;
+	int16_t in_place;
+	int16_t error_code;
+	int16_t max_image_size_v;
+	int16_t max_image_size_h;
+};
+
+struct ipp_eenf_algo_in_args {
+	uint32_t size;
+	int32_t input_chroma_format;
+	int16_t in_full_width;
+	int16_t in_full_height;
+	int16_t in_offset_v;
+	int16_t in_offset_h;
+	int16_t input_width;
+	int16_t input_height;
+	int16_t in_place;
+	int16_t nf_processing;
+};
+
+struct ipp_eenf_algo_out_args {
+	uint32_t size;
+	int32_t extended_error;
+	int16_t out_width;
+	int16_t out_height;
+};
+
+static struct ipp_algo *
+get_eenf_params(GstDspIpp *self)
+{
+	struct ipp_algo *algo;
+	dmm_buffer_t *tmp;
+	struct ipp_eenf_algo_create_params *params;
+	struct ipp_eenf_algo_in_args *in_args;
+	struct ipp_eenf_algo_out_args *out_args;
+
+	algo = calloc(1, sizeof(*algo));
+	if (!algo)
+		return NULL;
+
+	tmp = ipp_calloc(self, sizeof(*params), DMA_TO_DEVICE);
+	params = tmp->data;
+	params->size = sizeof(*params);
+	params->max_image_size_v = self->height;
+	params->max_image_size_h = self->width;
+	dmm_buffer_map(tmp);
+
+	algo->create_params = tmp;
+	algo->fxn = "EENF_IEENF";
+	algo->dma_fxn = "EENF_TI_IDMA3";
+
+	tmp = ipp_calloc(self, sizeof(*in_args), DMA_TO_DEVICE);
+	in_args = tmp->data;
+	in_args->size = sizeof(*in_args);
+	in_args->input_chroma_format = IPP_YUV_420P;
+	in_args->in_full_width = self->width;
+	in_args->in_full_height = self->height;
+	in_args->input_width = self->width;
+	in_args->input_height = self->height;
+	dmm_buffer_map(tmp);
+
+	algo->in = tmp;
+
+	tmp = ipp_calloc(self, sizeof(*out_args), DMA_TO_DEVICE);
+	out_args = tmp->data;
+	out_args->size = sizeof(*out_args);
+	dmm_buffer_map(tmp);
+
+	algo->out = tmp;
+
+	return algo;
+}
+
 static bool setup_ipp_params(GstDspIpp *self)
 {
 	int i = 0;
 	self->algos[i++] = get_star_params(self);
 	self->algos[i++] = get_yuvc_params(self, YUV_I_TO_P);
 	self->algos[i++] = get_crcbs_params(self);
+	self->algos[i++] = get_eenf_params(self);
 	self->algos[i++] = get_yuvc_params(self, YUV_P_TO_I);
 	self->nr_algos = i;
 
