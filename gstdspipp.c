@@ -234,11 +234,73 @@ get_yuvc_params(GstDspIpp *self, int alg_id)
 	return algo;
 }
 
+/* chroma suppression  */
+
+struct ipp_crcbs_algo_in_args {
+	uint32_t size;
+	int32_t input_height;
+	int32_t input_width;
+	int32_t input_chroma_format;
+};
+
+struct ipp_crcbs_algo_out_args {
+	uint32_t size;
+	int32_t extended_error;
+	int32_t out_buf_size;
+	int32_t out_width;
+	int32_t out_height;
+};
+
+static struct ipp_algo *
+get_crcbs_params(GstDspIpp *self)
+{
+	struct ipp_algo *algo;
+	dmm_buffer_t *tmp;
+	struct ipp_crcbs_yuv_algo_create_params *params;
+	struct ipp_crcbs_algo_in_args *in_args;
+	struct ipp_crcbs_algo_out_args *out_args;
+
+	algo = calloc(1, sizeof(*algo));
+	if (!algo)
+		return NULL;
+
+	tmp = ipp_calloc(self, sizeof(*params), DMA_TO_DEVICE);
+	params = tmp->data;
+	params->size = sizeof(*params);
+	params->max_width = self->width;
+	params->max_height = self->height;
+	dmm_buffer_map(tmp);
+
+	algo->create_params = tmp;
+	algo->fxn = "CRCBS_ICRCBS";
+	algo->dma_fxn = "CRCBS_TI_IDMA3";
+
+	tmp = ipp_calloc(self, sizeof(*in_args), DMA_TO_DEVICE);
+	in_args = tmp->data;
+	in_args->size = sizeof(*in_args);
+	in_args->input_width = self->width;
+	in_args->input_height = self->height;
+	in_args->input_chroma_format = IPP_YUV_420P;
+	dmm_buffer_map(tmp);
+
+	algo->in = tmp;
+
+	tmp = ipp_calloc(self, sizeof(*out_args), DMA_TO_DEVICE);
+	out_args = tmp->data;
+	out_args->size = sizeof(*out_args);
+	dmm_buffer_map(tmp);
+
+	algo->out = tmp;
+
+	return algo;
+}
+
 static bool setup_ipp_params(GstDspIpp *self)
 {
 	int i = 0;
 	self->algos[i++] = get_star_params(self);
 	self->algos[i++] = get_yuvc_params(self, YUV_I_TO_P);
+	self->algos[i++] = get_crcbs_params(self);
 	self->algos[i++] = get_yuvc_params(self, YUV_P_TO_I);
 	self->nr_algos = i;
 
