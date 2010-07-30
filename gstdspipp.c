@@ -459,6 +459,7 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	case DFGM_DESTROY_XBF_PIPE_ACK:
 	case DFGM_START_PROCESSING_ACK:
 	case DFGM_FREE_BUFF:
+	case DFGM_CONTROL_PIPE_ACK:
 		free_message_args(self);
 		break;
 	case DFGM_EVENT_ERROR:
@@ -728,6 +729,62 @@ static bool start_processing(GstDspIpp *self)
 	return send_msg(self, DFGM_START_PROCESSING, NULL, get_msg_2(self), NULL);
 }
 
+struct control_pipe_msg_elem_1 {
+	uint32_t size;
+	struct {
+		uint32_t alg_inst;
+		uint32_t control_cmd;
+		uint32_t dyn_params_ptr;
+		uint32_t status_ptr;
+	} control_tables[MAX_ALGS];
+};
+
+struct control_pipe_msg_elem_2 {
+	uint32_t size;
+	uint32_t error_code;
+	struct {
+		uint32_t command_error_code;
+	} error_tables[MAX_ALGS];
+};
+
+static bool control_pipe(GstDspIpp *self)
+{
+	struct control_pipe_msg_elem_1 *msg_1;
+	struct control_pipe_msg_elem_2 *msg_2;
+	dmm_buffer_t *b_msg_1;
+	dmm_buffer_t *b_msg_2;
+	size_t tbl_size;
+	int i;
+	int nr_algos = self->nr_algos;
+
+	b_msg_1 = ipp_calloc(self, sizeof(*msg_1), DMA_TO_DEVICE);
+	msg_1 = b_msg_1->data;
+	tbl_size = (sizeof(msg_1->control_tables) / MAX_ALGS) * nr_algos;
+	msg_1->size = sizeof(uint32_t) + tbl_size;
+
+	for (i = 0; i < nr_algos; i++) {
+		msg_1->control_tables[i].alg_inst = i;
+		msg_1->control_tables[i].control_cmd = -1 ;
+
+		/* 3 is the position of EENF in the pipeline */
+		if (i == 3) {
+			msg_1->control_tables[i].control_cmd = 1 ;
+			msg_1->control_tables[i].dyn_params_ptr = (uint32_t)self->dyn_params->map;
+			msg_1->control_tables[i].status_ptr = (uint32_t)self->status_params->map;
+		}
+	}
+
+	dmm_buffer_map(b_msg_1);
+
+	b_msg_2 = ipp_calloc(self, sizeof(*msg_2), DMA_TO_DEVICE);
+	msg_2 = b_msg_2->data;
+	tbl_size = (sizeof(msg_2->error_tables) / MAX_ALGS) * nr_algos;
+	msg_2->size = 2 * sizeof(uint32_t) + tbl_size;
+	dmm_buffer_map(b_msg_2);
+
+	return send_msg(self, DFGM_CONTROL_PIPE, b_msg_1, b_msg_2, NULL);
+}
+
 struct queue_buff_msg_elem_1 {
 	uint32_t size;
 	uint32_t content_type;
@@ -898,11 +955,100 @@ leave:
 	return ok;
 }
 
+/* Dynamic parameters for eenf */
+
+struct algo_buf_info {
+	uint32_t min_num_in_bufs;
+	uint32_t min_num_out_bufs;
+	uint32_t min_in_buf_size[MAX_ALGS];
+	uint32_t min_out_buf_size[MAX_ALGS];
+};
+
+struct algo_status {
+	uint32_t status;
+	uint32_t extended_error;
+	struct algo_buf_info bufInfo;
+};
+
+struct ipp_eenf_algo_dynamic_params {
+	uint32_t size;
+	int16_t in_place;
+	int16_t edge_enhancement_strength;
+	int16_t weak_edge_threshold;
+	int16_t strong_edge_threshold;
+	int16_t low_freq_luma_noise_filter_strength;
+	int16_t mid_freq_luma_noise_filter_strength;
+	int16_t high_freq_luma_noise_filter_strength;
+	int16_t low_freq_cb_noise_filter_strength;
+	int16_t mid_freq_cb_noise_filter_strength;
+	int16_t high_freq_cb_noise_filter_strength;
+	int16_t low_freq_cr_noise_filter_strength;
+	int16_t mid_freq_cr_noise_filter_strength;
+	int16_t high_freq_cr_noise_filter_strength;
+	int16_t shading_vert_param_1;
+	int16_t shading_vert_param_2;
+	int16_t shading_horz_param_1;
+	int16_t shading_horz_param_2;
+	int16_t shading_gain_scale;
+	int16_t shading_gain_offset;
+	int16_t shading_gain_max_value;
+	int16_t ratio_downsample_cb_cr;
+};
+
+static void
+get_eenf_dyn_params(GstDspIpp *self)
+{
+	dmm_buffer_t *tmp;
+	size_t size;
+
+	struct ipp_eenf_algo_dynamic_params params = {
+		.size = sizeof(struct ipp_eenf_algo_dynamic_params),
+		.in_place = 0,
+		.edge_enhancement_strength = 110,
+		.weak_edge_threshold = 30,
+		.strong_edge_threshold = 90,
+		.low_freq_luma_noise_filter_strength = 7,
+		.mid_freq_luma_noise_filter_strength = 14,
+		.high_freq_luma_noise_filter_strength = 28,
+		.low_freq_cb_noise_filter_strength = 8,
+		.mid_freq_cb_noise_filter_strength = 16,
+		.high_freq_cb_noise_filter_strength = 32,
+		.low_freq_cr_noise_filter_strength = 8,
+		.mid_freq_cr_noise_filter_strength = 16,
+		.high_freq_cr_noise_filter_strength = 32,
+		.shading_vert_param_1 = 10,
+		.shading_vert_param_2 = 400,
+		.shading_horz_param_1 = 10,
+		.shading_horz_param_2 = 400,
+		.shading_gain_scale = 128,
+		.shading_gain_offset = 2048,
+		.shading_gain_max_value = 16384,
+		.ratio_downsample_cb_cr = 1,
+	};
+
+	tmp = ipp_calloc(self, sizeof(params), DMA_TO_DEVICE);
+	memcpy(tmp->data, &params, sizeof(params));
+	dmm_buffer_map(tmp);
+	self->dyn_params = tmp;
+
+	size = sizeof(struct algo_status);
+	self->status_params = ipp_calloc(self, size, DMA_BIDIRECTIONAL);
+	dmm_buffer_map(self->status_params);
+}
+
 static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
 {
+	GstDspIpp *self = GST_DSP_IPP(base);
+	bool ok;
+
 	/* no need to send output buffer to dsp */
 	if (id == 1)
 		return true;
+
+	get_eenf_dyn_params(self);
+	ok = control_pipe(self);
+	if (!ok)
+		return ok;
 
 	dmm_buffer_map(b);
 
@@ -964,6 +1110,16 @@ cleanup:
 	if (self->intermediate_buf) {
 		dmm_buffer_free(self->intermediate_buf);
 		self->intermediate_buf = NULL;
+	}
+
+	if (self->dyn_params) {
+		dmm_buffer_free(self->dyn_params);
+		self->dyn_params = NULL;
+	}
+
+	if (self->status_params) {
+		dmm_buffer_free(self->status_params);
+		self->status_params = NULL;
 	}
 
 	g_sem_up(self->msg_sem);
