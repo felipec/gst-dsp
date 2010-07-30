@@ -42,6 +42,7 @@ struct ipp_algo {
 struct GstDspIpp {
 	GstDspBase element;
 	int width, height;
+	int in_pix_fmt;
 	struct ipp_algo *algos[IPP_MAX_NUM_OF_ALGOS];
 	unsigned nr_algos;
 	GSem *msg_sem;

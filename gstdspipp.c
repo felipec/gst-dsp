@@ -376,7 +376,10 @@ static bool setup_ipp_params(GstDspIpp *self)
 {
 	int i = 0;
 	self->algos[i++] = get_star_params(self);
-	self->algos[i++] = get_yuvc_params(self, YUV_I_TO_P);
+
+	if (self->in_pix_fmt == IPP_YUV_422ILE)
+		self->algos[i++] = get_yuvc_params(self, YUV_I_TO_P);
+
 	self->algos[i++] = get_crcbs_params(self);
 	self->algos[i++] = get_eenf_params(self);
 	self->algos[i++] = get_yuvc_params(self, YUV_P_TO_I);
@@ -755,7 +758,18 @@ static bool control_pipe(GstDspIpp *self)
 	dmm_buffer_t *b_msg_2;
 	size_t tbl_size;
 	int i;
+	int eenf_idx;
 	int nr_algos = self->nr_algos;
+
+	/*
+	 * if the input format is YUV420p, YUV422i to YUV420p conversion
+	 * algorithm will not present in the ipp pipeline.In that case
+	 * position of eenf in the pipeline is 2.Otherwise eenf positiom is 3.
+	 */
+	if (self->in_pix_fmt == IPP_YUV_420P)
+		eenf_idx = 2;
+	else
+		eenf_idx = 3;
 
 	b_msg_1 = ipp_calloc(self, sizeof(*msg_1), DMA_TO_DEVICE);
 	msg_1 = b_msg_1->data;
@@ -766,8 +780,7 @@ static bool control_pipe(GstDspIpp *self)
 		msg_1->control_tables[i].alg_inst = i;
 		msg_1->control_tables[i].control_cmd = -1 ;
 
-		/* 3 is the position of EENF in the pipeline */
-		if (i == 3) {
+		if (i == eenf_idx) {
 			msg_1->control_tables[i].control_cmd = 1 ;
 			msg_1->control_tables[i].dyn_params_ptr = (uint32_t)self->dyn_params->map;
 			msg_1->control_tables[i].status_ptr = (uint32_t)self->status_params->map;
@@ -1137,6 +1150,11 @@ static inline GstCaps *generate_sink_template(void)
 	struc = gst_structure_new("video/x-raw-yuv", "format",
 				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('U','Y','V','Y'), NULL);
 	gst_caps_append_structure(caps, struc);
+
+	struc = gst_structure_new("video/x-raw-yuv", "format",
+				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
+	gst_caps_append_structure(caps, struc);
+
 	return caps;
 }
 
@@ -1212,6 +1230,7 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	GstStructure *out_struc;
 	int width = 0;
 	int height = 0;
+	unsigned int format;
 
 	self = GST_DSP_IPP(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -1226,7 +1245,22 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	if (gst_structure_get_int(in_struc, "height", &height))
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
 
-	base->input_buffer_size = width * height * 2;
+	gst_structure_get_fourcc(in_struc, "format", &format);
+
+	switch (format) {
+	case GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'):
+		self->in_pix_fmt = IPP_YUV_422ILE;
+		base->input_buffer_size = width * height * 2;
+		break;
+	case GST_MAKE_FOURCC('I', '4', '2', '0'):
+		self->in_pix_fmt = IPP_YUV_420P;
+		base->input_buffer_size = (width * height * 3) / 2;
+		break;
+	default:
+		pr_err(self, "unsupported colour format");
+		return FALSE;
+	}
+
 	base->output_buffer_size = width * height * 2;
 	self->width = width;
 	self->height = height;
