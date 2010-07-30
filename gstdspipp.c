@@ -83,6 +83,11 @@ enum {
 	CONTENT_TYPE_OUT_ARGS,
 };
 
+enum {
+	YUV_I_TO_P,
+	YUV_P_TO_I,
+};
+
 struct ipp_name_string {
 	int8_t str[25];
 	uint32_t size;
@@ -177,7 +182,7 @@ struct ipp_yuvc_algo_out_args {
 };
 
 static struct ipp_algo *
-get_yuvc_params(GstDspIpp *self)
+get_yuvc_params(GstDspIpp *self, int alg_id)
 {
 	struct ipp_algo *algo;
 	dmm_buffer_t *tmp;
@@ -205,8 +210,16 @@ get_yuvc_params(GstDspIpp *self)
 	in_args->size = sizeof(*in_args);
 	in_args->input_width = self->width;
 	in_args->input_height = self->height;
-	in_args->input_chroma_format = IPP_YUV_422ILE;
-	in_args->output_chroma_format = IPP_YUV_420P;
+
+	if (alg_id == YUV_I_TO_P) {
+		in_args->input_chroma_format = IPP_YUV_422ILE;
+		in_args->output_chroma_format = IPP_YUV_420P;
+	}
+	else {
+		in_args->input_chroma_format = IPP_YUV_420P;
+		in_args->output_chroma_format = IPP_YUV_422ILE;
+	}
+
 	dmm_buffer_map(tmp);
 
 	algo->in = tmp;
@@ -225,7 +238,8 @@ static bool setup_ipp_params(GstDspIpp *self)
 {
 	int i = 0;
 	self->algos[i++] = get_star_params(self);
-	self->algos[i++] = get_yuvc_params(self);
+	self->algos[i++] = get_yuvc_params(self, YUV_I_TO_P);
+	self->algos[i++] = get_yuvc_params(self, YUV_P_TO_I);
 	self->nr_algos = i;
 
 	return true;
@@ -563,7 +577,7 @@ static bool create_pipe(GstDspIpp *self)
 	arg_1->filter_graph_ptr = (uint32_t)self->flt_graph->map;
 	arg_1->create_params_array_ptr = (uint32_t)b_create_params->map;
 	arg_1->num_create_params = nr_algos;
-	arg_1->num_in_port = 2;
+	arg_1->num_in_port = (nr_algos == 2) ? 2 : 3;
 	dmm_buffer_map(b_arg_1);
 
 	return send_msg(self, DFGM_CREATE_XBF_PIPE, b_arg_1, get_msg_2(self), b_create_params);
@@ -617,13 +631,20 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer, int id)
 			queue_msg1->content_size_used = base->input_buffer_size;
 			queue_msg1->content_size = base->input_buffer_size;
 			queue_msg1->content_ptr = (uint32_t)in_buffer->map;
-		} else {
+		} else if (i == 1) {
 			port = base->ports[1];
 			dmm_buffer_map(port->buffers[0]);
 			self->out_buf_ptr = port->buffers[0];
 			queue_msg1->content_size_used = base->output_buffer_size;
 			queue_msg1->content_size = base->output_buffer_size;
 			queue_msg1->content_ptr = (uint32_t)self->out_buf_ptr->map;
+		} else {
+			dmm_buffer_t *b = ipp_calloc(self, base->input_buffer_size, DMA_TO_DEVICE);
+			dmm_buffer_map(b);
+			self->intermediate_buf = b;
+			queue_msg1->content_size_used = base->input_buffer_size;
+			queue_msg1->content_size = base->input_buffer_size;
+			queue_msg1->content_ptr = (uint32_t)b->map;
 		}
 		cur_idx++;
 		queue_msg1->next_content_ptr = (uint32_t)((char *)msg_elem_array->map) +
@@ -798,6 +819,11 @@ cleanup:
 	if (self->flt_graph) {
 		dmm_buffer_free(self->flt_graph);
 		self->flt_graph = NULL;
+	}
+
+	if (self->intermediate_buf) {
+		dmm_buffer_free(self->intermediate_buf);
+		self->intermediate_buf = NULL;
 	}
 
 	g_sem_up(self->msg_sem);
