@@ -952,6 +952,8 @@ change_state(GstElement *element,
 			gstdsp_post_error(self, "dsp stop failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
+		if (self->reset)
+			self->reset(self);
 		break;
 
 	case GST_STATE_CHANGE_READY_TO_NULL:
