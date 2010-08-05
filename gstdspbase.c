@@ -378,13 +378,7 @@ output_loop(gpointer data)
 	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
 		pr_warning(self, "empty buffer");
-		g_mutex_lock(self->ts_mutex);
-		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
-		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
-		self->ts_count--;
-		if (G_LIKELY(!flush_buffer))
-			self->ts_push_pos = self->ts_out_pos;
-		g_mutex_unlock(self->ts_mutex);
+		/* no real frame data, so no need to consume a real frame's ts */
 		goto leave;
 	}
 
