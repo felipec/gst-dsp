@@ -216,7 +216,7 @@ setup_mp4vparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 	struct mp4vdec_in_params *in_param;
 
 	in_param = tmp->data;
-	in_param->performance_mode = 2;
+	in_param->performance_mode = 0;
 }
 
 static inline void
