@@ -639,19 +639,9 @@ static gboolean
 dsp_deinit(GstDspBase *self)
 {
 	gboolean ret = TRUE;
-	guint i;
 
 	if (self->dsp_error)
 		goto leave;
-
-	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
-		du_port_t *p = self->ports[i];
-		guint j;
-		for (j = 0; j < p->num_buffers; j++) {
-			dmm_buffer_free(p->comm[j]);
-			p->comm[j] = NULL;
-		}
-	}
 
 	if (self->proc) {
 		if (!dsp_detach(self->dsp_handle, self->proc)) {
@@ -797,6 +787,15 @@ leave:
 		pr_err(self, "dsp node destroy failed");
 
 	self->node = NULL;
+
+	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
+		du_port_t *p = self->ports[i];
+		guint j;
+		for (j = 0; j < p->num_buffers; j++) {
+			dmm_buffer_free(p->comm[j]);
+			p->comm[j] = NULL;
+		}
+	}
 
 	pr_info(self, "dsp node terminated");
 
