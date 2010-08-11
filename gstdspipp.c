@@ -1247,6 +1247,10 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 
 	gst_structure_get_fourcc(in_struc, "format", &format);
 
+	/* ipp output colour format is always UYVY */
+	gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
+			GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'), NULL);
+
 	switch (format) {
 	case GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'):
 		self->in_pix_fmt = IPP_YUV_422ILE;
