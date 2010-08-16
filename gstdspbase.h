@@ -81,6 +81,7 @@ struct GstDspBase {
 	void *(*create_node)(GstDspBase *base);
 	gboolean (*parse_func)(GstDspBase *base, GstBuffer *buf);
 	void (*reset)(GstDspBase *base);
+	void (*flush_buffer)(GstDspBase *base);
 	GstCaps *tmp_caps;
 
 	/* hacks */

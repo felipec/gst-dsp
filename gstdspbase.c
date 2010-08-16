@@ -1119,9 +1119,11 @@ sink_event(GstDspBase *self,
 		g_atomic_int_set(&self->deferred_eos, defer_eos);
 		g_mutex_unlock(self->ts_mutex);
 
-		if (defer_eos)
+		if (defer_eos) {
+			if (self->flush_buffer)
+				self->flush_buffer(self);
 			gst_event_unref(event);
-		else
+		} else
 			ret = gst_pad_push_event(self->srcpad, event);
 		break;
 	}
