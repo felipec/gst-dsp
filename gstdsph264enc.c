@@ -39,8 +39,8 @@ static struct gstdsp_codec_level levels[] = {
 	{20, 11880 , 2000000 },         /* Level 2  -      CIF@30fps */
 	{21, 19800 , 4000000 },         /* Level 2.1 - 352x480@30fps */
 	{22, 20250 , 4000000 },         /* Level 2.2 - 720x480@15fps */
-	{30, 40500 , 8000000 },         /* Level 3 -   720x480@30fps --> 10Mbps */
-	{31, 47700 , 8000000 },         /* Max supported - WVGA@30fps */
+	{30, 40500 , 8000000 },         /* Level 3 - D1@25/30fps (PAL/NTSC) --> 10Mbps */
+	{31, 48600 , 8000000 },         /* Max supported (WVGA) - 864x480@30fps */
 };
 
 enum {
