@@ -1047,6 +1047,7 @@ create_node(GstDspBase *base)
 	switch (base->alg) {
 	case GSTDSP_WMVDEC:
 		setup_wmvparams(base);
+		base->flush_buffer = gstdsp_base_flush_buffer;
 		wmvdec_send_params(base, node);
 		break;
 	case GSTDSP_H264DEC:
@@ -1055,6 +1056,7 @@ create_node(GstDspBase *base)
 	case GSTDSP_MPEG4VDEC:
 	case GSTDSP_H263DEC:
 		setup_mp4vdec_params(base);
+		base->flush_buffer = gstdsp_base_flush_buffer;
 		break;
 	case GSTDSP_JPEGDEC:
 		setup_jpegdec_params(base);

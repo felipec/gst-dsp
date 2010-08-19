@@ -107,6 +107,7 @@ gboolean gstdsp_send_codec_data(GstDspBase *self, GstBuffer *buf);
 void gstdsp_got_error(GstDspBase *self, guint id, const char *message);
 void gstdsp_post_error(GstDspBase *self, const char *message);
 void gstdsp_send_alg_ctrl(GstDspBase *self, dsp_node_t *node, dmm_buffer_t *b);
+void gstdsp_base_flush_buffer(GstDspBase *self);
 
 typedef void (*gstdsp_setup_params_func)(GstDspBase *base, dmm_buffer_t *b);
 

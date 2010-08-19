@@ -501,6 +501,17 @@ end:
 }
 
 void
+gstdsp_base_flush_buffer(GstDspBase *self)
+{
+	dmm_buffer_t *b;
+	b = async_queue_pop(self->ports[0]->queue);
+	if (!b)
+		return;
+	dmm_buffer_allocate(b, 1);
+	send_buffer(self, b, 0);
+}
+
+void
 gstdsp_post_error(GstDspBase *self,
 		  const char *message)
 {
