@@ -918,7 +918,7 @@ static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 		return;
 
 	tgt_level = -1;
-	tgt_bitrate = self->max_bitrate;
+	tgt_bitrate = self->user_max_bitrate;
 	tgt_mbps = (self->width / 16 * self->height / 16) * self->framerate;
 
 	/* see if downstream caps express something */
@@ -956,9 +956,13 @@ static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 		level = cur;
 	}
 
+	/* no overwriting of a user-set value,
+	 * it should remain across state change re-use of element */
+	self->max_bitrate = self->user_max_bitrate;
 	if (!self->max_bitrate)
 		self->max_bitrate = level->bitrate;
 
+	pr_info(self, "level bitrate: %d", level->bitrate);
 	pr_info(self, "max bitrate: %d", self->max_bitrate);
 	pr_info(self, "level: %d", level->id);
 }
@@ -1229,9 +1233,15 @@ get_property(GObject *obj,
 	case ARG_KEYFRAME_INTERVAL:
 		g_value_set_int(value, g_atomic_int_get(&self->keyframe_interval));
 		break;
-	case ARG_MAX_BITRATE:
-		g_value_set_uint(value, self->user_max_bitrate);
+	case ARG_MAX_BITRATE: {
+		guint bitrate;
+
+		bitrate = self->user_max_bitrate;
+		if (!bitrate)
+			bitrate = self->max_bitrate;
+		g_value_set_uint(value, bitrate);
 		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;

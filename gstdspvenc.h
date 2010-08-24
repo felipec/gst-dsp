@@ -54,6 +54,7 @@ struct GstDspVEnc {
 	guint32 color_format;
 	gint max_bitrate;
 	gint bitrate;
+	gint user_max_bitrate;
 	gint framerate;
 	gint quality;
 	struct gstdsp_codec_level *supported_levels;
