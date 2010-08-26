@@ -25,11 +25,11 @@
 static GstDspBaseClass *parent_class;
 
 enum {
-    ARG_0,
-    ARG_BITRATE,
-    ARG_MODE,
-    ARG_KEYFRAME_INTERVAL,
-    ARG_MAX_BITRATE,
+	ARG_0,
+	ARG_BITRATE,
+	ARG_MODE,
+	ARG_KEYFRAME_INTERVAL,
+	ARG_MAX_BITRATE,
 };
 
 #define DEFAULT_BITRATE 0
@@ -469,8 +469,8 @@ jpegenc_send_params(GstDspBase *base)
 {
 	struct jpegenc_dyn_params *params;
 	dmm_buffer_t *b;
-
 	GstDspVEnc *self = GST_DSP_VENC(base);
+
 	b = dmm_buffer_calloc(base->dsp_handle, base->proc,
 			      sizeof(*params), DMA_TO_DEVICE);
 
@@ -593,11 +593,9 @@ gst_dsp_set_codec_data_caps(GstDspBase *base,
 static inline void
 gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 {
-	GstDspVEnc *self;
+	GstDspVEnc *self = GST_DSP_VENC(base);
 	guint8 *sps, *pps, *codec_data;
 	guint16 sps_size, pps_size, offset;
-
-	self = GST_DSP_VENC(base);
 
 	sps = GST_BUFFER_DATA(self->priv.h264.sps);
 	pps = GST_BUFFER_DATA(self->priv.h264.pps);
@@ -852,6 +850,7 @@ mp4venc_in_send_cb(GstDspBase *base,
 {
 	struct mp4venc_in_stream_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
+
 	param = p->data;
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	param->bitrate = g_atomic_int_get(&self->bitrate);
@@ -1061,7 +1060,7 @@ sink_setcaps(GstPad *pad,
 			gst_structure_set_value(out_struc, "framerate", framerate);
 			/* calculate nearest integer */
 			self->framerate = (gst_value_get_fraction_numerator(framerate) * 2 /
-				gst_value_get_fraction_denominator(framerate) + 1) / 2;
+					   gst_value_get_fraction_denominator(framerate) + 1) / 2;
 		}
 	}
 
@@ -1123,9 +1122,7 @@ static gboolean
 sink_event(GstDspBase *base,
 	   GstEvent *event)
 {
-	GstDspVEnc *self;
-
-	self = GST_DSP_VENC(base);
+	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	switch (GST_EVENT_TYPE(event)) {
 	case GST_EVENT_CUSTOM_DOWNSTREAM:
@@ -1157,9 +1154,7 @@ static gboolean
 src_event(GstDspBase *base,
 	  GstEvent *event)
 {
-	GstDspVEnc *self;
-
-	self = GST_DSP_VENC(base);
+	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	switch (GST_EVENT_TYPE(event)) {
 	case GST_EVENT_CUSTOM_UPSTREAM:
@@ -1195,22 +1190,20 @@ set_property(GObject *obj,
 	     const GValue *value,
 	     GParamSpec *pspec)
 {
-	GstDspVEnc *self;
-
-	self = GST_DSP_VENC(obj);
+	GstDspVEnc *self = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
 	case ARG_BITRATE:
 		g_atomic_int_set(&self->bitrate, g_value_get_uint(value));
 		break;
 	case ARG_MODE:
-		g_atomic_int_set(&self->mode, g_value_get_enum(value));
+		self->mode = g_value_get_enum(value);
 		break;
 	case ARG_KEYFRAME_INTERVAL:
 		g_atomic_int_set(&self->keyframe_interval, g_value_get_int(value));
 		break;
 	case ARG_MAX_BITRATE:
-		g_atomic_int_set(&self->max_bitrate, g_value_get_uint(value));
+		self->user_max_bitrate = g_value_get_uint(value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
@@ -1224,22 +1217,20 @@ get_property(GObject *obj,
 	     GValue *value,
 	     GParamSpec *pspec)
 {
-	GstDspVEnc *self;
-
-	self = GST_DSP_VENC(obj);
+	GstDspVEnc *self = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
 	case ARG_BITRATE:
 		g_value_set_uint(value, g_atomic_int_get(&self->bitrate));
 		break;
 	case ARG_MODE:
-		g_value_set_enum(value, g_atomic_int_get(&self->mode));
+		g_value_set_enum(value, self->mode);
 		break;
 	case ARG_KEYFRAME_INTERVAL:
 		g_value_set_int(value, g_atomic_int_get(&self->keyframe_interval));
 		break;
 	case ARG_MAX_BITRATE:
-		g_value_set_uint(value, g_atomic_int_get(&self->max_bitrate));
+		g_value_set_uint(value, self->user_max_bitrate);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
@@ -1250,9 +1241,7 @@ get_property(GObject *obj,
 static void
 reset(GstDspBase *base)
 {
-	GstDspVEnc *self;
-
-	self = GST_DSP_VENC(base);
+	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	pr_debug(self, "venc reset");
 
@@ -1272,11 +1261,8 @@ static void
 instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
-	GstDspBase *base;
-	GstDspVEnc *self;
-
-	base = GST_DSP_BASE(instance);
-	self = GST_DSP_VENC(instance);
+	GstDspBase *base = GST_DSP_BASE(instance);
+	GstDspVEnc *self = GST_DSP_VENC(instance);
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 	base->reset = reset;
@@ -1333,12 +1319,14 @@ class_init(gpointer g_class,
 							  "Encoding bit-rate (0 for auto)",
 							  0, G_MAXUINT, DEFAULT_BITRATE,
 							  G_PARAM_READWRITE));
+
 	g_object_class_install_property(gobject_class, ARG_MODE,
 					g_param_spec_enum("mode", "Encoding mode",
 							  "Encoding mode",
 							  GST_TYPE_DSPVENC_MODE,
 							  DEFAULT_MODE,
 							  G_PARAM_READWRITE));
+
 	g_object_class_install_property(gobject_class, ARG_KEYFRAME_INTERVAL,
 					g_param_spec_int("keyframe-interval", "Keyframe interval",
 							 "Generate keyframes at every specified intervals (seconds)",
