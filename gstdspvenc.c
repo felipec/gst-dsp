@@ -308,9 +308,9 @@ get_h264venc_args(GstDspVEnc *self)
 	};
 
 	if (self->mode == 0)
-		args.rc_algorithm = 0;
+		args.rc_algorithm = 0; /* storage VBR */
 	else
-		args.rc_algorithm = 1;
+		args.rc_algorithm = 1; /* low delay CBR */
 
 	struct foo_data *cb_data;
 
@@ -571,11 +571,13 @@ h264venc_in_send_cb(GstDspBase *base,
 	g_mutex_unlock(self->keyframe_mutex);
 
 	/* hack to manually force keyframes */
-	param->force_i_frame |= self->force_i_frame_counter >=
-		self->keyframe_interval * self->framerate;
-	if (param->force_i_frame)
-		self->force_i_frame_counter = 0;
-	self->force_i_frame_counter++;
+	if (!(self->mode == 1 && self->intra_refresh)) {
+		param->force_i_frame |= self->force_i_frame_counter >=
+			self->keyframe_interval * self->framerate;
+		if (param->force_i_frame)
+			self->force_i_frame_counter = 0;
+		self->force_i_frame_counter++;
+	}
 }
 
 static inline gboolean
@@ -746,6 +748,33 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->max_bytes_per_slice = 327680;
 	in_param->max_mv_per_mb = 4;
 	in_param->intra_4x4_enable_idc = 2;
+
+	if (self->mode == 1 && self->intra_refresh) {
+		unsigned pixels;
+
+		/* Max delay in CBR, unit is is 1/30th of a second */
+		in_param->intra_frame_interval = 0;
+
+		/* For refreshing all the macroblocks in 3 sec */
+		in_param->air_mb_period = self->framerate * 3;
+
+		/* At least two intra macroblocks per frame */
+		pixels = self->width * self->height;
+		if (in_param->air_mb_period > pixels / (256 * 2))
+			in_param->air_mb_period = pixels / (256 * 2);
+
+		/*
+		 * Intra refresh methods:
+		 * 0 Doesn't insert forcefully intra macro blocks
+		 * 1 Inserts intra macro blocks in a cyclic fashion :
+		 *   cyclic interval is equal to airMbPeriod
+		 * 3 Position of intra macro blocks is intelligently
+		 *   chosen by encoder, but the number of forcely coded
+		 *   intra macro blocks in a frame is guaranteed to be
+		 *   equal to totalMbsInFrame/airMbPeriod
+		 */
+		in_param->intra_refresh_method = 1;
+	}
 }
 
 static inline void
