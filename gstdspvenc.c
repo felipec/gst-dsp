@@ -1016,11 +1016,10 @@ static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 	if ((tgt_bitrate && level->bitrate < tgt_bitrate) || (level->mbps < tgt_mbps))
 		level = --cur;
 
-	/* no overwriting of a user-set value,
-	 * it should remain across state change re-use of element */
-	self->max_bitrate = self->user_max_bitrate;
-	if (!self->max_bitrate)
+	if (!self->user_max_bitrate || self->user_max_bitrate >= level->bitrate)
 		self->max_bitrate = level->bitrate;
+	else
+		self->max_bitrate = self->user_max_bitrate;
 
 	pr_info(self, "level bitrate: %d", level->bitrate);
 	pr_info(self, "max bitrate: %d", self->max_bitrate);
