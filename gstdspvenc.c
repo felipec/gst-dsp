@@ -1000,6 +1000,11 @@ static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 		if (cur->mbps >= tgt_mbps && level->mbps < tgt_mbps)
 			ok = true;
 
+		/* at same level of mbps, get the biggest bitrate */
+		if (cur->mbps >= tgt_mbps && cur->mbps == level->mbps &&
+		    !tgt_bitrate && cur->bitrate >= level->bitrate)
+		       ok = true;
+
 		if (!ok)
 			continue;
 
