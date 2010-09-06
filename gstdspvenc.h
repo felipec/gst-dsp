@@ -66,6 +66,7 @@ struct GstDspVEnc {
 	gint mode;
 	gint keyframe_interval;
 	gint force_i_frame_counter;
+	gboolean intra_refresh;
 };
 
 struct GstDspVEncClass {

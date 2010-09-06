@@ -30,12 +30,14 @@ enum {
 	ARG_MODE,
 	ARG_KEYFRAME_INTERVAL,
 	ARG_MAX_BITRATE,
+	ARG_INTRA_REFRESH,
 };
 
 #define DEFAULT_BITRATE 0
 #define DEFAULT_MAX_BITRATE 0
 #define DEFAULT_MODE 0
 #define DEFAULT_KEYFRAME_INTERVAL 1
+#define DEFAULT_INTRA_REFRESH false
 
 #define GST_TYPE_DSPVENC_MODE gst_dspvenc_mode_get_type()
 static GType
@@ -1258,6 +1260,9 @@ set_property(GObject *obj,
 	case ARG_MAX_BITRATE:
 		self->user_max_bitrate = g_value_get_uint(value);
 		break;
+	case ARG_INTRA_REFRESH:
+		self->intra_refresh = g_value_get_boolean(value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;
@@ -1291,6 +1296,9 @@ get_property(GObject *obj,
 		g_value_set_uint(value, bitrate);
 		break;
 	}
+	case ARG_INTRA_REFRESH:
+		g_value_set_boolean(value, self->intra_refresh);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;
@@ -1329,6 +1337,7 @@ instance_init(GTypeInstance *instance,
 	self->bitrate = DEFAULT_BITRATE;
 	self->mode = DEFAULT_MODE;
 	self->keyframe_interval = DEFAULT_KEYFRAME_INTERVAL;
+	self->intra_refresh = DEFAULT_INTRA_REFRESH;
 
 	self->keyframe_mutex = g_mutex_new();
 }
@@ -1396,6 +1405,11 @@ class_init(gpointer g_class,
 							  "Maximum Encoding bit-rate (0 for auto)",
 							  0, G_MAXUINT, DEFAULT_MAX_BITRATE,
 							  G_PARAM_READWRITE));
+
+	g_object_class_install_property(gobject_class, ARG_INTRA_REFRESH,
+					g_param_spec_boolean("intra-refresh", "Intra-refresh",
+							     "Whether or not to use periodic intra-refresh",
+							     DEFAULT_INTRA_REFRESH, G_PARAM_READWRITE));
 
 	gobject_class->finalize = finalize;
 
