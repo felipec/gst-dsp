@@ -1228,6 +1228,7 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	int width = 0;
 	int height = 0;
 	unsigned int format;
+	const GValue *framerate;
 
 	self = GST_DSP_IPP(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -1247,6 +1248,10 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	/* ipp output colour format is always UYVY */
 	gst_structure_set(out_struc, "format", GST_TYPE_FOURCC,
 			GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'), NULL);
+
+	framerate = gst_structure_get_value(in_struc, "framerate");
+	if (framerate)
+		gst_structure_set_value(out_struc, "framerate", framerate);
 
 	switch (format) {
 	case GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'):
