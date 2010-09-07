@@ -581,7 +581,7 @@ h264dec_transform_codec_data(GstDspVDec *self,
 	for (i = 0; i < num_sps; ++i) {
 		len = GST_READ_UINT16_BE(data);
 		val = len << (8 * (4 - lol));
-		GST_WRITE_UINT32_BE(outdata, len);
+		GST_WRITE_UINT32_BE(outdata, val);
 		memcpy(outdata + lol, data + 2, len);
 		outdata += len + lol;
 		data += 2 + len;
@@ -590,7 +590,7 @@ h264dec_transform_codec_data(GstDspVDec *self,
 	for (i = 0; i < num_pps; ++i) {
 		len = GST_READ_UINT16_BE(data);
 		val = len << (8 * (4 - lol));
-		GST_WRITE_UINT32_BE(outdata, len);
+		GST_WRITE_UINT32_BE(outdata, val);
 		memcpy(outdata + lol, data + 2, len);
 		outdata += len + lol;
 		data += 2 + len;
