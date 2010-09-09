@@ -17,7 +17,9 @@
 #include "gstdspparse.h"
 
 static inline void
-set_framesize(GstDspBase *base, int width, int height)
+set_framesize(GstDspBase *base,
+		int width, int height,
+		int par_num, int par_den)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
 
@@ -31,6 +33,10 @@ set_framesize(GstDspBase *base, int width, int height)
 		gst_structure_set(struc,
 				"width", G_TYPE_INT, width,
 				"height", G_TYPE_INT, height, NULL);
+		if (par_num && par_den)
+			gst_structure_set(struc,
+					"pixel-aspect-ratio", GST_TYPE_FRACTION,
+					par_num, par_den, NULL);
 		vdec->crop_width = width;
 		vdec->crop_height = height;
 	}
@@ -50,6 +56,7 @@ bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 	unsigned type;
 	bool baseline = true;
 	int width, height;
+	int par_num = 11, par_den = 12;
 	struct size {
 		int width;
 		int height;
@@ -60,6 +67,17 @@ bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 		{ 352, 288 },
 		{ 704, 576 },
 		{ 1408, 1152 },
+	};
+	struct par {
+		int num;
+		int den;
+	} pars[] = {
+		{ 0, 0 },
+		{ 1, 1 },
+		{ 12, 11 },
+		{ 10, 11 },
+		{ 16, 11 },
+		{ 40, 33 },
 	};
 
 	init_get_bits(&s, buf->data, buf->size * 8);
@@ -80,7 +98,10 @@ bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 	case 6:
 		/* forbidden or reserved */
 		goto bail;
-	case 7:
+	case 7: {
+		unsigned custom_pf;
+		bool extended_par = false;
+
 		/* extended */
 		baseline = false;
 
@@ -110,16 +131,39 @@ bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 		skip_bits(&s, 9);
 
 		/* CPM */
-		if (get_bits1(&s))
+		if (get_bits1(&s)) {
+			if (get_bits_left(&s) < 25)
+				goto not_enough;
+
 			/* PSBI */
 			skip_bits(&s, 2);
+		}
 
-		/* Custom Picture format */
-		bits = get_bits(&s, 23);
+		custom_pf = get_bits(&s, 4);
+		if (custom_pf == 0x0F) {
+			extended_par = true;
+		} else if (custom_pf && custom_pf < 6) {
+			par_num = pars[custom_pf].num;
+			par_den = pars[custom_pf].den;
+		}
+
+		bits = get_bits(&s, 19);
 		height = (bits & 0x1FF) * 4;
 		bits >>= 10;
 		width = ((bits & 0x1FF) + 1) * 4;
+		if (!extended_par)
+			goto exit;
+
+		if (get_bits_left(&s) < 16)
+			goto not_enough;
+
+		bits = get_bits(&s, 16);
+		if (bits) {
+			par_num = bits >> 8;
+			par_den = bits & 0x0F;
+		}
 		break;
+	}
 	default:
 		/* regular */
 
@@ -144,9 +188,10 @@ bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 exit:
 	/* TODO use to decide on node */
 	pr_debug(base, "baseline=%u", baseline);
-	pr_debug(base, "width=%u, height=%u", width, height);
+	pr_debug(base, "width=%u, height=%u, par=%d:%d", width, height,
+			par_num, par_den);
 
-	set_framesize(base, width, height);
+	set_framesize(base, width, height, par_num, par_den);
 	return true;
 
 not_enough:
