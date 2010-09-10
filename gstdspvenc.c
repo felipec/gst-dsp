@@ -1144,6 +1144,8 @@ sink_setcaps(GstPad *pad,
 
 	if (self->bitrate == 0)
 		self->bitrate = self->max_bitrate;
+	else if (self->bitrate > self->max_bitrate)
+		self->bitrate = self->max_bitrate;
 
 	gst_caps_append_structure(out_caps, out_struc);
 
@@ -1269,9 +1271,14 @@ set_property(GObject *obj,
 	GstDspVEnc *self = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
-	case ARG_BITRATE:
+	case ARG_BITRATE: {
+		guint bitrate;
+		bitrate = g_value_get_uint(value);
+		if (self->max_bitrate && bitrate > (unsigned) self->max_bitrate)
+			bitrate = self->max_bitrate;
 		g_atomic_int_set(&self->bitrate, g_value_get_uint(value));
 		break;
+	}
 	case ARG_MODE:
 		self->mode = g_value_get_enum(value);
 		break;
