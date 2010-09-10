@@ -291,7 +291,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.out_count = base->ports[1]->num_buffers,
 		.width = self->width,
 		.height = self->height,
-		.bitrate = self->max_bitrate ? self->max_bitrate : self->bitrate,
+		.bitrate = self->bitrate,
 		.bitstream_buf_size = base->output_buffer_size,
 		.intra_frame_period = self->framerate,
 		.framerate = self->framerate * 1000,
