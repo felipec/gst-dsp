@@ -983,6 +983,7 @@ static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 		gst_caps_unref(allowed_caps);
 	}
 
+search:
 	level = cur = self->supported_levels;
 
 	for (i = 0; i < self->nr_supported_levels; i++, cur++) {
@@ -1012,9 +1013,21 @@ static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
 		level = cur;
 	}
 
+	if (tgt_level > 0 && tgt_level != level->id) {
+		pr_warning(self, "invalid level: %d; ignoring", tgt_level);
+		tgt_level = -1;
+		goto search;
+	}
+
 	/* went beyond the table looking for a target; pick last one */
-	if ((tgt_bitrate && level->bitrate < tgt_bitrate) || (level->mbps < tgt_mbps))
-		level = --cur;
+	if ((tgt_bitrate && level->bitrate < tgt_bitrate) || (level->mbps < tgt_mbps)) {
+		if (tgt_level > 0) {
+			pr_warning(self, "invalid level: %d; ignoring", tgt_level);
+			tgt_level = -1;
+			goto search;
+		} else
+			level = --cur;
+	}
 
 	if (!self->user_max_bitrate || self->user_max_bitrate >= level->bitrate)
 		self->max_bitrate = level->bitrate;
