@@ -288,6 +288,15 @@ configure_caps(GstDspVDec *self,
 			/* FIXME this is a workaround for xvimagesink */
 			gst_structure_set(out_struc, "framerate",
 					  GST_TYPE_FRACTION, 0, 1, NULL);
+		base->default_duration = 0;
+		if (framerate) {
+			guint fps_num = 0, fps_den = 0;
+
+			fps_num = gst_value_get_fraction_numerator(framerate);
+			fps_den = gst_value_get_fraction_denominator(framerate);
+			if (fps_num && fps_den)
+				base->default_duration = gst_util_uint64_scale(GST_SECOND, fps_den, fps_num);
+		}
 	}
 
 	gst_caps_append_structure(out, out_struc);

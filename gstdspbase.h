@@ -98,6 +98,7 @@ struct _GstDspBase {
 	guint ts_in_pos, ts_out_pos, ts_push_pos;
 	GMutex *ts_mutex;
 	gulong ts_count;
+	GstClockTime default_duration;
 	GSem *flush;
 	guint alg;
 

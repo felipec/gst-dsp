@@ -369,6 +369,7 @@ output_loop(gpointer data)
 	du_port_t *p;
 	struct td_buffer *tb;
 	bool pushed = false;
+	GstClockTime timestamp, duration;
 
 	pad = data;
 	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
@@ -506,8 +507,8 @@ output_loop(gpointer data)
 		GST_BUFFER_FLAGS(out_buf) |= GST_BUFFER_FLAG_DELTA_UNIT;
 
 	g_mutex_lock(self->ts_mutex);
-	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos].time;
-	GST_BUFFER_DURATION(out_buf) = self->ts_array[self->ts_out_pos].duration;
+	timestamp = self->ts_array[self->ts_out_pos].time;
+	duration = self->ts_array[self->ts_out_pos].duration;
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 	self->ts_push_pos = self->ts_out_pos;
 	self->ts_count--;
@@ -519,6 +520,16 @@ output_loop(gpointer data)
 		pr_info(self, "tsc=%lu", self->ts_count);
 #endif
 	g_mutex_unlock(self->ts_mutex);
+
+	if (!GST_CLOCK_TIME_IS_VALID(duration) && self->default_duration) {
+		duration = self->default_duration;
+		pr_debug(self, "using default duration %" GST_TIME_FORMAT, GST_TIME_ARGS(duration));
+	}
+	else if (GST_CLOCK_TIME_IS_VALID(duration) && !self->default_duration)
+		self->default_duration = duration;
+
+	GST_BUFFER_TIMESTAMP(out_buf) = timestamp;
+	GST_BUFFER_DURATION(out_buf) = duration;
 
 	pr_debug(self, "pushing buffer %" GST_TIME_FORMAT,
 		 GST_TIME_ARGS(GST_BUFFER_TIMESTAMP(out_buf)));
