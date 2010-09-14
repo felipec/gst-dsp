@@ -640,7 +640,7 @@ dsp_thread(gpointer data)
 		if (index == 0) {
 			struct dsp_msg msg;
 			while (true) {
-				if (!dsp_node_get_message(self->dsp_handle, self->node, &msg, 100))
+				if (!dsp_node_get_message(self->dsp_handle, self->node, &msg, 10))
 					break;
 				pr_debug(self, "got dsp message: 0x%0x 0x%0x 0x%0x",
 					 msg.cmd, msg.arg_1, msg.arg_2);
