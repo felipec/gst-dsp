@@ -115,6 +115,9 @@ struct _GstDspBase {
 	bool (*send_stop_message)(GstDspBase *self);
 	GstCaps *tmp_caps;
 
+	struct timespec eos_start;
+	gint eos_timeout; /* how much to wait for the EOS from DSP (ms) */
+
 	/* hacks */
 	guint skip_hack; /* don't push x number of buffers */
 	guint skip_hack_2; /* don't process x number of buffers */

@@ -28,6 +28,23 @@ map_buffer(GstDspBase *self,
 	   GstBuffer *g_buf,
 	   struct td_buffer *tb);
 
+static inline long
+get_elapsed_eos(GstDspBase *self)
+{
+	struct timespec cur;
+	long start, elapsed;
+
+	if (!self->eos_start.tv_sec)
+		return 0;
+
+	clock_gettime(CLOCK_MONOTONIC, &cur);
+
+	start = self->eos_start.tv_sec * 1000 + self->eos_start.tv_nsec / 1000000;
+	elapsed = cur.tv_sec * 1000 + cur.tv_nsec / 1000000 - start;
+
+	return elapsed;
+}
+
 du_port_t *
 du_port_new(int id,
 	    int dir)
@@ -321,6 +338,7 @@ pause_task(GstDspBase *self, GstFlowReturn status)
 	/* there's a pending deferred EOS, it's now or never */
 	if (deferred_eos) {
 		pr_info(self, "send elapsed eos");
+		self->eos_start.tv_sec = self->eos_start.tv_nsec = 0;
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		g_atomic_int_set(&self->eos, true);
 	}
@@ -514,6 +532,7 @@ output_loop(gpointer data)
 leave:
 	if (G_UNLIKELY(got_eos)) {
 		pr_info(self, "got eos");
+		self->eos_start.tv_sec = self->eos_start.tv_nsec = 0;
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		g_atomic_int_set(&self->eos, true);
 		g_atomic_int_set(&self->deferred_eos, false);
@@ -603,7 +622,14 @@ dsp_thread(gpointer data)
 		pr_debug(self, "waiting for events");
 		if (!dsp_wait_for_events(self->dsp_handle, self->events, 3, &index, 1000)) {
 			if (errno == ETIME) {
+				long elapsed = get_elapsed_eos(self);
 				pr_info(self, "timed out waiting for events");
+				if (self->eos_timeout && elapsed >= self->eos_timeout) {
+					pr_err(self, "eos timed out after %lu ms", elapsed);
+					/* wind out of output loop */
+					g_atomic_int_set(&self->status, GST_FLOW_UNEXPECTED);
+					async_queue_disable(self->ports[1]->queue);
+				}
 				continue;
 			}
 			pr_err(self, "failed waiting for events: %i", errno);
@@ -1214,6 +1240,7 @@ sink_event(GstDspBase *self,
 		g_mutex_unlock(self->ts_mutex);
 
 		if (defer_eos) {
+			clock_gettime(CLOCK_MONOTONIC, &self->eos_start);
 			if (self->flush_buffer)
 				self->flush_buffer(self);
 			gst_event_unref(event);
@@ -1355,6 +1382,7 @@ instance_init(GTypeInstance *instance,
 	self->ts_mutex = g_mutex_new();
 
 	self->flush = g_sem_new(0);
+	self->eos_timeout = 1000;
 }
 
 static void

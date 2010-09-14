@@ -1558,6 +1558,7 @@ static void instance_init(GTypeInstance *instance, gpointer g_class)
 	base->send_stop_message = send_stop_message;
 	base->reset = reset;
 	self->msg_sem = g_sem_new(1);
+	base->eos_timeout = 0;
 
 	/* initialize params to normal strength */
 	memcpy(&self->eenf_params, &eenf_normal, sizeof(eenf_normal));
