@@ -25,6 +25,7 @@ static GstDspBaseClass *parent_class;
 #endif
 
 static bool send_stop_message(GstDspBase *base);
+static gboolean sink_event(GstDspBase *base, GstEvent *event);
 
 enum {
 	IPP_YUV_420P = 1,
@@ -1297,6 +1298,11 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	return true;
 }
 
+static gboolean sink_event(GstDspBase *base, GstEvent *event)
+{
+	return parent_class->sink_event(base, event);
+}
+
 static void instance_init(GTypeInstance *instance, gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
@@ -1324,11 +1330,14 @@ static void finalize(GObject *obj)
 static void class_init(gpointer g_class, gpointer class_data)
 {
 	GObjectClass *gobject_class;
+	GstDspBaseClass *gstdspbase_class;
 
 	gobject_class = G_OBJECT_CLASS(g_class);
+	gstdspbase_class = GST_DSP_BASE_CLASS(g_class);
 
 	parent_class = g_type_class_peek_parent(g_class);
 	gobject_class->finalize = finalize;
+	gstdspbase_class->sink_event = sink_event;
 }
 
 static void base_init(gpointer g_class)
