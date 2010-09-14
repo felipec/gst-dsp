@@ -28,6 +28,17 @@ static bool send_stop_message(GstDspBase *base);
 static gboolean sink_event(GstDspBase *base, GstEvent *event);
 
 enum {
+	PROP_0,
+	PROP_NOISE_FILTER_STRENGTH,
+};
+
+enum {
+	NOISE_FILTER_CUSTOM,
+	NOISE_FILTER_NORMAL,
+	NOISE_FILTER_AGGRESSIVE,
+};
+
+enum {
 	IPP_YUV_420P = 1,
 	IPP_YUV_422P,
 	IPP_YUV_422IBE,
@@ -94,6 +105,28 @@ struct ipp_name_string {
 	int8_t str[25];
 	uint32_t size;
 };
+
+#define GST_TYPE_IPP_NOISE_FILTER_STRENGTH (gst_dsp_ipp_get_noise_filter_type())
+static GType
+gst_dsp_ipp_get_noise_filter_type(void)
+{
+	static GType gst_dspipp_strength_type;
+
+	static GEnumValue strength[] = {
+		{NOISE_FILTER_CUSTOM, "Custom", "custom"},
+		{NOISE_FILTER_NORMAL, "Normal", "normal"},
+		{NOISE_FILTER_AGGRESSIVE, "Aggressive", "aggressive"},
+		{0, NULL, NULL},
+	};
+
+	if (G_UNLIKELY(!gst_dspipp_strength_type)) {
+		gst_dspipp_strength_type =
+				g_enum_register_static("GstDspIppNoiseFilterStrength", strength);
+	}
+	return gst_dspipp_strength_type;
+}
+
+#define DEFAULT_NOISE_FILTER_STRENGTH NOISE_FILTER_CUSTOM
 
 static inline dmm_buffer_t *ipp_calloc(GstDspIpp *self, size_t size, int dir)
 {
@@ -1002,12 +1035,52 @@ static struct ipp_eenf_params eenf_normal = {
 	.ratio_downsample_cb_cr = 1,
 };
 
+static struct ipp_eenf_params eenf_aggressive = {
+	.edge_enhancement_strength = 170,
+	.weak_edge_threshold = 50,
+	.strong_edge_threshold = 300,
+	.low_freq_luma_noise_filter_strength = 30,
+	.mid_freq_luma_noise_filter_strength = 80,
+	.high_freq_luma_noise_filter_strength = 20,
+	.low_freq_cb_noise_filter_strength = 60,
+	.mid_freq_cb_noise_filter_strength = 40,
+	.high_freq_cb_noise_filter_strength = 30,
+	.low_freq_cr_noise_filter_strength = 50,
+	.mid_freq_cr_noise_filter_strength = 30,
+	.high_freq_cr_noise_filter_strength = 20,
+	.shading_vert_param_1 = 1,
+	.shading_vert_param_2 = 800,
+	.shading_horz_param_1 = 1,
+	.shading_horz_param_2 = 800,
+	.shading_gain_scale = 128,
+	.shading_gain_offset = 4096,
+	.shading_gain_max_value = 32767,
+	.ratio_downsample_cb_cr = 4,
+};
+
 static void
 get_eenf_dyn_params(GstDspIpp *self)
 {
 	dmm_buffer_t *tmp;
 	size_t size;
-	struct ipp_eenf_params *params = &self->eenf_params;
+	struct ipp_eenf_params *params;
+
+	switch (self->eenf_strength) {
+	case NOISE_FILTER_CUSTOM:
+		pr_debug(self, "custom noise filter parameters");
+		params = &self->eenf_params;
+		break;
+	case NOISE_FILTER_NORMAL:
+		pr_debug(self, "normal noise filter parameters");
+		params = &eenf_normal;
+		break;
+	case NOISE_FILTER_AGGRESSIVE:
+		pr_debug(self, "aggerssive noise filter parameters");
+		params = &eenf_aggressive;
+		break;
+	default:
+		return;
+	}
 
 	params->size = sizeof(*params);
 	params->in_place = 0;
@@ -1364,6 +1437,42 @@ leave:
 	return parent_class->sink_event(base, event);
 }
 
+static void
+set_property(GObject *obj,
+	     guint prop_id,
+	     const GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspIpp *self = GST_DSP_IPP(obj);
+
+	switch (prop_id) {
+	case PROP_NOISE_FILTER_STRENGTH:
+		self->eenf_strength = g_value_get_enum(value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property(GObject *obj,
+	     guint prop_id,
+	     GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspIpp *self = GST_DSP_IPP(obj);
+
+	switch (prop_id) {
+	case PROP_NOISE_FILTER_STRENGTH:
+		g_value_set_enum(value, self->eenf_strength);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
+	}
+}
+
 static void instance_init(GTypeInstance *instance, gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
@@ -1398,6 +1507,16 @@ static void class_init(gpointer g_class, gpointer class_data)
 
 	gobject_class = G_OBJECT_CLASS(g_class);
 	gstdspbase_class = GST_DSP_BASE_CLASS(g_class);
+
+	gobject_class->set_property = set_property;
+	gobject_class->get_property = get_property;
+
+	g_object_class_install_property(gobject_class, PROP_NOISE_FILTER_STRENGTH,
+			g_param_spec_enum("noise-filter-strength", "Noise filter strength",
+				"Specifies the strength of the noise filter",
+				GST_TYPE_IPP_NOISE_FILTER_STRENGTH,
+				DEFAULT_NOISE_FILTER_STRENGTH,
+				G_PARAM_READWRITE));
 
 	parent_class = g_type_class_peek_parent(g_class);
 	gobject_class->finalize = finalize;

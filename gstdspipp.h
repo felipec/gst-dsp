@@ -72,6 +72,7 @@ struct GstDspIpp {
 	unsigned nr_algos;
 	GSem *msg_sem;
 	struct ipp_eenf_params eenf_params;
+	int eenf_strength;
 
 	dmm_buffer_t *msg_ptr[3];
 	dmm_buffer_t *flt_graph;
