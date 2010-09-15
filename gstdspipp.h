@@ -39,6 +39,31 @@ struct ipp_algo {
 	dmm_buffer_t *b_dma_fxn;
 };
 
+struct ipp_eenf_params {
+	uint32_t size;
+	int16_t in_place;
+	int16_t edge_enhancement_strength;
+	int16_t weak_edge_threshold;
+	int16_t strong_edge_threshold;
+	int16_t low_freq_luma_noise_filter_strength;
+	int16_t mid_freq_luma_noise_filter_strength;
+	int16_t high_freq_luma_noise_filter_strength;
+	int16_t low_freq_cb_noise_filter_strength;
+	int16_t mid_freq_cb_noise_filter_strength;
+	int16_t high_freq_cb_noise_filter_strength;
+	int16_t low_freq_cr_noise_filter_strength;
+	int16_t mid_freq_cr_noise_filter_strength;
+	int16_t high_freq_cr_noise_filter_strength;
+	int16_t shading_vert_param_1;
+	int16_t shading_vert_param_2;
+	int16_t shading_horz_param_1;
+	int16_t shading_horz_param_2;
+	int16_t shading_gain_scale;
+	int16_t shading_gain_offset;
+	int16_t shading_gain_max_value;
+	int16_t ratio_downsample_cb_cr;
+};
+
 struct GstDspIpp {
 	GstDspBase element;
 	int width, height;
@@ -46,6 +71,7 @@ struct GstDspIpp {
 	struct ipp_algo *algos[IPP_MAX_NUM_OF_ALGOS];
 	unsigned nr_algos;
 	GSem *msg_sem;
+	struct ipp_eenf_params eenf_params;
 
 	dmm_buffer_t *msg_ptr[3];
 	dmm_buffer_t *flt_graph;

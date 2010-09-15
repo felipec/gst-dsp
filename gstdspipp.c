@@ -979,29 +979,27 @@ struct algo_status {
 	struct algo_buf_info bufInfo;
 };
 
-struct ipp_eenf_algo_dynamic_params {
-	uint32_t size;
-	int16_t in_place;
-	int16_t edge_enhancement_strength;
-	int16_t weak_edge_threshold;
-	int16_t strong_edge_threshold;
-	int16_t low_freq_luma_noise_filter_strength;
-	int16_t mid_freq_luma_noise_filter_strength;
-	int16_t high_freq_luma_noise_filter_strength;
-	int16_t low_freq_cb_noise_filter_strength;
-	int16_t mid_freq_cb_noise_filter_strength;
-	int16_t high_freq_cb_noise_filter_strength;
-	int16_t low_freq_cr_noise_filter_strength;
-	int16_t mid_freq_cr_noise_filter_strength;
-	int16_t high_freq_cr_noise_filter_strength;
-	int16_t shading_vert_param_1;
-	int16_t shading_vert_param_2;
-	int16_t shading_horz_param_1;
-	int16_t shading_horz_param_2;
-	int16_t shading_gain_scale;
-	int16_t shading_gain_offset;
-	int16_t shading_gain_max_value;
-	int16_t ratio_downsample_cb_cr;
+static struct ipp_eenf_params eenf_normal = {
+	.edge_enhancement_strength = 110,
+	.weak_edge_threshold = 30,
+	.strong_edge_threshold = 90,
+	.low_freq_luma_noise_filter_strength = 7,
+	.mid_freq_luma_noise_filter_strength = 14,
+	.high_freq_luma_noise_filter_strength = 28,
+	.low_freq_cb_noise_filter_strength = 8,
+	.mid_freq_cb_noise_filter_strength = 16,
+	.high_freq_cb_noise_filter_strength = 32,
+	.low_freq_cr_noise_filter_strength = 8,
+	.mid_freq_cr_noise_filter_strength = 16,
+	.high_freq_cr_noise_filter_strength = 32,
+	.shading_vert_param_1 = 10,
+	.shading_vert_param_2 = 400,
+	.shading_horz_param_1 = 10,
+	.shading_horz_param_2 = 400,
+	.shading_gain_scale = 128,
+	.shading_gain_offset = 2048,
+	.shading_gain_max_value = 16384,
+	.ratio_downsample_cb_cr = 1,
 };
 
 static void
@@ -1009,34 +1007,13 @@ get_eenf_dyn_params(GstDspIpp *self)
 {
 	dmm_buffer_t *tmp;
 	size_t size;
+	struct ipp_eenf_params *params = &self->eenf_params;
 
-	struct ipp_eenf_algo_dynamic_params params = {
-		.size = sizeof(struct ipp_eenf_algo_dynamic_params),
-		.in_place = 0,
-		.edge_enhancement_strength = 110,
-		.weak_edge_threshold = 30,
-		.strong_edge_threshold = 90,
-		.low_freq_luma_noise_filter_strength = 7,
-		.mid_freq_luma_noise_filter_strength = 14,
-		.high_freq_luma_noise_filter_strength = 28,
-		.low_freq_cb_noise_filter_strength = 8,
-		.mid_freq_cb_noise_filter_strength = 16,
-		.high_freq_cb_noise_filter_strength = 32,
-		.low_freq_cr_noise_filter_strength = 8,
-		.mid_freq_cr_noise_filter_strength = 16,
-		.high_freq_cr_noise_filter_strength = 32,
-		.shading_vert_param_1 = 10,
-		.shading_vert_param_2 = 400,
-		.shading_horz_param_1 = 10,
-		.shading_horz_param_2 = 400,
-		.shading_gain_scale = 128,
-		.shading_gain_offset = 2048,
-		.shading_gain_max_value = 16384,
-		.ratio_downsample_cb_cr = 1,
-	};
+	params->size = sizeof(*params);
+	params->in_place = 0;
 
-	tmp = ipp_calloc(self, sizeof(params), DMA_TO_DEVICE);
-	memcpy(tmp->data, &params, sizeof(params));
+	tmp = ipp_calloc(self, sizeof(*params), DMA_TO_DEVICE);
+	memcpy(tmp->data, params, sizeof(*params));
 	dmm_buffer_map(tmp);
 	self->dyn_params = tmp;
 
@@ -1315,6 +1292,9 @@ static void instance_init(GTypeInstance *instance, gpointer g_class)
 	du_port_alloc_buffers(base->ports[0], 1);
 	du_port_alloc_buffers(base->ports[1], 1);
 	self->msg_sem = g_sem_new(1);
+
+	/* initialize params to normal strength */
+	memcpy(&self->eenf_params, &eenf_normal, sizeof(eenf_normal));
 
 	gst_pad_set_setcaps_function(base->sinkpad, sink_setcaps);
 }
