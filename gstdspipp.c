@@ -24,6 +24,8 @@ static GstDspBaseClass *parent_class;
 #define INTERNAL_FORMAT IPP_YUV_420P
 #endif
 
+#define OVERWRITE_INPUT_BUFFER
+
 static bool send_stop_message(GstDspBase *base);
 static gboolean sink_event(GstDspBase *base, GstEvent *event);
 
@@ -476,9 +478,24 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	if (command_id == DFGM_FREE_BUFF) {
 		du_port_t *p = base->ports[1];
 
+#ifdef OVERWRITE_INPUT_BUFFER
+		if (!(self->nr_algos & 0x01)) {
+			/* push the output buffer in to the queue. */
+			self->out_buf_ptr->len = base->output_buffer_size;
+			async_queue_push(p->queue, self->out_buf_ptr);
+		} else {
+			/*
+			 * Input buffer holds processed data.
+			 * push the input buffer in to the queue.
+			 */
+			self->in_buf_ptr->len = base->output_buffer_size;
+			async_queue_push(p->queue, self->in_buf_ptr);
+		}
+#else
 		/* push the output buffer in to the queue. */
 		self->out_buf_ptr->len = base->output_buffer_size;
 		async_queue_push(p->queue, self->out_buf_ptr);
+#endif
 	}
 
 	switch (command_id) {
@@ -700,6 +717,20 @@ static void prepare_filter_graph(GstDspIpp *self)
 	for (i = 0; i < nr_algos - 1; i++)
 		*flt_graph->graph_connection[i][i + 1].n = 0;
 
+#ifdef OVERWRITE_INPUT_BUFFER
+	/*
+	 * Star ports:
+	 * 0: input
+	 * 1: output
+	 *
+	 * Input buffer is also used for processing.Use above ports alternatively,
+	 * and the first one should always be 1.
+	 */
+	for (i = 0; i < nr_algos - 1; i++) {
+		*flt_graph->output_buf_distribution[i + 1].n = port;
+		port = !port;
+	}
+#else
 	/*
 	 * Star ports:
 	 * 1: output
@@ -712,6 +743,7 @@ static void prepare_filter_graph(GstDspIpp *self)
 		*flt_graph->output_buf_distribution[i].n = port;
 		port = !(port - 1) + 1;
 	}
+#endif
 
 	dmm_buffer_map(self->flt_graph);
 }
@@ -750,7 +782,13 @@ static bool create_pipe(GstDspIpp *self)
 	arg_1->filter_graph_ptr = (uint32_t)self->flt_graph->map;
 	arg_1->create_params_array_ptr = (uint32_t)b_create_params->map;
 	arg_1->num_create_params = nr_algos;
+
+#ifdef OVERWRITE_INPUT_BUFFER
+	arg_1->num_in_port = 2;
+#else
 	arg_1->num_in_port = (nr_algos == 2) ? 2 : 3;
+#endif
+
 	dmm_buffer_map(b_arg_1);
 
 	return send_msg(self, DFGM_CREATE_XBF_PIPE, b_arg_1, get_msg_2(self), b_create_params);
@@ -853,7 +891,12 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer, int id)
 	int nr_buffers;
 	int nr_msgs;
 
+#ifdef OVERWRITE_INPUT_BUFFER
+	nr_buffers = 2;
+#else
 	nr_buffers = (nr_algos == 2) ? 2 : 3;
+#endif
+
 	nr_msgs = nr_algos * 2 + nr_buffers;
 	msg_elem_array = ipp_calloc(self, nr_msgs * sizeof(*msg_elem_list), DMA_BIDIRECTIONAL);
 	msg_elem_list = msg_elem_array->data;
@@ -867,6 +910,7 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer, int id)
 		queue_msg1->port_num = i;
 		queue_msg1->reuse_allowed_flag = 0;
 		if (i == 0) {
+			self->in_buf_ptr = in_buffer;
 			queue_msg1->content_size_used = base->input_buffer_size;
 			queue_msg1->content_size = base->input_buffer_size;
 			queue_msg1->content_ptr = (uint32_t)in_buffer->map;
