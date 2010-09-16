@@ -1,11 +1,12 @@
 #!/bin/sh
 
-if test -f .version
-then
+if test -f .version; then
         v=`cat .version`
 else
-        v=`git describe --tags`
+        v=`git describe --tags 2> /dev/null`
 fi
+
+test -z "$v" && v="unknown"
 
 # remove initial 'v'
 echo "$v" | sed 's/^v//'
