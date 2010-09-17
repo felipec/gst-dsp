@@ -427,6 +427,8 @@ output_loop(gpointer data)
 			pr_info(self, "copy");
 			memcpy(GST_BUFFER_DATA(out_buf), b->data, b->len);
 		}
+
+		GST_BUFFER_SIZE(out_buf) = b->len;
 	}
 	else {
 		out_buf = gst_buffer_new();
