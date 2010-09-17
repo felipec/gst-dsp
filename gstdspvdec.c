@@ -700,6 +700,7 @@ h264dec_out_recv_cb(GstDspBase *base,
 		    dmm_buffer_t *p,
 		    dmm_buffer_t *b)
 {
+	GstDspVDec *vdec = GST_DSP_VDEC(base);
 	struct h264dec_out_stream_params *param;
 	param = p->data;
 
@@ -709,6 +710,9 @@ h264dec_out_recv_cb(GstDspBase *base,
 		 param->error_code, param->frame_type);
 	if (param->error_code & 0xffff)
 		pr_err(base, "decode error");
+
+	/* let the videosink know the real size */
+	b->len = vdec->crop_width * vdec->crop_height * 2;
 }
 
 static void
