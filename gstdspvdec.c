@@ -1152,6 +1152,12 @@ configure_caps(GstDspVDec *self,
 	if (aspect_ratio)
 		gst_structure_set_value(out_struc, "pixel-aspect-ratio", aspect_ratio);
 
+	/* estimate the real coded framesize */
+	if (base->alg == GSTDSP_H264DEC) {
+		self->width = ROUND_UP(self->width, 16);
+		self->height = ROUND_UP(self->height, 16);
+	}
+
 	base->output_buffer_size = self->width * self->height * 2;
 	self->color_format = GST_MAKE_FOURCC('U', 'Y', 'V', 'Y');
 
