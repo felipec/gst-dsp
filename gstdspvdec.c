@@ -1152,6 +1152,9 @@ configure_caps(GstDspVDec *self,
 	if (aspect_ratio)
 		gst_structure_set_value(out_struc, "pixel-aspect-ratio", aspect_ratio);
 
+	self->crop_width = self->width;
+	self->crop_height = self->height;
+
 	/* estimate the real coded framesize */
 	if (base->alg == GSTDSP_H264DEC) {
 		self->width = ROUND_UP(self->width, 16);

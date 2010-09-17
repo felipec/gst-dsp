@@ -33,6 +33,7 @@ union vdec_priv_data {
 struct GstDspVDec {
 	GstDspBase element;
 	gint width, height;
+	gint crop_width, crop_height;
 	gint frame_index;
 	gboolean wmv_is_vc1;
 	gboolean jpeg_is_interlaced;
