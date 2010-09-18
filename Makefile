@@ -1,7 +1,7 @@
 CROSS_COMPILE ?= arm-linux-
 CC := $(CROSS_COMPILE)gcc
 
-CFLAGS := -O2 -ggdb -Wall -Wextra -Wno-unused-parameter -ansi -std=c99
+CFLAGS := -O2 -ggdb -Wall -Wextra -Wno-unused-parameter -Wmissing-prototypes -ansi -std=c99
 LDFLAGS := -Wl,--no-undefined -Wl,--as-needed
 
 override CFLAGS += -D_GNU_SOURCE -DGST_DISABLE_DEPRECATED
