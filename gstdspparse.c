@@ -14,6 +14,7 @@
 #include <gst/gst.h>
 #include "gstdspbase.h"
 #include "gstdspvdec.h"
+#include "gstdspparse.h"
 
 static inline void
 set_framesize(GstDspBase *base,
