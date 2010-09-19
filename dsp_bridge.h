@@ -24,7 +24,7 @@
 #define MAX_PROFILES 16
 #define DSP_MAXNAMELEN 32
 
-typedef struct {
+typedef struct dsp_uuid {
 	uint32_t field_1;
 	uint16_t field_2;
 	uint16_t field_3;
@@ -33,7 +33,7 @@ typedef struct {
 	uint8_t field_6[6];
 } dsp_uuid_t;
 
-typedef struct {
+typedef struct dsp_node {
 	void *handle;
 	void *heap;
 	void *msgbuf_addr;
@@ -41,7 +41,7 @@ typedef struct {
 } dsp_node_t;
 
 /* note: cmd = 0x20000000 has special handling */
-typedef struct {
+typedef struct dsp_msg {
 	uint32_t cmd;
 	uint32_t arg_1;
 	uint32_t arg_2;
@@ -98,7 +98,7 @@ struct dsp_nodeprofs {
 /* The dsp_ndb_props structure reports the attributes of a node */
 struct dsp_ndb_props {
 	uint32_t cb_struct;
-	dsp_uuid_t node_id;
+	struct dsp_uuid node_id;
 	char ac_name[DSP_MAXNAMELEN];
 	enum dsp_node_type ntype;
 	uint32_t cache_on_gpp;
@@ -158,7 +158,7 @@ struct dsp_stream_connect {
 	enum dsp_connect_type type;
 	unsigned int index;
 	void *node_handle;
-	dsp_uuid_t node_id;
+	struct dsp_uuid node_id;
 	unsigned int stream_index;
 };
 
@@ -259,40 +259,40 @@ bool dsp_load(int handle,
 
 bool dsp_node_allocate(int handle,
 		void *proc_handle,
-		const dsp_uuid_t *node_uuid,
+		const struct dsp_uuid *node_uuid,
 		const void *cb_data,
 		struct dsp_node_attr_in *attrs,
-		dsp_node_t **ret_node);
+		struct dsp_node **ret_node);
 
 bool dsp_node_free(int handle,
-		dsp_node_t *node);
+		struct dsp_node *node);
 
 bool dsp_node_connect(int handle,
-		dsp_node_t *node,
+		struct dsp_node *node,
 		unsigned int stream,
-		dsp_node_t *other_node,
+		struct dsp_node *other_node,
 		unsigned int other_stream,
 		struct dsp_stream_attr *attrs,
 		void *params);
 
 bool dsp_node_create(int handle,
-		dsp_node_t *node);
+		struct dsp_node *node);
 
 bool dsp_node_run(int handle,
-		dsp_node_t *node);
+		struct dsp_node *node);
 
 bool dsp_node_terminate(int handle,
-		dsp_node_t *node,
+		struct dsp_node *node,
 		unsigned long *status);
 
 bool dsp_node_put_message(int handle,
-		dsp_node_t *node,
-		const dsp_msg_t *message,
+		struct dsp_node *node,
+		const struct dsp_msg *message,
 		unsigned int timeout);
 
 bool dsp_node_get_message(int handle,
-		dsp_node_t *node,
-		dsp_msg_t *message,
+		struct dsp_node *node,
+		struct dsp_msg *message,
 		unsigned int timeout);
 
 bool dsp_reserve(int handle,
@@ -334,7 +334,7 @@ bool dsp_register_notify(int handle,
 		struct dsp_notification *info);
 
 bool dsp_node_register_notify(int handle,
-		dsp_node_t *node,
+		struct dsp_node *node,
 		unsigned int event_mask,
 		unsigned int notify_type,
 		struct dsp_notification *info);
@@ -352,12 +352,12 @@ bool dsp_enum(int handle,
 		unsigned int *ret_num);
 
 bool dsp_register(int handle,
-		const dsp_uuid_t *uuid,
+		const struct dsp_uuid *uuid,
 		enum dsp_dcd_object_type type,
 		const char *path);
 
 bool dsp_unregister(int handle,
-		const dsp_uuid_t *uuid,
+		const struct dsp_uuid *uuid,
 		enum dsp_dcd_object_type type);
 
 bool dsp_proc_get_info(int handle,
@@ -368,12 +368,12 @@ bool dsp_proc_get_info(int handle,
 
 static inline bool
 dsp_send_message(int handle,
-		dsp_node_t *node,
+		struct dsp_node *node,
 		uint32_t cmd,
 		uint32_t arg_1,
 		uint32_t arg_2)
 {
-	dsp_msg_t msg;
+	struct dsp_msg msg;
 
 	msg.cmd = cmd;
 	msg.arg_1 = arg_1;
@@ -383,7 +383,7 @@ dsp_send_message(int handle,
 }
 
 bool dsp_node_get_attr(int handle,
-		dsp_node_t *node,
+		struct dsp_node *node,
 		struct dsp_node_attr *attr,
 		size_t attr_size);
 
@@ -395,7 +395,7 @@ bool dsp_enum_nodes(int handle,
 		unsigned *allocated);
 
 bool dsp_stream_open(int handle,
-		dsp_node_t *node,
+		struct dsp_node *node,
 		unsigned int direction,
 		unsigned int index,
 		struct dsp_stream_attr_in *attrin,
