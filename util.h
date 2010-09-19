@@ -14,7 +14,7 @@
 #include "dsp_bridge.h"
 
 bool gstdsp_register(int dsp_handle,
-		     const dsp_uuid_t *uuid,
+		     const struct dsp_uuid *uuid,
 		     int type,
 		     const char *filename);
 

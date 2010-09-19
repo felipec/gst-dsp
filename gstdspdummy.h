@@ -31,7 +31,7 @@ struct GstDspDummy {
 
 	int dsp_handle;
 	void *proc;
-	dsp_node_t *node;
+	struct dsp_node *node;
 
 	dmm_buffer_t *in_buffer, *out_buffer;
 };

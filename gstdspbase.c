@@ -143,7 +143,7 @@ static GstElementClass *parent_class;
 
 static inline void
 got_message(GstDspBase *self,
-	    dsp_msg_t *msg)
+	    struct dsp_msg *msg)
 {
 	uint32_t id;
 	uint32_t command_id;
@@ -562,7 +562,7 @@ dsp_thread(gpointer data)
 		}
 
 		if (index == 0) {
-			dsp_msg_t msg;
+			struct dsp_msg msg;
 			while (true) {
 				if (!dsp_node_get_message(self->dsp_handle, self->node, &msg, 100))
 					break;
@@ -593,7 +593,7 @@ dsp_thread(gpointer data)
 static inline bool
 destroy_node(GstDspBase *self,
 	     int dsp_handle,
-	     dsp_node_t *node)
+	     struct dsp_node *node)
 {
 	if (node) {
 		if (!dsp_node_free(dsp_handle, node)) {
@@ -906,7 +906,7 @@ send_buffer(GstDspBase *self,
 
 void
 gstdsp_send_alg_ctrl(GstDspBase *self,
-		     dsp_node_t *node,
+		     struct dsp_node *node,
 		     dmm_buffer_t *b)
 {
 	self->alg_ctrl = b;
