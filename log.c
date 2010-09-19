@@ -66,12 +66,12 @@ log_level_to_gst(unsigned int level)
 #endif
 
 void pr_helper(unsigned int level,
-	       void *object,
-	       const char *file,
-	       const char *function,
-	       unsigned int line,
-	       const char *fmt,
-	       ...)
+		void *object,
+		const char *file,
+		const char *function,
+		unsigned int line,
+		const char *fmt,
+		...)
 {
 	char *tmp;
 	va_list args;

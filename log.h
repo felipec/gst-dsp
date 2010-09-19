@@ -25,12 +25,12 @@
 /* #define DEBUG */
 
 void pr_helper(unsigned int level,
-	       void *object,
-	       const char *file,
-	       const char *function,
-	       unsigned int line,
-	       const char *fmt,
-	       ...) __attribute__((format(printf, 6, 7)));
+		void *object,
+		const char *file,
+		const char *function,
+		unsigned int line,
+		const char *fmt,
+		...) __attribute__((format(printf, 6, 7)));
 
 #define pr_base(level, object, ...) pr_helper(level, object, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
