@@ -1,17 +1,33 @@
-Allo socket nodes should be in /lib/dsp
+Texas Instruments provides DSP algorithms for the OMAP 3 platform used in a
+number of devices like beagleboard and N900.
 
-== vdec ==
+The gst-dsp project aims to provide GStreamer elements to take advantage of
+those algorithms. The list includes video/image decoders and encoders.
 
-You'll need these ringio.dll64P, usn.dll64P, and the corresponding
-SN mp4vdec_sn.dll64P (MPEG-4 video), h264vdec_sn.dll64P (H.264).
+Unlike other similar projects there are no dependencies (no openmax, no
+libtidspbridge).
 
-== venc (and image) ==
+The features include:
 
-You'll need usn.dll64P, and the corresponding SN JPEG (jpegenc_sn.dll64P).
+ * video decoding (MPEG-4, H.263, H.264, WMV)
+ * video encoding (MPEG-4, H.263, H.264)
+ * image encoding/decoding (JPEG)
+ * zero-copy
 
-== dummy ==
+The advantages over other solutions are:
 
-Make sure you have dummy.dll64P.
+ * simpler code (5k vs 50k)
+ * better performance (4x)
 
-You can try putting dspdummy in the middle of normal gst-launch pipelines:
-gst-launch-0.10 videotestsrc ! dspdummy ! xvimagesink
+== building ==
+
+There are no dependencies, so just type 'make'. If you are using an old version
+of TI's dspbrdige driver, do 'make DSP_API=0'.
+
+== tidsp ==
+
+You'll need a kernel with tidspbridge driver, the DSP firmware in /lib/dsp, and
+the DSP running a proper baseimage (baseimage.dof).
+
+See:
+http://omapzoom.org/wiki/L23.i3.8_Release_Notes
