@@ -188,6 +188,33 @@ _dsp_start(GstDspDummy *self)
 
 	self->in_buffer->alignment = 0;
 
+	self->events[0] = calloc(1, sizeof(struct dsp_notification));
+	if (!dsp_node_register_notify(self->dsp_handle, self->node,
+				      DSP_NODEMESSAGEREADY, 1,
+				      self->events[0]))
+	{
+		pr_err(self, "failed to register for notifications");
+		return false;
+	}
+
+	self->events[1] = calloc(1, sizeof(struct dsp_notification));
+	if (!dsp_register_notify(self->dsp_handle, self->proc,
+				 DSP_MMUFAULT, 1,
+				 self->events[1]))
+	{
+		pr_err(self, "failed to register for DSP_MMUFAULT");
+		return false;
+	}
+
+	self->events[2] = calloc(1, sizeof(struct dsp_notification));
+	if (!dsp_register_notify(self->dsp_handle, self->proc,
+				 DSP_SYSERROR, 1,
+				 self->events[2]))
+	{
+		pr_err(self, "failed to register for DSP_SYSERROR");
+		return false;
+	}
+
 	return TRUE;
 }
 
@@ -195,9 +222,15 @@ static gboolean
 _dsp_stop(GstDspDummy *self)
 {
 	unsigned long exit_status;
+	unsigned i;
 
 	dmm_buffer_free(self->out_buffer);
 	dmm_buffer_free(self->in_buffer);
+
+	for (i = 0; i < ARRAY_SIZE(self->events); i++) {
+		free(self->events[i]);
+		self->events[i] = NULL;
+	}
 
 	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
 		pr_err(self, "dsp node terminate failed: %lx", exit_status);
@@ -300,6 +333,38 @@ map_buffer(GstDspDummy *self,
 	d_buf->need_copy = true;
 }
 
+static bool check_events(GstDspDummy *self,
+		struct dsp_node *node, struct dsp_msg *msg)
+{
+	unsigned int index = 0;
+	pr_debug(self, "waiting for events");
+	if (!dsp_wait_for_events(self->dsp_handle, self->events, 3, &index, 1000)) {
+		if (errno == ETIME) {
+			pr_info(self, "timed out waiting for events");
+			return true;
+		}
+		pr_err(self, "failed waiting for events: %i", errno);
+		return false;
+	}
+
+	switch (index) {
+	case 0:
+		dsp_node_get_message(self->dsp_handle, node, msg, 100);
+		pr_debug(self, "got dsp message: 0x%0x 0x%0x 0x%0x",
+				msg->cmd, msg->arg_1, msg->arg_2);
+		return true;
+	case 1:
+		pr_err(self, "got DSP MMUFAULT");
+		return false;
+	case 2:
+		pr_err(self, "got DSP SYSERROR");
+		return false;
+	default:
+		pr_err(self, "wrong event index");
+		return false;
+	}
+}
+
 static GstFlowReturn
 pad_chain(GstPad *pad,
 	  GstBuffer *buf)
@@ -343,6 +408,12 @@ pad_chain(GstPad *pad,
 		msg.arg_1 = self->in_buffer->size;
 		dsp_node_put_message(self->dsp_handle, self->node, &msg, -1);
 		dsp_node_get_message(self->dsp_handle, self->node, &msg, -1);
+		if (!check_events(self, self->node, &msg)) {
+			dmm_buffer_unmap(self->out_buffer);
+			dmm_buffer_unmap(self->in_buffer);
+			ret = GST_FLOW_ERROR;
+			return ret;
+		}
 	}
 
 	dmm_buffer_unmap(self->out_buffer);

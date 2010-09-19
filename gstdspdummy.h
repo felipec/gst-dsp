@@ -34,6 +34,7 @@ struct GstDspDummy {
 	struct dsp_node *node;
 
 	dmm_buffer_t *in_buffer, *out_buffer;
+	struct dsp_notification *events[3];
 };
 
 struct GstDspDummyClass {
