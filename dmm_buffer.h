@@ -48,8 +48,8 @@ typedef struct {
 
 static inline dmm_buffer_t *
 dmm_buffer_new(int handle,
-	       void *proc,
-	       int dir)
+		void *proc,
+		int dir)
 {
 	dmm_buffer_t *b;
 	b = calloc(1, sizeof(*b));
@@ -79,7 +79,7 @@ dmm_buffer_free(dmm_buffer_t *b)
 
 static inline void
 dmm_buffer_begin(dmm_buffer_t *b,
-		 size_t len)
+		size_t len)
 {
 	pr_debug(NULL, "%p", b);
 	if (b->dir == DMA_FROM_DEVICE)
@@ -90,7 +90,7 @@ dmm_buffer_begin(dmm_buffer_t *b,
 
 static inline void
 dmm_buffer_end(dmm_buffer_t *b,
-	       size_t len)
+		size_t len)
 {
 	pr_debug(NULL, "%p", b);
 	if (b->dir != DMA_TO_DEVICE)
@@ -131,7 +131,7 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 
 static inline void
 dmm_buffer_allocate(dmm_buffer_t *b,
-		    size_t size)
+		size_t size)
 {
 	pr_debug(NULL, "%p", b);
 	free(b->allocated_data);
@@ -147,8 +147,8 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 
 static inline void
 dmm_buffer_use(dmm_buffer_t *b,
-	       void *data,
-	       size_t size)
+		void *data,
+		size_t size)
 {
 	pr_debug(NULL, "%p", b);
 	b->data = data;
@@ -157,9 +157,9 @@ dmm_buffer_use(dmm_buffer_t *b,
 
 static inline dmm_buffer_t *
 dmm_buffer_calloc(int handle,
-		  void *proc,
-		  size_t size,
-		  int dir)
+		void *proc,
+		size_t size,
+		int dir)
 {
 	dmm_buffer_t *tmp;
 	tmp = dmm_buffer_new(handle, proc, dir);
