@@ -135,13 +135,8 @@ dsp_deinit(GstDspDummy *self)
 {
 	gboolean ret = TRUE;
 
-	if (self->node) {
-		if (!destroy_node(self)) {
-			pr_err(self, "dsp node destroy failed");
-			ret = FALSE;
-		}
-		self->node = NULL;
-	}
+	if (self->dsp_error)
+		goto leave;
 
 	if (self->proc) {
 		if (!dsp_detach(self->dsp_handle, self->proc)) {
@@ -150,6 +145,8 @@ dsp_deinit(GstDspDummy *self)
 		}
 		self->proc = NULL;
 	}
+
+leave:
 
 	if (self->dsp_handle >= 0) {
 		if (dsp_close(self->dsp_handle) < 0) {
@@ -232,10 +229,18 @@ _dsp_stop(GstDspDummy *self)
 		self->events[i] = NULL;
 	}
 
-	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
-		pr_err(self, "dsp node terminate failed: %lx", exit_status);
-		return FALSE;
-	}
+	if (self->dsp_error)
+		goto leave;
+
+	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status))
+		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
+
+leave:
+
+	if (!destroy_node(self))
+		pr_err(self, "dsp node destroy failed");
+
+	self->node = NULL;
 
 	pr_info(self, "dsp node terminated");
 
@@ -333,6 +338,31 @@ map_buffer(GstDspDummy *self,
 	d_buf->need_copy = true;
 }
 
+static void
+post_error(GstDspDummy *self,
+		const char *message)
+{
+	GError *gerror;
+	GstMessage *gst_msg;
+
+	gerror = g_error_new_literal(GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, message);
+	gst_msg = gst_message_new_error(GST_OBJECT(self), gerror, NULL);
+	gst_element_post_message(GST_ELEMENT(self), gst_msg);
+
+	g_error_free(gerror);
+}
+
+static void
+got_error(GstDspDummy *self,
+		unsigned id,
+		const char *message)
+{
+	pr_err(self, message);
+	post_error(self, message);
+
+	self->dsp_error = id;
+}
+
 static bool check_events(GstDspDummy *self,
 		struct dsp_node *node, struct dsp_msg *msg)
 {
@@ -344,6 +374,7 @@ static bool check_events(GstDspDummy *self,
 			return true;
 		}
 		pr_err(self, "failed waiting for events: %i", errno);
+		got_error(self, -1, "unable to get event");
 		return false;
 	}
 
