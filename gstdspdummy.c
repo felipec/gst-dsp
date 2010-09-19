@@ -324,25 +324,27 @@ pad_chain(GstPad *pad,
 	map_buffer(self, buf, self->in_buffer);
 	map_buffer(self, out_buf, self->out_buffer);
 
-	configure_dsp_node(self->dsp_handle, self->node, self->in_buffer, self->out_buffer);
-
 	if (self->in_buffer->need_copy) {
 		memcpy(self->in_buffer->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 		self->in_buffer->need_copy = false;
 	}
 
+	dmm_buffer_map(self->in_buffer);
+	dmm_buffer_map(self->out_buffer);
+
+	configure_dsp_node(self->dsp_handle, self->node, self->in_buffer, self->out_buffer);
+
 	{
 		struct dsp_msg msg;
 
-		dmm_buffer_map(self->in_buffer);
-		dmm_buffer_map(self->out_buffer);
 		msg.cmd = 1;
 		msg.arg_1 = self->in_buffer->size;
 		dsp_node_put_message(self->dsp_handle, self->node, &msg, -1);
 		dsp_node_get_message(self->dsp_handle, self->node, &msg, -1);
-		dmm_buffer_unmap(self->out_buffer);
-		dmm_buffer_unmap(self->in_buffer);
 	}
+
+	dmm_buffer_unmap(self->out_buffer);
+	dmm_buffer_unmap(self->in_buffer);
 
 	if (self->out_buffer->need_copy) {
 		memcpy(GST_BUFFER_DATA(out_buf), self->out_buffer->data, GST_BUFFER_SIZE(out_buf));
