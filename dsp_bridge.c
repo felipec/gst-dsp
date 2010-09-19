@@ -142,6 +142,12 @@
 #define STRM_FREEBUFFER		_IOWR(DB, DB_IOC(DB_STRM, 2), unsigned long)
 #define STRM_ISSUE		_IOW(DB, DB_IOC(DB_STRM, 6), unsigned long)
 
+/* will not be needed when tidspbridge uses proper error codes */
+#define ioctl(...) (ioctl(__VA_ARGS__) < 0)
+
+#define DSP_SUCCEEDED(x) (!x)
+#define DSP_FAILED(x) (x)
+
 int dsp_open(void)
 {
 	return open("/dev/DspBridge", O_RDWR);

@@ -17,9 +17,6 @@
 
 #define ALLOCATE_HEAP
 
-#define DSP_SUCCEEDED(x) ((int)(x) >= 0)
-#define DSP_FAILED(x) ((int)(x) < 0)
-
 #define DSP_MMUFAULT 0x00000010
 #define DSP_SYSERROR 0x00000020
 #define DSP_NODEMESSAGEREADY 0x00000200
