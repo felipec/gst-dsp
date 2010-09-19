@@ -194,10 +194,10 @@ struct register_notify {
 };
 
 bool dsp_register_notify(int handle,
-			 void *proc_handle,
-			 unsigned int event_mask,
-			 unsigned int notify_type,
-			 struct dsp_notification *info)
+		void *proc_handle,
+		unsigned int event_mask,
+		unsigned int notify_type,
+		struct dsp_notification *info)
 {
 	struct register_notify arg = {
 		.proc_handle = proc_handle,
@@ -214,7 +214,7 @@ struct proc_start {
 };
 
 bool dsp_start(int handle,
-	       void *proc_handle)
+		void *proc_handle)
 {
 	struct proc_start arg = {
 		.proc_handle = proc_handle,
@@ -224,7 +224,7 @@ bool dsp_start(int handle,
 }
 
 bool dsp_stop(int handle,
-	      void *proc_handle)
+		void *proc_handle)
 {
 	struct proc_start arg = {
 		.proc_handle = proc_handle,
@@ -241,9 +241,9 @@ struct proc_load {
 };
 
 bool dsp_load(int handle,
-	      void *proc_handle,
-	      int argc, char **argv,
-	      char **env)
+		void *proc_handle,
+		int argc, char **argv,
+		char **env)
 {
 	struct proc_load arg = {
 		.proc_handle = proc_handle,
@@ -263,10 +263,10 @@ struct node_register_notify {
 };
 
 bool dsp_node_register_notify(int handle,
-			      dsp_node_t *node,
-			      unsigned int event_mask,
-			      unsigned int notify_type,
-			      struct dsp_notification *info)
+		dsp_node_t *node,
+		unsigned int event_mask,
+		unsigned int notify_type,
+		struct dsp_notification *info)
 {
 	struct node_register_notify arg = {
 		.node_handle = node->handle,
@@ -286,10 +286,10 @@ struct wait_for_events {
 };
 
 bool dsp_wait_for_events(int handle,
-			 struct dsp_notification **notifications,
-			 unsigned int count,
-			 unsigned int *ret_index,
-			 unsigned int timeout)
+		struct dsp_notification **notifications,
+		unsigned int count,
+		unsigned int *ret_index,
+		unsigned int timeout)
 {
 	struct wait_for_events arg = {
 		.notifications = notifications,
@@ -321,10 +321,10 @@ struct enum_node {
 };
 
 bool dsp_enum(int handle,
-	      unsigned int num,
-	      struct dsp_ndb_props *info,
-	      size_t info_size,
-	      unsigned int *ret_num)
+		unsigned int num,
+		struct dsp_ndb_props *info,
+		size_t info_size,
+		unsigned int *ret_num)
 {
 	struct enum_node arg = {
 		.num = num,
@@ -343,9 +343,9 @@ struct register_object {
 };
 
 bool dsp_register(int handle,
-		  const dsp_uuid_t *uuid,
-		  enum dsp_dcd_object_type type,
-		  const char *path)
+		const dsp_uuid_t *uuid,
+		enum dsp_dcd_object_type type,
+		const char *path)
 {
 	struct register_object arg = {
 		.uuid = uuid,
@@ -362,8 +362,8 @@ struct unregister_object {
 };
 
 bool dsp_unregister(int handle,
-		    const dsp_uuid_t *uuid,
-		    enum dsp_dcd_object_type type)
+		const dsp_uuid_t *uuid,
+		enum dsp_dcd_object_type type)
 {
 	struct unregister_object arg = {
 		.uuid = uuid,
@@ -378,7 +378,7 @@ struct node_create {
 };
 
 bool dsp_node_create(int handle,
-		     dsp_node_t *node)
+		dsp_node_t *node)
 {
 	struct node_create arg = {
 		.node_handle = node->handle,
@@ -392,7 +392,7 @@ struct node_run {
 };
 
 bool dsp_node_run(int handle,
-		  dsp_node_t *node)
+		dsp_node_t *node)
 {
 	struct node_run arg = {
 		.node_handle = node->handle,
@@ -407,8 +407,8 @@ struct node_terminate {
 };
 
 bool dsp_node_terminate(int handle,
-			dsp_node_t *node,
-			unsigned long *status)
+		dsp_node_t *node,
+		unsigned long *status)
 {
 	struct node_terminate arg = {
 		.node_handle = node->handle,
@@ -425,9 +425,9 @@ struct node_put_message {
 };
 
 bool dsp_node_put_message(int handle,
-			  dsp_node_t *node,
-			  const dsp_msg_t *message,
-			  unsigned int timeout)
+		dsp_node_t *node,
+		const dsp_msg_t *message,
+		unsigned int timeout)
 {
 	struct node_put_message arg = {
 		.node_handle = node->handle,
@@ -445,9 +445,9 @@ struct node_get_message {
 };
 
 bool dsp_node_get_message(int handle,
-			  dsp_node_t *node,
-			  dsp_msg_t *message,
-			  unsigned int timeout)
+		dsp_node_t *node,
+		dsp_msg_t *message,
+		unsigned int timeout)
 {
 	struct node_get_message arg = {
 		.node_handle = node->handle,
@@ -463,7 +463,7 @@ struct node_delete {
 };
 
 static inline bool dsp_node_delete(int handle,
-				   dsp_node_t *node)
+		dsp_node_t *node)
 {
 	struct node_delete arg = {
 		.node_handle = node->handle,
@@ -480,9 +480,9 @@ struct node_get_attr {
 };
 
 bool dsp_node_get_attr(int handle,
-		       dsp_node_t *node,
-		       struct dsp_node_attr *attr,
-		       size_t attr_size)
+		dsp_node_t *node,
+		struct dsp_node_attr *attr,
+		size_t attr_size)
 {
 	struct node_get_attr arg = {
 		.node_handle = node->handle,
@@ -507,10 +507,10 @@ struct node_alloc_buf {
 };
 
 static inline bool dsp_node_alloc_buf(int handle,
-				      dsp_node_t *node,
-				      size_t size,
-				      struct dsp_buffer_attr *attr,
-				      void **buffer)
+		dsp_node_t *node,
+		size_t size,
+		struct dsp_buffer_attr *attr,
+		void **buffer)
 {
 	struct node_alloc_buf arg = {
 		.node_handle = node->handle,
@@ -556,8 +556,8 @@ struct cmm_get_info {
 };
 
 static inline bool get_cmm_info(int handle,
-				void *proc_handle,
-				struct dsp_cmm_info *cmm_info)
+		void *proc_handle,
+		struct dsp_cmm_info *cmm_info)
 {
 	struct cmm_object *cmm;
 	struct cmm_get_handle cmm_arg = {
@@ -579,8 +579,8 @@ static inline bool get_cmm_info(int handle,
 }
 
 static inline bool allocate_segments(int handle,
-				     void *proc_handle,
-				     dsp_node_t *node)
+		void *proc_handle,
+		dsp_node_t *node)
 {
 	struct dsp_cmm_info cmm_info;
 	struct dsp_node_attr attr;
@@ -604,8 +604,8 @@ static inline bool allocate_segments(int handle,
 			struct dsp_buffer_attr buffer_attr;
 
 			base = mmap(NULL, seg->size,
-				    PROT_READ | PROT_WRITE, MAP_SHARED | 0x2000 /* MAP_LOCKED */,
-				    handle, seg->base_pa);
+					PROT_READ | PROT_WRITE, MAP_SHARED | 0x2000 /* MAP_LOCKED */,
+					handle, seg->base_pa);
 
 			if (!base)
 				return false;
@@ -637,9 +637,9 @@ struct get_uuid_props {
 };
 
 static inline bool get_uuid_props(int handle,
-				  void *proc_handle,
-				  const dsp_uuid_t *node_uuid,
-				  struct dsp_ndb_props *props)
+		void *proc_handle,
+		const dsp_uuid_t *node_uuid,
+		struct dsp_ndb_props *props)
 {
 	struct get_uuid_props arg = {
 		.proc_handle = proc_handle,
@@ -665,11 +665,11 @@ struct node_allocate {
 };
 
 bool dsp_node_allocate(int handle,
-		       void *proc_handle,
-		       const dsp_uuid_t *node_uuid,
-		       const void *cb_data,
-		       struct dsp_node_attr_in *attrs,
-		       dsp_node_t **ret_node)
+		void *proc_handle,
+		const dsp_uuid_t *node_uuid,
+		const void *cb_data,
+		struct dsp_node_attr_in *attrs,
+		dsp_node_t **ret_node)
 {
 	dsp_node_t *node;
 	void *node_handle = NULL;
@@ -745,12 +745,12 @@ struct node_connect {
 };
 
 bool dsp_node_connect(int handle,
-		      dsp_node_t *node,
-		      unsigned int stream,
-		      dsp_node_t *other_node,
-		      unsigned int other_stream,
-		      struct dsp_stream_attr *attrs,
-		      void *params)
+		dsp_node_t *node,
+		unsigned int stream,
+		dsp_node_t *other_node,
+		unsigned int other_stream,
+		struct dsp_stream_attr *attrs,
+		void *params)
 {
 	struct node_connect arg = {
 		.node_handle = node->handle,
@@ -765,7 +765,7 @@ bool dsp_node_connect(int handle,
 }
 
 bool dsp_node_free(int handle,
-		   dsp_node_t *node)
+		dsp_node_t *node)
 {
 #ifdef ALLOCATE_SM
 	munmap(node->msgbuf_addr, node->msgbuf_size);
@@ -784,9 +784,9 @@ struct reserve_mem {
 };
 
 bool dsp_reserve(int handle,
-		 void *proc_handle,
-		 unsigned long size,
-		 void **addr)
+		void *proc_handle,
+		unsigned long size,
+		void **addr)
 {
 	struct reserve_mem arg = {
 		.proc_handle = proc_handle,
@@ -804,8 +804,8 @@ struct unreserve_mem {
 };
 
 bool dsp_unreserve(int handle,
-		   void *proc_handle,
-		   void *addr)
+		void *proc_handle,
+		void *addr)
 {
 	struct unreserve_mem arg = {
 		.proc_handle = proc_handle,
@@ -825,12 +825,12 @@ struct map_mem {
 };
 
 bool dsp_map(int handle,
-	     void *proc_handle,
-	     void *mpu_addr,
-	     unsigned long size,
-	     void *req_addr,
-	     void *ret_map_addr,
-	     unsigned long attr)
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size,
+		void *req_addr,
+		void *ret_map_addr,
+		unsigned long attr)
 {
 	struct map_mem arg = {
 		.proc_handle = proc_handle,
@@ -851,8 +851,8 @@ struct unmap_mem {
 };
 
 bool dsp_unmap(int handle,
-	       void *proc_handle,
-	       void *map_addr)
+		void *proc_handle,
+		void *map_addr)
 {
 	struct unmap_mem arg = {
 		.proc_handle = proc_handle,
@@ -870,10 +870,10 @@ struct flush_mem {
 };
 
 bool dsp_flush(int handle,
-	       void *proc_handle,
-	       void *mpu_addr,
-	       unsigned long size,
-	       unsigned long flags)
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size,
+		unsigned long flags)
 {
 	struct flush_mem arg = {
 		.proc_handle = proc_handle,
@@ -892,9 +892,9 @@ struct invalidate_mem {
 };
 
 bool dsp_invalidate(int handle,
-		    void *proc_handle,
-		    void *mpu_addr,
-		    unsigned long size)
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size)
 {
 	struct invalidate_mem arg = {
 		.proc_handle = proc_handle,
@@ -913,10 +913,10 @@ struct proc_get_info {
 };
 
 bool dsp_proc_get_info(int handle,
-		       void *proc_handle,
-		       unsigned type,
-		       struct dsp_info *info,
-		       unsigned size)
+		void *proc_handle,
+		unsigned type,
+		struct dsp_info *info,
+		unsigned size)
 {
 	struct proc_get_info arg = {
 		.proc_handle = proc_handle,
@@ -937,11 +937,11 @@ struct enum_nodes {
 };
 
 bool dsp_enum_nodes(int handle,
-		    void *proc_handle,
-		    void **node_table,
-		    unsigned node_table_size,
-		    unsigned *num_nodes,
-		    unsigned *allocated)
+		void *proc_handle,
+		void **node_table,
+		unsigned node_table_size,
+		unsigned *num_nodes,
+		unsigned *allocated)
 {
 	struct enum_nodes arg = {
 		.proc_handle = proc_handle,
@@ -971,11 +971,11 @@ struct stream_open {
 };
 
 bool dsp_stream_open(int handle,
-		     dsp_node_t *node,
-		     unsigned int direction,
-		     unsigned int index,
-		     struct dsp_stream_attr_in *attrin,
-		     void *stream)
+		dsp_node_t *node,
+		unsigned int direction,
+		unsigned int index,
+		struct dsp_stream_attr_in *attrin,
+		void *stream)
 {
 	struct stream_attr strm_attr = {
 		.attrin = attrin,
@@ -989,7 +989,7 @@ bool dsp_stream_open(int handle,
 	};
 
 	if (attrin && (attrin->mode == STRMMODE_ZEROCOPY ||
-		       attrin->mode == STRMMODE_RDMA)) {
+				attrin->mode == STRMMODE_RDMA)) {
 		struct dsp_cmm_info cmm_info;
 
 		if (!get_cmm_info(handle, NULL, &cmm_info))
@@ -1001,9 +1001,9 @@ bool dsp_stream_open(int handle,
 
 			seg = &cmm_info.info[0];
 			base = mmap(NULL, seg->size,
-				    PROT_READ | PROT_WRITE,
-				    MAP_SHARED | 0x2000 /* MAP_LOCKED */,
-				    handle, seg->base_pa);
+					PROT_READ | PROT_WRITE,
+					MAP_SHARED | 0x2000 /* MAP_LOCKED */,
+					handle, seg->base_pa);
 
 			if (!base)
 				return false;
@@ -1030,9 +1030,9 @@ struct stream_get_info {
 };
 
 static inline bool get_stream_info(int handle,
-				   void *stream,
-				   struct stream_info *info,
-				   unsigned int size)
+		void *stream,
+		struct stream_info *info,
+		unsigned int size)
 {
 	struct stream_get_info arg = {
 		.stream = stream,
@@ -1044,7 +1044,7 @@ static inline bool get_stream_info(int handle,
 }
 
 bool dsp_stream_close(int handle,
-		      void *stream)
+		void *stream)
 {
 	struct stream_info info;
 	if (!get_stream_info(handle, stream, &info, sizeof(struct stream_info)))
@@ -1073,8 +1073,8 @@ struct stream_idle {
 };
 
 bool dsp_stream_idle(int handle,
-		     void *stream,
-		     bool flush)
+		void *stream,
+		bool flush)
 {
 	struct stream_idle arg = {
 		.stream = stream,
@@ -1092,11 +1092,11 @@ struct stream_reclaim {
 };
 
 bool dsp_stream_reclaim(int handle,
-			void *stream,
-			unsigned char **buff,
-			unsigned long *data_size,
-			unsigned long *buff_size,
-			unsigned long *flag)
+		void *stream,
+		unsigned char **buff,
+		unsigned long *data_size,
+		unsigned long *buff_size,
+		unsigned long *flag)
 {
 	struct stream_reclaim arg = {
 		.stream = stream,
@@ -1117,11 +1117,11 @@ struct stream_issue {
 };
 
 bool dsp_stream_issue(int handle,
-		      void *stream,
-		      unsigned char *buff,
-		      unsigned long data_size,
-		      unsigned long buff_size,
-		      unsigned long flag)
+		void *stream,
+		unsigned char *buff,
+		unsigned long data_size,
+		unsigned long buff_size,
+		unsigned long flag)
 {
 	struct stream_issue arg = {
 		.stream = stream,
@@ -1134,9 +1134,9 @@ bool dsp_stream_issue(int handle,
 }
 
 bool dsp_stream_get_info(int handle,
-			 void *stream,
-			 struct dsp_stream_info *info,
-			 unsigned int size)
+		void *stream,
+		struct dsp_stream_info *info,
+		unsigned int size)
 {
 	struct stream_info stream_info = {
 		.info = info
@@ -1154,10 +1154,10 @@ struct stream_allocate_buffer {
 };
 
 bool dsp_stream_allocate_buffers(int handle,
-				 void *stream,
-				 unsigned int size,
-				 unsigned char **buff,
-				 unsigned int num_buf)
+		void *stream,
+		unsigned int size,
+		unsigned char **buff,
+		unsigned int num_buf)
 {
 	unsigned int i;
 	struct stream_info info;
@@ -1188,9 +1188,9 @@ struct stream_free_buffers {
 };
 
 bool dsp_stream_free_buffers(int handle,
-			     void *stream,
-			     unsigned char **buff,
-			     unsigned int num_buf)
+		void *stream,
+		unsigned char **buff,
+		unsigned int num_buf)
 {
 	unsigned int i;
 	struct stream_info info;
