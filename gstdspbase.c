@@ -733,7 +733,7 @@ gstdsp_start(GstDspBase *self)
 }
 
 static gboolean
-dsp_stop(GstDspBase *self)
+_dsp_stop(GstDspBase *self)
 {
 	unsigned long exit_status;
 	guint i;
@@ -961,7 +961,7 @@ change_state(GstElement *element,
 
 	switch (transition) {
 	case GST_STATE_CHANGE_PAUSED_TO_READY:
-		if (!dsp_stop(self)) {
+		if (!_dsp_stop(self)) {
 			gstdsp_post_error(self, "dsp stop failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}

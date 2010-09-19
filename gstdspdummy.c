@@ -174,7 +174,7 @@ configure_dsp_node(int dsp_handle,
 }
 
 static gboolean
-dsp_start(GstDspDummy *self)
+_dsp_start(GstDspDummy *self)
 {
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
 		GST_ERROR("dsp node run failed");
@@ -192,7 +192,7 @@ dsp_start(GstDspDummy *self)
 }
 
 static gboolean
-dsp_stop(GstDspDummy *self)
+_dsp_stop(GstDspDummy *self)
 {
 	unsigned long exit_status;
 
@@ -228,7 +228,7 @@ change_state(GstElement *element,
 		break;
 
 	case GST_STATE_CHANGE_READY_TO_PAUSED:
-		if (!dsp_start(self)) {
+		if (!_dsp_start(self)) {
 			GST_ERROR("dsp start failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
@@ -246,7 +246,7 @@ change_state(GstElement *element,
 
 	switch (transition) {
 	case GST_STATE_CHANGE_PAUSED_TO_READY:
-		if (!dsp_stop(self)) {
+		if (!_dsp_stop(self)) {
 			GST_ERROR("dsp stop failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
