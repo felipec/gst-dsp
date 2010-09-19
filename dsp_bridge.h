@@ -24,28 +24,28 @@
 #define MAX_PROFILES 16
 #define DSP_MAXNAMELEN 32
 
-typedef struct dsp_uuid {
+struct dsp_uuid {
 	uint32_t field_1;
 	uint16_t field_2;
 	uint16_t field_3;
 	uint8_t field_4;
 	uint8_t field_5;
 	uint8_t field_6[6];
-} dsp_uuid_t;
+};
 
-typedef struct dsp_node {
+struct dsp_node {
 	void *handle;
 	void *heap;
 	void *msgbuf_addr;
 	size_t msgbuf_size;
-} dsp_node_t;
+};
 
 /* note: cmd = 0x20000000 has special handling */
-typedef struct dsp_msg {
+struct dsp_msg {
 	uint32_t cmd;
 	uint32_t arg_1;
 	uint32_t arg_2;
-} dsp_msg_t;
+};
 
 struct dsp_notification {
 	char *name;
