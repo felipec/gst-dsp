@@ -41,49 +41,49 @@ generate_sink_template(void)
 }
 
 static inline void *
-create_node(int dsp_handle,
-	    void *proc)
+create_node(GstDspDummy *self)
 {
+	int dsp_handle = self->dsp_handle;
+	void *proc = self->proc;
 	struct dsp_node *node;
 	const struct dsp_uuid dummy_uuid = { 0x3dac26d0, 0x6d4b, 0x11dd, 0xad, 0x8b,
 		{ 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 } };
 
 	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_NODETYPE, "test.dll64P")) {
-		GST_ERROR("dsp node register failed");
+		pr_err(self, "dsp node register failed");
 		return NULL;
 	}
 
 	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_LIBRARYTYPE, "test.dll64P")) {
-		GST_ERROR("dsp node register failed");
+		pr_err(self, "dsp node register failed");
 		return NULL;
 	}
 
 	if (!dsp_node_allocate(dsp_handle, proc, &dummy_uuid, NULL, NULL, &node)) {
-		GST_ERROR("dsp node allocate failed");
+		pr_err(self, "dsp node allocate failed");
 		return NULL;
 	}
 
 	if (!dsp_node_create(dsp_handle, node)) {
-		GST_ERROR("dsp node create failed");
+		pr_err(self, "dsp node create failed");
 		return NULL;
 	}
 
-	GST_INFO("dsp node created");
+	pr_info(self, "dsp node created");
 
 	return node;
 }
 
 static inline bool
-destroy_node(int dsp_handle,
-	     struct dsp_node *node)
+destroy_node(GstDspDummy *self)
 {
-	if (node) {
-		if (!dsp_node_free(dsp_handle, node)) {
-			GST_ERROR("dsp node free failed");
+	if (self->node) {
+		if (!dsp_node_free(self->dsp_handle, self->node)) {
+			pr_err(self, "dsp node free failed");
 			return false;
 		}
 
-		GST_INFO("dsp node deleted");
+		pr_info(self, "dsp node deleted");
 	}
 
 	return true;
@@ -97,18 +97,18 @@ dsp_init(GstDspDummy *self)
 	self->dsp_handle = dsp_handle = dsp_open();
 
 	if (dsp_handle < 0) {
-		GST_ERROR("dsp open failed");
+		pr_err(self, "dsp open failed");
 		return FALSE;
 	}
 
 	if (!dsp_attach(dsp_handle, 0, NULL, &self->proc)) {
-		GST_ERROR("dsp attach failed");
+		pr_err(self, "dsp attach failed");
 		goto fail;
 	}
 
-	self->node = create_node(dsp_handle, self->proc);
+	self->node = create_node(self);
 	if (!self->node) {
-		GST_ERROR("dsp node creation failed");
+		pr_err(self, "dsp node creation failed");
 		goto fail;
 	}
 
@@ -117,13 +117,13 @@ dsp_init(GstDspDummy *self)
 fail:
 	if (self->proc) {
 		if (!dsp_detach(dsp_handle, self->proc))
-			GST_ERROR("dsp detach failed");
+			pr_err(self, "dsp detach failed");
 		self->proc = NULL;
 	}
 
 	if (self->dsp_handle >= 0) {
 		if (dsp_close(dsp_handle) < 0)
-			GST_ERROR("dsp close failed");
+			pr_err(self, "dsp close failed");
 		self->dsp_handle = -1;
 	}
 
@@ -136,8 +136,8 @@ dsp_deinit(GstDspDummy *self)
 	gboolean ret = TRUE;
 
 	if (self->node) {
-		if (!destroy_node(self->dsp_handle, self->node)) {
-			GST_ERROR("dsp node destroy failed");
+		if (!destroy_node(self)) {
+			pr_err(self, "dsp node destroy failed");
 			ret = FALSE;
 		}
 		self->node = NULL;
@@ -145,7 +145,7 @@ dsp_deinit(GstDspDummy *self)
 
 	if (self->proc) {
 		if (!dsp_detach(self->dsp_handle, self->proc)) {
-			GST_ERROR("dsp detach failed");
+			pr_err(self, "dsp detach failed");
 			ret = FALSE;
 		}
 		self->proc = NULL;
@@ -153,7 +153,7 @@ dsp_deinit(GstDspDummy *self)
 
 	if (self->dsp_handle >= 0) {
 		if (dsp_close(self->dsp_handle) < 0) {
-			GST_ERROR("dsp close failed");
+			pr_err(self, "dsp close failed");
 			ret = FALSE;
 		}
 		self->dsp_handle = -1;
@@ -177,11 +177,11 @@ static gboolean
 _dsp_start(GstDspDummy *self)
 {
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
-		GST_ERROR("dsp node run failed");
+		pr_err(self, "dsp node run failed");
 		return FALSE;
 	}
 
-	GST_INFO("dsp node running");
+	pr_info(self, "dsp node running");
 
 	self->in_buffer = dmm_buffer_new(self->dsp_handle, self->proc, DMA_TO_DEVICE);
 	self->out_buffer = dmm_buffer_new(self->dsp_handle, self->proc, DMA_FROM_DEVICE);
@@ -200,11 +200,11 @@ _dsp_stop(GstDspDummy *self)
 	dmm_buffer_free(self->in_buffer);
 
 	if (!dsp_node_terminate(self->dsp_handle, self->node, &exit_status)) {
-		GST_ERROR("dsp node terminate failed: %lx", exit_status);
+		pr_err(self, "dsp node terminate failed: %lx", exit_status);
 		return FALSE;
 	}
 
-	GST_INFO("dsp node terminated");
+	pr_info(self, "dsp node terminated");
 
 	return TRUE;
 }
@@ -221,7 +221,7 @@ change_state(GstElement *element,
 	switch (transition) {
 	case GST_STATE_CHANGE_NULL_TO_READY:
 		if (!dsp_init(self)) {
-			GST_ERROR("dsp init failed");
+			pr_err(self, "dsp init failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
 
@@ -229,7 +229,7 @@ change_state(GstElement *element,
 
 	case GST_STATE_CHANGE_READY_TO_PAUSED:
 		if (!_dsp_start(self)) {
-			GST_ERROR("dsp start failed");
+			pr_err(self, "dsp start failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
 
@@ -247,7 +247,7 @@ change_state(GstElement *element,
 	switch (transition) {
 	case GST_STATE_CHANGE_PAUSED_TO_READY:
 		if (!_dsp_stop(self)) {
-			GST_ERROR("dsp stop failed");
+			pr_err(self, "dsp stop failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
 
@@ -255,7 +255,7 @@ change_state(GstElement *element,
 
 	case GST_STATE_CHANGE_READY_TO_NULL:
 		if (!dsp_deinit(self)) {
-			GST_ERROR("dsp deinit failed");
+			pr_err(self, "dsp deinit failed");
 			return GST_STATE_CHANGE_FAILURE;
 		}
 
@@ -317,7 +317,7 @@ pad_chain(GstPad *pad,
 						&out_buf);
 
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-		GST_ERROR_OBJECT(self, "couldn't allocate buffer");
+		pr_err(self, "couldn't allocate buffer");
 		ret = GST_FLOW_ERROR;
 		goto leave;
 	}

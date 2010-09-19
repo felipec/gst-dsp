@@ -591,12 +591,10 @@ dsp_thread(gpointer data)
 }
 
 static inline bool
-destroy_node(GstDspBase *self,
-	     int dsp_handle,
-	     struct dsp_node *node)
+destroy_node(GstDspBase *self)
 {
-	if (node) {
-		if (!dsp_node_free(dsp_handle, node)) {
+	if (self->node) {
+		if (!dsp_node_free(self->dsp_handle, self->node)) {
 			pr_err(self, "dsp node free failed");
 			return false;
 		}
@@ -736,7 +734,7 @@ static gboolean
 _dsp_stop(GstDspBase *self)
 {
 	unsigned long exit_status;
-	guint i;
+	unsigned i;
 
 	if (!self->node)
 		return TRUE;
@@ -792,7 +790,7 @@ _dsp_stop(GstDspBase *self)
 		pr_err(self, "dsp node terminate failed: 0x%lx", exit_status);
 
 leave:
-	if (!destroy_node(self, self->dsp_handle, self->node))
+	if (!destroy_node(self))
 		pr_err(self, "dsp node destroy failed");
 
 	self->node = NULL;
