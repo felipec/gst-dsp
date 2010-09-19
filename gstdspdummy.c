@@ -48,12 +48,12 @@ create_node(int dsp_handle,
 	const struct dsp_uuid dummy_uuid = { 0x3dac26d0, 0x6d4b, 0x11dd, 0xad, 0x8b,
 		{ 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 } };
 
-	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_NODETYPE, "dummy.dll64P")) {
+	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_NODETYPE, "test.dll64P")) {
 		GST_ERROR("dsp node register failed");
 		return NULL;
 	}
 
-	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_LIBRARYTYPE, "dummy.dll64P")) {
+	if (!gstdsp_register(dsp_handle, &dummy_uuid, DSP_DCD_LIBRARYTYPE, "test.dll64P")) {
 		GST_ERROR("dsp node register failed");
 		return NULL;
 	}
