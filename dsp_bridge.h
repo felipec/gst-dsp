@@ -24,6 +24,9 @@
 #define DSP_SYSERROR 0x00000020
 #define DSP_NODEMESSAGEREADY 0x00000200
 
+#define MAX_PROFILES 16
+#define DSP_MAXNAMELEN 32
+
 typedef struct {
 	uint32_t field_1;
 	uint16_t field_2;
@@ -78,40 +81,42 @@ enum dsp_node_type {
 };
 
 #ifdef ALLOCATE_HEAP
-struct DSP_RESOURCEREQMTS {
-	unsigned long cbStruct;
-	unsigned int uStaticDataSize;
-	unsigned int uGlobalDataSize;
-	unsigned int uProgramMemSize;
-	unsigned int uWCExecutionTime;
-	unsigned int uWCPeriod;
-	unsigned int uWCDeadline;
-	unsigned int uAvgExectionTime;
-	unsigned int uMinimumPeriod;
+/* The dsp_resourcereqmts structure for node's resource requirements */
+struct dsp_resourcereqmts {
+	uint32_t cb_struct;
+	uint32_t static_data_size;
+	uint32_t global_data_size;
+	uint32_t program_mem_size;
+	uint32_t uwc_execution_time;
+	uint32_t uwc_period;
+	uint32_t uwc_deadline;
+	uint32_t avg_exection_time;
+	uint32_t minimum_period;
 };
 
-struct DSP_NODEPROFS {
-	unsigned int ulHeapSize;
+struct dsp_nodeprofs {
+	uint32_t heap_size;
 };
 
+/* The dsp_ndb_props structure reports the attributes of a node */
 struct dsp_ndb_props {
-	unsigned long cbStruct;
-	dsp_uuid_t uiNodeID;
-	char acName[32];
-	enum dsp_node_type uNodeType;
-	unsigned int bCacheOnGPP;
-	struct DSP_RESOURCEREQMTS dspResourceReqmts;
-	int iPriority;
-	unsigned int uStackSize;
-	unsigned int uSysStackSize;
-	unsigned int uStackSeg;
-	unsigned int uMessageDepth;
-	unsigned int uNumInputStreams;
-	unsigned int uNumOutputStreams;
-	unsigned int uTimeout;
-	unsigned int uCountProfiles; /* Number of supported profiles */
-	struct DSP_NODEPROFS aProfiles[16];	/* Array of profiles */
-	unsigned int uStackSegName; /* Stack Segment Name */
+	uint32_t cb_struct;
+	dsp_uuid_t node_id;
+	char ac_name[DSP_MAXNAMELEN];
+	enum dsp_node_type ntype;
+	uint32_t cache_on_gpp;
+	struct dsp_resourcereqmts dsp_resource_reqmts;
+	int32_t prio;
+	uint32_t stack_size;
+	uint32_t sys_stack_size;
+	uint32_t stack_seg;
+	uint32_t message_depth;
+	uint32_t num_input_streams;
+	uint32_t num_output_streams;
+	uint32_t timeout;
+	uint32_t count_profiles; /* Number of supported profiles */
+	struct dsp_nodeprofs node_profiles[MAX_PROFILES]; /* Array of profiles */
+	uint32_t stack_seg_name; /* Stack Segment Name */
 };
 #endif
 
