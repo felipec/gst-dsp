@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2009 Felipe Contreras
- * Copyright (C) 2009 Nokia Corporation
+ * Copyright (C) 2009-2010 Felipe Contreras
+ * Copyright (C) 2009-2010 Nokia Corporation
  *
  * Authors:
  * Juha Alanen <juha.m.alanen@nokia.com>

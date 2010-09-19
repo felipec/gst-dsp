@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Felipe Contreras
+ * Copyright (C) 2009-2010 Felipe Contreras
  *
  * Author: Felipe Contreras <felipe.contreras@gmail.com>
  *

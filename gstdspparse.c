@@ -1,6 +1,6 @@
 /*
+ * Copyright (C) 2007-2010 Nokia Corporation
  * Copyright (C) 2009 Marco Ballesio
- * Copyright (C) 2007-2009 Nokia Corporation
  *
  * Authors:
  * Marco Ballesio <marco.ballesio@gmail.com>
