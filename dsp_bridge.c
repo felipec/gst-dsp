@@ -145,9 +145,6 @@
 /* will not be needed when tidspbridge uses proper error codes */
 #define ioctl(...) (ioctl(__VA_ARGS__) < 0)
 
-#define DSP_SUCCEEDED(x) (!x)
-#define DSP_FAILED(x) (x)
-
 int dsp_open(void)
 {
 	return open("/dev/DspBridge", O_RDWR);
@@ -175,7 +172,7 @@ bool dsp_attach(int handle,
 		.ret_handle = ret_handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_ATTACH, &arg));
+	return !ioctl(handle, PROC_ATTACH, &arg);
 }
 
 struct proc_detach {
@@ -189,7 +186,7 @@ bool dsp_detach(int handle,
 		.proc_handle = proc_handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_DETACH, &arg));
+	return !ioctl(handle, PROC_DETACH, &arg);
 }
 
 struct register_notify {
@@ -212,7 +209,7 @@ bool dsp_register_notify(int handle,
 		.info = info,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_REGISTERNOTIFY, &arg));
+	return !ioctl(handle, PROC_REGISTERNOTIFY, &arg);
 }
 
 struct proc_start {
@@ -226,7 +223,7 @@ bool dsp_start(int handle,
 		.proc_handle = proc_handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_START, &arg));
+	return !ioctl(handle, PROC_START, &arg);
 }
 
 bool dsp_stop(int handle,
@@ -236,7 +233,7 @@ bool dsp_stop(int handle,
 		.proc_handle = proc_handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_STOP, &arg));
+	return !ioctl(handle, PROC_STOP, &arg);
 }
 
 struct proc_load {
@@ -258,7 +255,7 @@ bool dsp_load(int handle,
 		.env = env,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_LOAD, &arg));
+	return !ioctl(handle, PROC_LOAD, &arg);
 }
 
 struct node_register_notify {
@@ -281,7 +278,7 @@ bool dsp_node_register_notify(int handle,
 		.info = info,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_REGISTERNOTIFY, &arg));
+	return !ioctl(handle, NODE_REGISTERNOTIFY, &arg);
 }
 
 struct wait_for_events {
@@ -305,7 +302,7 @@ bool dsp_wait_for_events(int handle,
 	};
 
 #if DSP_API >= 2
-	return DSP_SUCCEEDED(ioctl(handle, MGR_WAIT, &arg));
+	return !ioctl(handle, MGR_WAIT, &arg);
 #else
 	/*
 	 * Temporary hack since libc only saves errors -1 to -4095; 0x80008017
@@ -315,7 +312,7 @@ bool dsp_wait_for_events(int handle,
 	r = ioctl(handle, MGR_WAIT, &arg);
 	if (r == (int)0x80008017)
 		errno = ETIME;
-	return DSP_SUCCEEDED(r);
+	return !r;
 #endif
 }
 
@@ -339,7 +336,7 @@ bool dsp_enum(int handle,
 		.ret_num = ret_num,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, MGR_ENUMNODE_INFO, &arg));
+	return !ioctl(handle, MGR_ENUMNODE_INFO, &arg);
 }
 
 struct register_object {
@@ -359,7 +356,7 @@ bool dsp_register(int handle,
 		.path = path,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, MGR_REGISTEROBJECT, &arg));
+	return !ioctl(handle, MGR_REGISTEROBJECT, &arg);
 }
 
 struct unregister_object {
@@ -376,7 +373,7 @@ bool dsp_unregister(int handle,
 		.type = type,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, MGR_UNREGISTEROBJECT, &arg));
+	return !ioctl(handle, MGR_UNREGISTEROBJECT, &arg);
 }
 
 struct node_create {
@@ -390,7 +387,7 @@ bool dsp_node_create(int handle,
 		.node_handle = node->handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_CREATE, &arg));
+	return !ioctl(handle, NODE_CREATE, &arg);
 }
 
 struct node_run {
@@ -404,7 +401,7 @@ bool dsp_node_run(int handle,
 		.node_handle = node->handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_RUN, &arg));
+	return !ioctl(handle, NODE_RUN, &arg);
 }
 
 struct node_terminate {
@@ -421,7 +418,7 @@ bool dsp_node_terminate(int handle,
 		.status = status,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_TERMINATE, &arg));
+	return !ioctl(handle, NODE_TERMINATE, &arg);
 }
 
 struct node_put_message {
@@ -441,7 +438,7 @@ bool dsp_node_put_message(int handle,
 		.timeout = timeout,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_PUTMESSAGE, &arg));
+	return !ioctl(handle, NODE_PUTMESSAGE, &arg);
 }
 
 struct node_get_message {
@@ -461,7 +458,7 @@ bool dsp_node_get_message(int handle,
 		.timeout = timeout,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_GETMESSAGE, &arg));
+	return !ioctl(handle, NODE_GETMESSAGE, &arg);
 }
 
 struct node_delete {
@@ -475,7 +472,7 @@ static inline bool dsp_node_delete(int handle,
 		.node_handle = node->handle,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_DELETE, &arg));
+	return !ioctl(handle, NODE_DELETE, &arg);
 }
 
 #ifdef ALLOCATE_SM
@@ -496,7 +493,7 @@ bool dsp_node_get_attr(int handle,
 		.attr_size = attr_size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_GETATTR, &arg));
+	return !ioctl(handle, NODE_GETATTR, &arg);
 }
 
 struct dsp_buffer_attr {
@@ -525,7 +522,7 @@ static inline bool dsp_node_alloc_buf(int handle,
 		.buffer = buffer,
 	};
 
-	if (!DSP_SUCCEEDED(ioctl(handle, NODE_ALLOCMSGBUF, &arg))) {
+	if (ioctl(handle, NODE_ALLOCMSGBUF, &arg)) {
 		*buffer = NULL;
 		return false;
 	}
@@ -574,11 +571,11 @@ static inline bool get_cmm_info(int handle,
 		.info = cmm_info,
 	};
 
-	if (!DSP_SUCCEEDED(ioctl(handle, CMM_GETHANDLE, &cmm_arg)))
+	if (ioctl(handle, CMM_GETHANDLE, &cmm_arg))
 		return false;
 
 	cmm_info_arg.cmm = cmm;
-	if (!DSP_SUCCEEDED(ioctl(handle, CMM_GETINFO, &cmm_info_arg)))
+	if (ioctl(handle, CMM_GETINFO, &cmm_info_arg))
 		return false;
 
 	return true;
@@ -653,7 +650,7 @@ static inline bool get_uuid_props(int handle,
 		.props = props,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_GETUUIDPROPS, &arg));
+	return !ioctl(handle, NODE_GETUUIDPROPS, &arg);
 }
 
 #define PG_SIZE_4K 4096
@@ -714,7 +711,7 @@ bool dsp_node_allocate(int handle,
 	}
 #endif
 
-	if (!DSP_SUCCEEDED(ioctl(handle, NODE_ALLOCATE, &arg))) {
+	if (ioctl(handle, NODE_ALLOCATE, &arg)) {
 		if (attrs) {
 			free(attrs->gpp_va);
 			attrs->gpp_va = NULL;
@@ -767,7 +764,7 @@ bool dsp_node_connect(int handle,
 		.params = params,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, NODE_CONNECT, &arg));
+	return !ioctl(handle, NODE_CONNECT, &arg);
 }
 
 bool dsp_node_free(int handle,
@@ -800,7 +797,7 @@ bool dsp_reserve(int handle,
 		.addr = addr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_RSVMEM, &arg));
+	return !ioctl(handle, PROC_RSVMEM, &arg);
 }
 
 struct unreserve_mem {
@@ -818,7 +815,7 @@ bool dsp_unreserve(int handle,
 		.addr = addr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_UNRSVMEM, &arg));
+	return !ioctl(handle, PROC_UNRSVMEM, &arg);
 }
 
 struct map_mem {
@@ -847,7 +844,7 @@ bool dsp_map(int handle,
 		.attr = attr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_MAPMEM, &arg));
+	return !ioctl(handle, PROC_MAPMEM, &arg);
 }
 
 struct unmap_mem {
@@ -865,7 +862,7 @@ bool dsp_unmap(int handle,
 		.map_addr = map_addr,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_UNMAPMEM, &arg));
+	return !ioctl(handle, PROC_UNMAPMEM, &arg);
 }
 
 struct flush_mem {
@@ -888,7 +885,7 @@ bool dsp_flush(int handle,
 		.flags = flags,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_FLUSHMEMORY, &arg));
+	return !ioctl(handle, PROC_FLUSHMEMORY, &arg);
 }
 
 struct invalidate_mem {
@@ -908,7 +905,7 @@ bool dsp_invalidate(int handle,
 		.size = size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_INVALIDATEMEMORY, &arg));
+	return !ioctl(handle, PROC_INVALIDATEMEMORY, &arg);
 }
 
 struct proc_get_info {
@@ -931,7 +928,7 @@ bool dsp_proc_get_info(int handle,
 		.size = size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_ENUMRESOURCES, &arg));
+	return !ioctl(handle, PROC_ENUMRESOURCES, &arg);
 }
 
 struct enum_nodes {
@@ -957,7 +954,7 @@ bool dsp_enum_nodes(int handle,
 		.allocated = allocated,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, PROC_ENUMNODE, &arg));
+	return !ioctl(handle, PROC_ENUMNODE, &arg);
 }
 
 struct stream_attr {
@@ -1019,7 +1016,7 @@ bool dsp_stream_open(int handle,
 		}
 	}
 
-	return DSP_SUCCEEDED(ioctl(handle, STRM_OPEN, &stream_arg));
+	return !ioctl(handle, STRM_OPEN, &stream_arg);
 }
 
 struct stream_info {
@@ -1046,7 +1043,7 @@ static inline bool get_stream_info(int handle,
 		.size = size,
 	};
 
-	return DSP_SUCCEEDED(ioctl(handle, STRM_GETINFO, &arg));
+	return !ioctl(handle, STRM_GETINFO, &arg);
 }
 
 bool dsp_stream_close(int handle,
@@ -1070,7 +1067,7 @@ bool dsp_stream_close(int handle,
 		}
 	}
 
-	return DSP_SUCCEEDED(ioctl(handle, STRM_CLOSE, &stream));
+	return !ioctl(handle, STRM_CLOSE, &stream);
 }
 
 struct stream_idle {
@@ -1086,7 +1083,7 @@ bool dsp_stream_idle(int handle,
 		.stream = stream,
 		.flush = flush,
 	};
-	return DSP_SUCCEEDED(ioctl(handle, STRM_IDLE, &arg));
+	return !ioctl(handle, STRM_IDLE, &arg);
 }
 
 struct stream_reclaim {
@@ -1111,7 +1108,7 @@ bool dsp_stream_reclaim(int handle,
 		.buff_size = buff_size,
 		.flag = flag,
 	};
-	return DSP_SUCCEEDED(ioctl(handle, STRM_RECLAIM, &arg));
+	return !ioctl(handle, STRM_RECLAIM, &arg);
 }
 
 struct stream_issue {
@@ -1136,7 +1133,7 @@ bool dsp_stream_issue(int handle,
 		.buff_size = buff_size,
 		.flag = flag,
 	};
-	return DSP_SUCCEEDED(ioctl(handle, STRM_ISSUE, &arg));
+	return !ioctl(handle, STRM_ISSUE, &arg);
 }
 
 bool dsp_stream_get_info(int handle,
@@ -1178,7 +1175,7 @@ bool dsp_stream_allocate_buffers(int handle,
 			.num_buf = num_buf,
 		};
 
-		return DSP_SUCCEEDED(ioctl(handle, STRM_ALLOCATEBUFFER, &arg));
+		return !ioctl(handle, STRM_ALLOCATEBUFFER, &arg);
 	}
 
 	for (i = 0; i < num_buf; i++)
@@ -1209,7 +1206,7 @@ bool dsp_stream_free_buffers(int handle,
 			.buff = buff,
 			.num_buf = num_buf,
 		};
-		return DSP_SUCCEEDED(ioctl(handle, STRM_FREEBUFFER, &arg));
+		return !ioctl(handle, STRM_FREEBUFFER, &arg);
 	}
 
 	for (i = 0; i < num_buf; i++) {
