@@ -1164,6 +1164,15 @@ sink_setcaps(GstPad *pad,
 			GstStructure *s;
 			s = gst_caps_get_structure(allowed_caps, 0);
 			gst_structure_get_int(s, "level", &tgt_level);
+			if (base->alg == GSTDSP_H264ENC) {
+				const char *stream_format;
+				stream_format = gst_structure_get_string(s, "stream-format");
+				if (stream_format && !strcmp(stream_format, "avc"))
+					self->priv.h264.bytestream = false;
+				else
+					stream_format = "byte-stream";
+				gst_structure_set(out_struc, "stream-format", G_TYPE_STRING, stream_format, NULL);
+			}
 		}
 		gst_caps_unref(allowed_caps);
 	}
