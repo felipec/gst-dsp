@@ -986,31 +986,17 @@ setup_mp4params(GstDspBase *base)
 	p->recv_cb = mp4venc_out_recv_cb;
 }
 
-static void check_supported_levels(GstDspVEnc *self, GstCaps *caps)
+static void check_supported_levels(GstDspVEnc *self, gint tgt_level)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
-	GstCaps *allowed_caps;
 	guint i;
-	gint tgt_mbps, tgt_level, tgt_bitrate;
+	gint tgt_mbps, tgt_bitrate;
 	struct gstdsp_codec_level *cur, *level;
 
 	if (!self->supported_levels)
 		return;
 
-	tgt_level = -1;
 	tgt_bitrate = self->user_max_bitrate;
 	tgt_mbps = (self->width / 16 * self->height / 16) * self->framerate;
-
-	/* see if downstream caps express something */
-	allowed_caps = gst_pad_get_allowed_caps(base->srcpad);
-	if (allowed_caps) {
-		if (gst_caps_get_size(allowed_caps) > 0) {
-			GstStructure *s;
-			s = gst_caps_get_structure(allowed_caps, 0);
-			gst_structure_get_int(s, "level", &tgt_level);
-		}
-		gst_caps_unref(allowed_caps);
-	}
 
 search:
 	level = cur = self->supported_levels;
@@ -1078,6 +1064,8 @@ sink_setcaps(GstPad *pad,
 	GstCaps *out_caps;
 	GstStructure *out_struc;
 	gint width = 0, height = 0;
+	GstCaps *allowed_caps;
+	gint tgt_level = -1;
 
 	self = GST_DSP_VENC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -1169,7 +1157,18 @@ sink_setcaps(GstPad *pad,
 		}
 	}
 
-	check_supported_levels(self, caps);
+	/* see if downstream caps express something */
+	allowed_caps = gst_pad_get_allowed_caps(base->srcpad);
+	if (allowed_caps) {
+		if (gst_caps_get_size(allowed_caps) > 0) {
+			GstStructure *s;
+			s = gst_caps_get_structure(allowed_caps, 0);
+			gst_structure_get_int(s, "level", &tgt_level);
+		}
+		gst_caps_unref(allowed_caps);
+	}
+
+	check_supported_levels(self, tgt_level);
 
 	if (self->bitrate == 0)
 		self->bitrate = self->max_bitrate;
