@@ -357,7 +357,7 @@ got_error(GstDspDummy *self,
 		unsigned id,
 		const char *message)
 {
-	pr_err(self, message);
+	pr_err(self, "%s", message);
 	post_error(self, message);
 
 	self->dsp_error = id;

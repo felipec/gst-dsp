@@ -89,7 +89,7 @@ static inline void
 g_sem_down_status(GSem *sem,
 		  const GstFlowReturn *status)
 {
-	GstFlowReturn ret;
+	GstFlowReturn ret = GST_FLOW_OK;
 	g_mutex_lock(sem->mutex);
 
 	while (sem->count == 0 &&
@@ -337,7 +337,7 @@ output_loop(gpointer data)
 	if (G_UNLIKELY(!b)) {
 		pr_info(self, "no buffer");
 		ret = check_status(self);
-		goto end;
+		goto nok;
 	}
 
 	ret = check_status(self);
@@ -532,7 +532,7 @@ gstdsp_got_error(GstDspBase *self,
 	  guint id,
 	  const char *message)
 {
-	pr_err(self, message);
+	pr_err(self, "%s", message);
 	gstdsp_post_error(self, message);
 
 	g_atomic_int_set(&self->status, GST_FLOW_ERROR);
@@ -1070,13 +1070,13 @@ pad_chain(GstPad *pad,
 		}
 	}
 
-	b = async_queue_pop(self->ports[0]->queue);
+	b = async_queue_pop(p->queue);
 
 	ret = g_atomic_int_get(&self->status);
 	if (ret != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
 		if (b)
-			async_queue_push(self->ports[0]->queue, b);
+			async_queue_push(p->queue, b);
 		goto leave;
 	}
 
