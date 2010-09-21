@@ -1305,7 +1305,7 @@ set_property(GObject *obj,
 		bitrate = g_value_get_uint(value);
 		if (self->max_bitrate && bitrate > (unsigned) self->max_bitrate)
 			bitrate = self->max_bitrate;
-		g_atomic_int_set(&self->bitrate, g_value_get_uint(value));
+		g_atomic_int_set(&self->bitrate, bitrate);
 		break;
 	}
 	case ARG_MODE:
