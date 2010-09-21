@@ -21,8 +21,6 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
-#define DEFAULT_BYTESTREAM TRUE
-
 /*
  * H.264 supported levels
  * Source http://www.itu.int/rec/T-REC-H.264-201003-I/ page 294 - Annex A table A-1
@@ -45,7 +43,9 @@ static struct gstdsp_codec_level levels[] = {
 
 enum {
 	ARG_0,
+#ifdef GST_DSP_ENABLE_DEPRECATED
 	ARG_BYTESTREAM,
+#endif
 };
 
 static inline GstCaps *
@@ -72,7 +72,7 @@ instance_init(GTypeInstance *instance,
 	GstDspVEnc *self = GST_DSP_VENC(instance);
 	base->alg = GSTDSP_H264ENC;
 
-	self->priv.h264.bytestream = DEFAULT_BYTESTREAM;
+	self->priv.h264.bytestream = true;
 	self->supported_levels = levels;
 	self->nr_supported_levels = ARRAY_SIZE(levels);
 }
@@ -105,12 +105,14 @@ set_property(GObject *obj,
 	     const GValue *value,
 	     GParamSpec *pspec)
 {
-	GstDspVEnc *self = GST_DSP_VENC(obj);
+	GstDspVEnc *self G_GNUC_UNUSED = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
+#ifdef GST_DSP_ENABLE_DEPRECATED
 	case ARG_BYTESTREAM:
 		self->priv.h264.bytestream = g_value_get_boolean(value);
 		break;
+#endif
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;
@@ -123,12 +125,14 @@ get_property(GObject *obj,
 	     GValue *value,
 	     GParamSpec *pspec)
 {
-	GstDspVEnc *self = GST_DSP_VENC(obj);
+	GstDspVEnc *self G_GNUC_UNUSED = GST_DSP_VENC(obj);
 
 	switch (prop_id) {
+#ifdef GST_DSP_ENABLE_DEPRECATED
 	case ARG_BYTESTREAM:
 		g_value_set_boolean(value, self->priv.h264.bytestream);
 		break;
+#endif
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
 		break;
@@ -146,9 +150,11 @@ class_init(gpointer g_class,
 	gobject_class->set_property = set_property;
 	gobject_class->get_property = get_property;
 
+#ifdef GST_DSP_ENABLE_DEPRECATED
 	g_object_class_install_property(gobject_class, ARG_BYTESTREAM,
 					g_param_spec_boolean("bytestream", "BYTESTREAM", "bytestream",
-							     DEFAULT_BYTESTREAM, G_PARAM_READWRITE));
+							     true, G_PARAM_READWRITE));
+#endif
 }
 
 GType
