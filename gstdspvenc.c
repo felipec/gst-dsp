@@ -1049,9 +1049,11 @@ search:
 	else
 		self->max_bitrate = self->user_max_bitrate;
 
+	self->level = level->id;
+
 	pr_info(self, "level bitrate: %d", level->bitrate);
 	pr_info(self, "max bitrate: %d", self->max_bitrate);
-	pr_info(self, "level: %d", level->id);
+	pr_info(self, "level: %d", self->level);
 }
 
 static gboolean
