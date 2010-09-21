@@ -302,7 +302,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.mv_range = 64,
 		.qpi_frame = 28,
 		.profile = 66, /* Baseline profile */
-		.level = 13,
+		.level = self->level,
 		.nal_mode = self->priv.h264.bytestream ? 2 : 1, /* 0 == bytestream, 1 == NALU, 2 == bytestream, with NALU sizes */
 		.encoding_preset = 3,
 	};
