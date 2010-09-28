@@ -928,6 +928,14 @@ send_buffer(GstDspBase *self,
 	return true;
 }
 
+bool
+gstdsp_send_buffer(GstDspBase *self,
+		   dmm_buffer_t *buffer,
+		   unsigned int id)
+{
+	return send_buffer(self, buffer, id);
+}
+
 void
 gstdsp_send_alg_ctrl(GstDspBase *self,
 		     struct dsp_node *node,

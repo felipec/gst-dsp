@@ -126,6 +126,7 @@ void gstdsp_got_error(GstDspBase *self, guint id, const char *message);
 void gstdsp_post_error(GstDspBase *self, const char *message);
 void gstdsp_send_alg_ctrl(GstDspBase *self, struct dsp_node *node, dmm_buffer_t *b);
 void gstdsp_base_flush_buffer(GstDspBase *self);
+bool gstdsp_send_buffer(GstDspBase *self, dmm_buffer_t *buffer, unsigned int id);
 
 typedef void (*gstdsp_setup_params_func)(GstDspBase *base, dmm_buffer_t *b);
 
