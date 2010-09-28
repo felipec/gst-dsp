@@ -157,7 +157,7 @@ struct mp4venc_args {
 
 	uint32_t width;
 	uint32_t height;
-	uint32_t bitrate;
+	uint32_t max_bitrate;
 	uint32_t vbv_size;
 	uint32_t gob_interval;
 
@@ -200,7 +200,7 @@ get_mp4venc_args(GstDspVEnc *self)
 		.out_count = base->ports[1]->num_buffers,
 		.width = self->width,
 		.height = self->height,
-		.bitrate = self->max_bitrate,
+		.max_bitrate = self->max_bitrate,
 		.vbv_size = 112,
 		.color_format = (self->color_format == GST_MAKE_FOURCC('U','Y','V','Y') ? 2 : 0),
 		.unrestricted_mv = 1,
@@ -254,7 +254,7 @@ struct h264venc_args {
 
 	uint32_t width;
 	uint32_t height;
-	uint32_t bitrate;
+	uint32_t max_bitrate;
 	uint32_t bitstream_buf_size;
 	uint32_t intra_frame_period;
 	uint32_t framerate;
@@ -291,7 +291,7 @@ get_h264venc_args(GstDspVEnc *self)
 		.out_count = base->ports[1]->num_buffers,
 		.width = self->width,
 		.height = self->height,
-		.bitrate = self->max_bitrate,
+		.max_bitrate = self->max_bitrate,
 		.bitstream_buf_size = base->output_buffer_size,
 		.intra_frame_period = self->framerate,
 		.framerate = self->framerate * 1000,
@@ -494,8 +494,8 @@ struct h264venc_in_stream_params {
 	uint32_t input_height;
 	uint32_t input_width;
 	uint32_t ref_framerate;
-	uint32_t target_framerate;
-	uint32_t target_bitrate;
+	uint32_t framerate;
+	uint32_t bitrate;
 	uint32_t intra_frame_interval;
 	uint32_t generate_header;
 	uint32_t capture_width;
@@ -561,7 +561,7 @@ h264venc_in_send_cb(GstDspBase *base,
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	param = p->data;
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
-	param->target_bitrate = g_atomic_int_get(&self->bitrate);
+	param->bitrate = g_atomic_int_get(&self->bitrate);
 	g_mutex_lock(self->keyframe_mutex);
 	param->force_i_frame = self->keyframe_event ? 1 : 0;
 	if (self->keyframe_event) {
@@ -738,8 +738,8 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->input_height = self->height;
 	in_param->input_width = self->width;
 	in_param->ref_framerate = self->framerate * 1000;
-	in_param->target_framerate = self->framerate * 1000;
-	in_param->target_bitrate = self->bitrate;
+	in_param->framerate = self->framerate * 1000;
+	in_param->bitrate = self->bitrate;
 
 	in_param->qp_intra = 0x1c;
 	in_param->qp_inter = 0x1c;
