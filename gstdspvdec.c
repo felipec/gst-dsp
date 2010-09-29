@@ -854,9 +854,8 @@ static void
 setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 {
 	struct jpegdec_in_params *in_param;
-	GstDspVDec *self;
+	GstDspVDec *self = GST_DSP_VDEC(base);
 
-	self = GST_DSP_VDEC(base);
 	in_param = tmp->data;
 	in_param->frame_count = 1;
 	in_param->frame_align = 4;
