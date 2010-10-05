@@ -37,6 +37,7 @@ union venc_priv_data {
 
 struct gstdsp_codec_level {
 	gint id;
+	gint mbpf; /* macroblock per frame */
 	gint mbps; /* macroblocks per second */
 	gint bitrate;
 };

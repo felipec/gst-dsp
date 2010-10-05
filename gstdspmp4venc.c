@@ -26,13 +26,13 @@
  */
 
 static struct gstdsp_codec_level levels[] = {
-	{0,  1485,   64000 },        /* Level 0  - QCIF@15fps */
-	{0,  1485,  128000 },        /* Level 0b - CIF@15fps  */
-	{1,  1485,   64000 },        /* Level 1  - CIF@30fps  */
-	{2,  5940,  128000 },        /* Level 2  - CIF@30fps  */
-	{3, 11880,  384000 },        /* Level 3  - QCIF@15fps */
-	{4, 36000, 4000000 },        /* Level 4a - VGA@30fps  */
-	{5, 47700, 5000000 },        /* Level 5  - WVGA@30fps */
+	{0,   99,  1485,   64000 },        /* Level 0  - QCIF@15fps */
+	{0,   99,  1485,  128000 },        /* Level 0b - CIF@15fps  */
+	{1,   99,  1485,   64000 },        /* Level 1  - CIF@30fps  */
+	{2,  396,  5940,  128000 },        /* Level 2  - CIF@30fps  */
+	{3,  396, 11880,  384000 },        /* Level 3  - QCIF@15fps */
+	{4, 1200, 36000, 4000000 },        /* Level 4a - VGA@30fps  */
+	{5, 1620, 47700, 5000000 },        /* Level 5  - WVGA@30fps */
 };
 
 static inline GstCaps *

@@ -996,14 +996,15 @@ setup_mp4params(GstDspBase *base)
 static void check_supported_levels(GstDspVEnc *self, gint tgt_level)
 {
 	guint i;
-	gint tgt_mbps, tgt_bitrate;
+	gint tgt_mbps, tgt_mbpf, tgt_bitrate;
 	struct gstdsp_codec_level *cur, *level;
 
 	if (!self->supported_levels)
 		return;
 
 	tgt_bitrate = self->user_max_bitrate;
-	tgt_mbps = (self->width / 16 * self->height / 16) * self->framerate;
+	tgt_mbpf = ROUND_UP(self->width, 16) / 16 * ROUND_UP(self->height, 16) / 16;
+	tgt_mbps = tgt_mbpf * self->framerate;
 
 	if (!tgt_bitrate)
 		tgt_bitrate =  self->bitrate;
@@ -1030,6 +1031,10 @@ search:
 		if (cur->mbps >= tgt_mbps && cur->mbps == level->mbps &&
 		    !tgt_bitrate && cur->bitrate >= level->bitrate)
 		       ok = true;
+
+		/* are the mbpf enough? (and don't overshoot) */
+		if (cur->mbpf >= tgt_mbpf && level->mbpf < tgt_mbpf)
+			ok = true;
 
 		if (!ok)
 			continue;
