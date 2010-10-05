@@ -380,7 +380,6 @@ output_loop(gpointer data)
 
 	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
-		pr_warning(self, "empty buffer");
 		/* no real frame data, so no need to consume a real frame's ts */
 		goto leave;
 	}
