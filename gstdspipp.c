@@ -1148,6 +1148,9 @@ static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
 	if (id == 1)
 		return true;
 
+	if (base->dsp_error)
+		return false;
+
 	get_eenf_dyn_params(self);
 	ok = control_pipe(self);
 	if (!ok)
