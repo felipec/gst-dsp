@@ -698,7 +698,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 	if (G_LIKELY(self->priv.h264.codec_data_done)) {
 		/* prefix the NALU with a lenght field, not counting the start code */
 		*(uint32_t*)b->data = GINT_TO_BE(b->len - 4);
-		if (self->mode == 1)
+		if (!self->priv.h264.bytestream)
 			h264venc_ignore_sps_pps_header(base, b);
 	}
 	else {
