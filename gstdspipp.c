@@ -17,6 +17,9 @@ static GstDspBaseClass *parent_class;
 
 #define MAX_ALGS 16
 #define IPP_TIMEOUT (2000 * 1000)
+#define MAX_WIDTH 4096
+#define MAX_HEIGHT 3072
+#define MAX_TOTAL_PIXEL (4000 * 3008)
 
 #if SN_API == 0
 #define INTERNAL_FORMAT IPP_YUV_422P
@@ -1340,6 +1343,17 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 
 	if (gst_structure_get_int(in_struc, "height", &height))
 		gst_structure_set(out_struc, "height", G_TYPE_INT, height, NULL);
+
+	if (width > MAX_WIDTH || width & 0x0F) {
+		gstdsp_got_error(base, 0, "invalid width value");
+		return FALSE;
+	} else if (height > MAX_HEIGHT || height & 0x07) {
+		gstdsp_got_error(base, 0, "invalid height value");
+		return FALSE;
+	} else if (width * height > MAX_TOTAL_PIXEL) {
+		gstdsp_got_error(base, 0, "Total number of pixels exceeding the limit");
+		return FALSE;
+	}
 
 	gst_structure_get_fourcc(in_struc, "format", &format);
 
