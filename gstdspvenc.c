@@ -998,6 +998,9 @@ static void check_supported_levels(GstDspVEnc *self, gint tgt_level)
 	tgt_bitrate = self->user_max_bitrate;
 	tgt_mbps = (self->width / 16 * self->height / 16) * self->framerate;
 
+	if (!tgt_bitrate)
+		tgt_bitrate =  self->bitrate;
+
 search:
 	level = cur = self->supported_levels;
 
