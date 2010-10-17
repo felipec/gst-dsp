@@ -142,6 +142,13 @@
 #define STRM_FREEBUFFER		_IOWR(DB, DB_IOC(DB_STRM, 2), unsigned long)
 #define STRM_ISSUE		_IOW(DB, DB_IOC(DB_STRM, 6), unsigned long)
 
+#if DSP_API < 2
+static inline int real_ioctl(int fd, int r, void *arg)
+{
+	return ioctl(fd, r, arg);
+}
+#endif
+
 /* will not be needed when tidspbridge uses proper error codes */
 #define ioctl(...) (ioctl(__VA_ARGS__) < 0)
 
@@ -309,10 +316,10 @@ bool dsp_wait_for_events(int handle,
 	 * is not stored.
 	 */
 	int r;
-	r = ioctl(handle, MGR_WAIT, &arg);
+	r = real_ioctl(handle, MGR_WAIT, &arg);
 	if (r == (int)0x80008017)
 		errno = ETIME;
-	return !r;
+	return r >= 0;
 #endif
 }
 
