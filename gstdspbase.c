@@ -62,8 +62,11 @@ void
 du_port_alloc_buffers(du_port_t *p, guint num_buffers)
 {
 	p->num_buffers = num_buffers;
+	free(p->comm);
 	p->comm = calloc(num_buffers, sizeof(**p->comm));
+	free(p->buffers);
 	p->buffers = calloc(num_buffers, sizeof(**p->buffers));
+	free(p->params);
 	p->params = calloc(num_buffers, sizeof(**p->params));
 }
 
@@ -802,6 +805,7 @@ leave:
 			dmm_buffer_free(p->comm[j]);
 			p->comm[j] = NULL;
 		}
+		du_port_alloc_buffers(p, 0);
 	}
 
 	pr_info(self, "dsp node terminated");
