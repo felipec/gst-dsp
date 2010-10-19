@@ -63,7 +63,7 @@ du_port_alloc_buffers(du_port_t *p, guint num_buffers)
 {
 	p->num_buffers = num_buffers;
 	p->comm = calloc(num_buffers, sizeof(**p->comm));
-	p->buffers = calloc(num_buffers, sizeof(**p->comm));
+	p->buffers = calloc(num_buffers, sizeof(**p->buffers));
 	p->params = calloc(num_buffers, sizeof(**p->params));
 }
 
