@@ -965,10 +965,10 @@ change_state(GstElement *element,
 		}
 		if (self->reset)
 			self->reset(self);
+		gst_caps_replace(&self->tmp_caps, NULL);
 		break;
 
 	case GST_STATE_CHANGE_READY_TO_NULL:
-		gst_caps_replace(&self->tmp_caps, NULL);
 		if (!dsp_deinit(self)) {
 			gstdsp_post_error(self, "dsp deinit failed");
 			return GST_STATE_CHANGE_FAILURE;
