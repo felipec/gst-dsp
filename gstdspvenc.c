@@ -598,7 +598,7 @@ gst_dsp_set_codec_data_caps(GstDspBase *base,
 	gst_structure_set_value(structure, "codec_data", &value);
 	g_value_unset(&value);
 
-	return gst_pad_set_caps(base->srcpad, caps);
+	return gst_pad_take_caps(base->srcpad, caps);
 }
 
 static inline void
@@ -1197,7 +1197,7 @@ sink_setcaps(GstPad *pad,
 		g_free(str);
 	}
 
-	if (!gst_pad_set_caps(base->srcpad, out_caps))
+	if (!gst_pad_take_caps(base->srcpad, out_caps))
 		return FALSE;
 
 	base->node = create_node(self);

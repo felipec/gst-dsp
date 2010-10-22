@@ -128,6 +128,15 @@ static inline void gstdsp_port_setup_params(GstDspBase *self,
 	}
 }
 
+/* this is saner than gst_pad_set_caps() */
+static inline bool gst_pad_take_caps(GstPad *pad, GstCaps *caps)
+{
+	bool ret;
+	ret = gst_pad_set_caps(pad, caps);
+	gst_caps_unref(caps);
+	return ret;
+}
+
 G_END_DECLS
 
 #endif /* GST_DSP_BASE_H */
