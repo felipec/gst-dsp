@@ -739,6 +739,7 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 {
 	struct h264venc_in_stream_params *in_param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
+	int bits_per_mb;
 
 	in_param = tmp->data;
 	in_param->params_size = sizeof(*in_param);
@@ -748,8 +749,17 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->framerate = self->framerate * 1000;
 	in_param->bitrate = self->bitrate;
 
-	in_param->qp_intra = 0x1c;
-	in_param->qp_inter = 0x1c;
+	/* QP selection for the first frame */
+	bits_per_mb = (in_param->bitrate / self->framerate) /
+		(in_param->input_width * in_param->input_height / 256);
+	if (bits_per_mb >= 50) {
+		in_param->qp_intra = 0x1c;
+		in_param->qp_inter = 0x1c;
+	} else {
+		in_param->qp_intra = 0x28;
+		in_param->qp_inter = 0x28;
+	}
+
 	in_param->qp_max = 0x33;
 	in_param->max_mbs_per_slice = 3620;
 	in_param->max_bytes_per_slice = 327680;
