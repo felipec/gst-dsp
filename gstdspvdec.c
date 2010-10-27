@@ -235,6 +235,13 @@ setup_mp4vdec_params(GstDspBase *base)
 	p->recv_cb = mp4vdec_out_recv_cb;
 }
 
+static bool handle_mp4vdec_extra_data(GstDspBase *base, GstBuffer *buf)
+{
+	if (base->alg == GSTDSP_MPEG4VDEC)
+		base->skip_hack++;
+	return gstdsp_send_codec_data(base, buf);
+}
+
 struct h264vdec_args {
 	uint32_t size;
 	uint16_t num_streams;
@@ -515,6 +522,18 @@ setup_h264params(GstDspBase *base)
 	p->recv_cb = h264dec_out_recv_cb;
 }
 
+static bool handle_h264dec_extra_data(GstDspBase *base, GstBuffer *buf)
+{
+	GstDspVDec *self = GST_DSP_VDEC(base);
+
+	buf = h264dec_transform_codec_data(self, buf);
+	if (!buf) {
+		gstdsp_got_error(base, 0, "invalid codec_data");
+		return false;
+	}
+	return gstdsp_send_codec_data(base, buf);
+}
+
 struct wmvdec_args {
 	uint32_t size;
 	uint16_t num_streams;
@@ -761,6 +780,16 @@ setup_wmvparams(GstDspBase *base)
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 	p->recv_cb = wmvdec_out_recv_cb;
+}
+
+static bool handle_wmvdec_extra_data(GstDspBase *base, GstBuffer *buf)
+{
+	GstDspVDec *self = GST_DSP_VDEC(base);
+	if (self->wmv_is_vc1)
+		self->codec_data = gst_buffer_ref(buf);
+	else
+		wmvdec_send_rcv_buffer(base, buf);
+	return true;
 }
 
 struct jpegdec_args {
@@ -1096,25 +1125,14 @@ handle_codec_data(GstDspVDec *self,
 
 	switch (base->alg) {
 	case GSTDSP_MPEG4VDEC:
-		base->skip_hack++;
-		break;
+		return handle_mp4vdec_extra_data(base, buf);
 	case GSTDSP_WMVDEC:
-		if (self->wmv_is_vc1)
-			self->codec_data = gst_buffer_ref(buf);
-		else
-			wmvdec_send_rcv_buffer(base, buf);
-		return TRUE;
+		return handle_wmvdec_extra_data(base, buf);
 	case GSTDSP_H264DEC:
-		buf = h264dec_transform_codec_data(self, buf);
-		if (!buf) {
-			gstdsp_got_error(base, 0, "invalid codec_data");
-			return FALSE;
-		}
-		break;
+		return handle_h264dec_extra_data(base, buf);
 	default:
-		break;
+		return gstdsp_send_codec_data(base, buf);
 	}
-	return gstdsp_send_codec_data(base, buf);
 }
 
 static inline void
