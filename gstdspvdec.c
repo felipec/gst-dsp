@@ -139,11 +139,10 @@ struct mp4vdec_args {
 	uint32_t display_width;
 };
 
-static inline void *
-get_mp4v_args(GstDspVDec *self, unsigned *profile_id)
+static inline void
+get_mp4v_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct mp4vdec_args args = {
 		.size = sizeof(args) - 4,
@@ -175,9 +174,8 @@ get_mp4v_args(GstDspVDec *self, unsigned *profile_id)
 	else
 		*profile_id = 1;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 struct mp4vdec_in_params {
@@ -265,11 +263,10 @@ struct h264vdec_args {
 	uint32_t display_width;
 };
 
-static inline void *
-get_h264_args(GstDspVDec *self, unsigned *profile_id)
+static inline void
+get_h264_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct h264vdec_args args = {
 		.size = sizeof(args) - 4,
@@ -295,9 +292,8 @@ get_h264_args(GstDspVDec *self, unsigned *profile_id)
 	else
 		*profile_id = 1;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 static GstBuffer *
@@ -547,11 +543,10 @@ struct wmvdec_args {
 	uint32_t stride_width;
 };
 
-static inline void *
-get_wmv_args(GstDspVDec *self, unsigned *profile_id)
+static inline void
+get_wmv_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct wmvdec_args args = {
 		.size = sizeof(args) - 4,
@@ -580,9 +575,8 @@ get_wmv_args(GstDspVDec *self, unsigned *profile_id)
 	else
 		*profile_id = 1;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 struct wmvdec_in_params {
@@ -845,11 +839,10 @@ struct jpegdec_out_params {
 	int32_t dsp_error;
 };
 
-static inline void *
-get_jpeg_args(GstDspVDec *self, unsigned *profile_id)
+static inline void
+get_jpeg_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct jpegdec_args args = {
 		.size = sizeof(args) - 4,
@@ -891,9 +884,8 @@ get_jpeg_args(GstDspVDec *self, unsigned *profile_id)
 	else
 		*profile_id = -1;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 static void
@@ -1010,33 +1002,33 @@ create_node(GstDspBase *base)
 			.priority = 5,
 			.timeout = 1000,
 		};
-		void *cb_data;
+		void *arg_data;
 
 		switch (base->alg) {
 		case GSTDSP_MPEG4VDEC:
 		case GSTDSP_H263DEC:
-			cb_data = get_mp4v_args(self, &attrs.profile_id);
+			get_mp4v_args(self, &attrs.profile_id, &arg_data);
 			break;
 		case GSTDSP_H264DEC:
-			cb_data = get_h264_args(self, &attrs.profile_id);
+			get_h264_args(self, &attrs.profile_id, &arg_data);
 			break;
 		case GSTDSP_WMVDEC:
-			cb_data = get_wmv_args(self, &attrs.profile_id);
+			get_wmv_args(self, &attrs.profile_id, &arg_data);
 			break;
 		case GSTDSP_JPEGDEC:
-			cb_data = get_jpeg_args(self, &attrs.profile_id);
+			get_jpeg_args(self, &attrs.profile_id, &arg_data);
 			break;
 		default:
-			cb_data = NULL;
+			arg_data = NULL;
 			break;
 		}
 
-		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, cb_data, &attrs, &node)) {
+		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, arg_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
-			free(cb_data);
+			free(arg_data);
 			return NULL;
 		}
-		free(cb_data);
+		free(arg_data);
 	}
 
 	if (!dsp_node_create(dsp_handle, node)) {

@@ -112,11 +112,10 @@ struct jpegenc_args {
 
 #include "gstdspjpegenc.h"
 
-static inline void *
-get_jpegenc_args(GstDspVEnc *self, unsigned *profile_id)
+static inline void
+get_jpegenc_args(GstDspVEnc *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct jpegenc_args args = {
 		.size = sizeof(args) - 4,
@@ -134,9 +133,8 @@ get_jpegenc_args(GstDspVEnc *self, unsigned *profile_id)
 
 	*profile_id = 1;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 struct mp4venc_args {
@@ -182,11 +180,10 @@ struct mp4venc_args {
 	uint32_t h263_annex_t;
 };
 
-static inline void *
-get_mp4venc_args(GstDspVEnc *self, unsigned *profile_id)
+static inline void
+get_mp4venc_args(GstDspVEnc *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct mp4venc_args args = {
 		.size = sizeof(args) - 4,
@@ -241,9 +238,8 @@ get_mp4venc_args(GstDspVEnc *self, unsigned *profile_id)
 	else
 		*profile_id = 0;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 struct h264venc_args {
@@ -283,11 +279,10 @@ struct h264venc_args {
 	uint32_t rc_algo;
 };
 
-static inline void *
-get_h264venc_args(GstDspVEnc *self, unsigned *profile_id)
+static inline void
+get_h264venc_args(GstDspVEnc *self, unsigned *profile_id, void **arg_data)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
-	void *arg_data;
 
 	struct h264venc_args args = {
 		.size = sizeof(args) - 4,
@@ -328,9 +323,8 @@ get_h264venc_args(GstDspVEnc *self, unsigned *profile_id)
 	else
 		*profile_id = 0;
 
-	arg_data = malloc(sizeof(args));
-	memcpy(arg_data, &args, sizeof(args));
-	return arg_data;
+	*arg_data = malloc(sizeof(args));
+	memcpy(*arg_data, &args, sizeof(args));
 }
 
 static inline void *
@@ -406,29 +400,29 @@ create_node(GstDspVEnc *self)
 			.priority = 5,
 			.timeout = 1000,
 		};
-		void *cb_data;
+		void *arg_data;
 
 		switch (base->alg) {
 		case GSTDSP_JPEGENC:
-			cb_data = get_jpegenc_args(self, &attrs.profile_id);
+			get_jpegenc_args(self, &attrs.profile_id, &arg_data);
 			break;
 		case GSTDSP_H263ENC:
 		case GSTDSP_MP4VENC:
-			cb_data = get_mp4venc_args(self, &attrs.profile_id);
+			get_mp4venc_args(self, &attrs.profile_id, &arg_data);
 			break;
 		case GSTDSP_H264ENC:
-			cb_data = get_h264venc_args(self, &attrs.profile_id);
+			get_h264venc_args(self, &attrs.profile_id, &arg_data);
 			break;
 		default:
-			cb_data = NULL;
+			arg_data = NULL;
 		}
 
-		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, cb_data, &attrs, &node)) {
+		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, arg_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
-			free(cb_data);
+			free(arg_data);
 			return NULL;
 		}
-		free(cb_data);
+		free(arg_data);
 	}
 
 	if (!dsp_node_create(dsp_handle, node)) {
