@@ -291,6 +291,225 @@ get_h264_args(GstDspVDec *self)
 	return cb_data;
 }
 
+static GstBuffer *
+h264dec_transform_codec_data(GstDspVDec *self,
+			     GstBuffer *buf)
+{
+	guint8 *data, *outdata;
+	guint size, total_size = 0, len, num_sps, num_pps;
+	guint lol;
+	guint val;
+	guint i;
+	GstBuffer *new;
+
+	/* extract some info and transform into codec expected format, which is:
+	 * lol bytes (BE) SPS size, SPS, lol bytes (BE) PPS size, PPS */
+
+	data = GST_BUFFER_DATA(buf);
+	size = GST_BUFFER_SIZE(buf);
+
+	if (size < 8)
+		goto fail;
+
+	lol = (data[4] & (0x3)) + 1;
+	num_sps = data[5] & 0x1f;
+	data += 6;
+	size -= 6;
+	for (i = 0; i < num_sps; i++) {
+		len = GST_READ_UINT16_BE(data);
+		total_size += len + lol;
+		data += len + 2;
+		if (size < len + 2)
+			goto fail;
+		size -= len + 2;
+	}
+	num_pps = data[0];
+	data++;
+	size++;
+	for (i = 0; i < num_pps; i++) {
+		len = GST_READ_UINT16_BE(data);
+		total_size += len + lol;
+		data += len + 2;
+		if (size < len + 2)
+			goto fail;
+		size -= len + 2;
+	}
+
+	/* save original data */
+	new = gst_buffer_new_and_alloc(total_size);
+	data = GST_BUFFER_DATA(buf);
+	outdata = GST_BUFFER_DATA(new);
+
+	data += 6;
+	for (i = 0; i < num_sps; ++i) {
+		len = GST_READ_UINT16_BE(data);
+		val = len << (8 * (4 - lol));
+		GST_WRITE_UINT32_BE(outdata, val);
+		memcpy(outdata + lol, data + 2, len);
+		outdata += len + lol;
+		data += 2 + len;
+	}
+	data += 1;
+	for (i = 0; i < num_pps; ++i) {
+		len = GST_READ_UINT16_BE(data);
+		val = len << (8 * (4 - lol));
+		GST_WRITE_UINT32_BE(outdata, val);
+		memcpy(outdata + lol, data + 2, len);
+		outdata += len + lol;
+		data += 2 + len;
+	}
+
+	pr_debug(self, "lol: %d", lol);
+	self->priv.h264.lol = lol;
+
+	return new;
+
+fail:
+	pr_warning(self, "failed to transform h264 to codec format");
+	return NULL;
+}
+
+static void
+h264dec_transform_nal_encoding(GstDspVDec *self,
+			       dmm_buffer_t *b)
+{
+	guint8 *data;
+	gint size;
+	gint lol;
+	guint val, nal;
+
+	data = b->data;
+	size = b->size;
+	lol = self->priv.h264.lol;
+
+	nal = 0;
+	while (size) {
+		if (size < lol)
+			goto fail;
+
+		/* get NAL size encoded in BE lol bytes */
+		val = GST_READ_UINT32_BE(data);
+		val >>= ((4 - lol) << 3);
+		if (lol == 4)
+			/* blank size prefix with 00 00 00 01 */
+			GST_WRITE_UINT32_BE(data, 0x01);
+		else if (lol == 3)
+			/* blank size prefix with 00 00 01 */
+			GST_WRITE_UINT24_BE(data, 0x01);
+		else
+			nal++;
+		data += lol + val;
+		size -= lol + val;
+	}
+
+	if (lol < 3) {
+		/* slower, but unlikely path; need to copy stuff to make room for sync */
+		guint8 *odata, *alloc_data;
+		gint osize;
+
+		/* set up for next run */
+		data = b->data;
+		size = b->size;
+		osize = size + nal * (4 - lol);
+		/* save this so it is not free'd by subsequent allocate */
+		alloc_data = b->allocated_data;
+		b->allocated_data = NULL;
+		dmm_buffer_allocate(b, osize);
+		b->len = osize;
+
+		odata = b->data;
+		while (size) {
+			if (size < lol)
+				goto fail;
+
+			/* get NAL size encoded in BE lol bytes */
+			val = GST_READ_UINT32_BE(data);
+			val >>= ((4 - lol) << 3);
+			GST_WRITE_UINT32_BE(odata, 0x01);
+			odata += 4;
+			data += lol;
+			memcpy(odata, data, val);
+			odata += val;
+			data += val;
+			size -= lol + val;
+		}
+		/* now release original data */
+		if (b->user_data) {
+			gst_buffer_unref(b->user_data);
+			b->user_data = NULL;
+		}
+		free(alloc_data);
+	}
+	return;
+
+fail:
+	pr_warning(self, "failed to transform h264 to codec format");
+	return;
+}
+
+struct h264dec_out_stream_params {
+	uint32_t display_id;
+	uint32_t bytes_consumed;
+	int32_t error_code;
+	uint32_t frame_type;
+	uint32_t num_of_nalu;
+	int32_t mb_err_status_flag;
+	int8_t mb_err_status_out[1620];
+};
+
+static void
+h264dec_out_recv_cb(GstDspBase *base,
+		    du_port_t *port,
+		    dmm_buffer_t *p,
+		    dmm_buffer_t *b)
+{
+	GstDspVDec *vdec = GST_DSP_VDEC(base);
+	struct h264dec_out_stream_params *param;
+	param = p->data;
+
+	pr_debug(base, "receive %d/%ld",
+		 b->len, base->output_buffer_size);
+	pr_debug(base, "error: 0x%x, frame type: %d",
+		 param->error_code, param->frame_type);
+	if (param->error_code & 0xffff)
+		pr_err(base, "decode error");
+
+	/* let the videosink know the real size */
+	b->len = vdec->crop_width * vdec->crop_height * 2;
+}
+
+static void
+h264dec_in_send_cb(GstDspBase *base,
+		   du_port_t *port,
+		   dmm_buffer_t *p,
+		   dmm_buffer_t *b)
+{
+	GstDspVDec *vdec = GST_DSP_VDEC(base);
+	/* transform MP4 format to bytestream format */
+	if (G_LIKELY(vdec->priv.h264.lol)) {
+		pr_debug(base, "transforming H264 buffer data");
+		/* intercept and transform into dsp expected format */
+		h264dec_transform_nal_encoding(vdec, b);
+	} else {
+		/* no more need for callback */
+		port->send_cb = NULL;
+	}
+}
+
+static inline void
+setup_h264params(GstDspBase *base)
+{
+	struct h264dec_out_stream_params *out_param;
+	du_port_t *p;
+
+	p = base->ports[0];
+	p->send_cb = h264dec_in_send_cb;
+
+	p = base->ports[1];
+	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
+	p->recv_cb = h264dec_out_recv_cb;
+}
+
 struct wmvdec_args {
 	uint16_t num_streams;
 
@@ -531,225 +750,6 @@ setup_wmvparams(GstDspBase *base)
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 	p->recv_cb = wmvdec_out_recv_cb;
-}
-
-static GstBuffer *
-h264dec_transform_codec_data(GstDspVDec *self,
-			     GstBuffer *buf)
-{
-	guint8 *data, *outdata;
-	guint size, total_size = 0, len, num_sps, num_pps;
-	guint lol;
-	guint val;
-	guint i;
-	GstBuffer *new;
-
-	/* extract some info and transform into codec expected format, which is:
-	 * lol bytes (BE) SPS size, SPS, lol bytes (BE) PPS size, PPS */
-
-	data = GST_BUFFER_DATA(buf);
-	size = GST_BUFFER_SIZE(buf);
-
-	if (size < 8)
-		goto fail;
-
-	lol = (data[4] & (0x3)) + 1;
-	num_sps = data[5] & 0x1f;
-	data += 6;
-	size -= 6;
-	for (i = 0; i < num_sps; i++) {
-		len = GST_READ_UINT16_BE(data);
-		total_size += len + lol;
-		data += len + 2;
-		if (size < len + 2)
-			goto fail;
-		size -= len + 2;
-	}
-	num_pps = data[0];
-	data++;
-	size++;
-	for (i = 0; i < num_pps; i++) {
-		len = GST_READ_UINT16_BE(data);
-		total_size += len + lol;
-		data += len + 2;
-		if (size < len + 2)
-			goto fail;
-		size -= len + 2;
-	}
-
-	/* save original data */
-	new = gst_buffer_new_and_alloc(total_size);
-	data = GST_BUFFER_DATA(buf);
-	outdata = GST_BUFFER_DATA(new);
-
-	data += 6;
-	for (i = 0; i < num_sps; ++i) {
-		len = GST_READ_UINT16_BE(data);
-		val = len << (8 * (4 - lol));
-		GST_WRITE_UINT32_BE(outdata, val);
-		memcpy(outdata + lol, data + 2, len);
-		outdata += len + lol;
-		data += 2 + len;
-	}
-	data += 1;
-	for (i = 0; i < num_pps; ++i) {
-		len = GST_READ_UINT16_BE(data);
-		val = len << (8 * (4 - lol));
-		GST_WRITE_UINT32_BE(outdata, val);
-		memcpy(outdata + lol, data + 2, len);
-		outdata += len + lol;
-		data += 2 + len;
-	}
-
-	pr_debug(self, "lol: %d", lol);
-	self->priv.h264.lol = lol;
-
-	return new;
-
-fail:
-	pr_warning(self, "failed to transform h264 to codec format");
-	return NULL;
-}
-
-static void
-h264dec_transform_nal_encoding(GstDspVDec *self,
-			       dmm_buffer_t *b)
-{
-	guint8 *data;
-	gint size;
-	gint lol;
-	guint val, nal;
-
-	data = b->data;
-	size = b->size;
-	lol = self->priv.h264.lol;
-
-	nal = 0;
-	while (size) {
-		if (size < lol)
-			goto fail;
-
-		/* get NAL size encoded in BE lol bytes */
-		val = GST_READ_UINT32_BE(data);
-		val >>= ((4 - lol) << 3);
-		if (lol == 4)
-			/* blank size prefix with 00 00 00 01 */
-			GST_WRITE_UINT32_BE(data, 0x01);
-		else if (lol == 3)
-			/* blank size prefix with 00 00 01 */
-			GST_WRITE_UINT24_BE(data, 0x01);
-		else
-			nal++;
-		data += lol + val;
-		size -= lol + val;
-	}
-
-	if (lol < 3) {
-		/* slower, but unlikely path; need to copy stuff to make room for sync */
-		guint8 *odata, *alloc_data;
-		gint osize;
-
-		/* set up for next run */
-		data = b->data;
-		size = b->size;
-		osize = size + nal * (4 - lol);
-		/* save this so it is not free'd by subsequent allocate */
-		alloc_data = b->allocated_data;
-		b->allocated_data = NULL;
-		dmm_buffer_allocate(b, osize);
-		b->len = osize;
-
-		odata = b->data;
-		while (size) {
-			if (size < lol)
-				goto fail;
-
-			/* get NAL size encoded in BE lol bytes */
-			val = GST_READ_UINT32_BE(data);
-			val >>= ((4 - lol) << 3);
-			GST_WRITE_UINT32_BE(odata, 0x01);
-			odata += 4;
-			data += lol;
-			memcpy(odata, data, val);
-			odata += val;
-			data += val;
-			size -= lol + val;
-		}
-		/* now release original data */
-		if (b->user_data) {
-			gst_buffer_unref(b->user_data);
-			b->user_data = NULL;
-		}
-		free(alloc_data);
-	}
-	return;
-
-fail:
-	pr_warning(self, "failed to transform h264 to codec format");
-	return;
-}
-
-struct h264dec_out_stream_params {
-	uint32_t display_id;
-	uint32_t bytes_consumed;
-	int32_t error_code;
-	uint32_t frame_type;
-	uint32_t num_of_nalu;
-	int32_t mb_err_status_flag;
-	int8_t mb_err_status_out[1620];
-};
-
-static void
-h264dec_out_recv_cb(GstDspBase *base,
-		    du_port_t *port,
-		    dmm_buffer_t *p,
-		    dmm_buffer_t *b)
-{
-	GstDspVDec *vdec = GST_DSP_VDEC(base);
-	struct h264dec_out_stream_params *param;
-	param = p->data;
-
-	pr_debug(base, "receive %d/%ld",
-		 b->len, base->output_buffer_size);
-	pr_debug(base, "error: 0x%x, frame type: %d",
-		 param->error_code, param->frame_type);
-	if (param->error_code & 0xffff)
-		pr_err(base, "decode error");
-
-	/* let the videosink know the real size */
-	b->len = vdec->crop_width * vdec->crop_height * 2;
-}
-
-static void
-h264dec_in_send_cb(GstDspBase *base,
-		   du_port_t *port,
-		   dmm_buffer_t *p,
-		   dmm_buffer_t *b)
-{
-	GstDspVDec *vdec = GST_DSP_VDEC(base);
-	/* transform MP4 format to bytestream format */
-	if (G_LIKELY(vdec->priv.h264.lol)) {
-		pr_debug(base, "transforming H264 buffer data");
-		/* intercept and transform into dsp expected format */
-		h264dec_transform_nal_encoding(vdec, b);
-	} else {
-		/* no more need for callback */
-		port->send_cb = NULL;
-	}
-}
-
-static inline void
-setup_h264params(GstDspBase *base)
-{
-	struct h264dec_out_stream_params *out_param;
-	du_port_t *p;
-
-	p = base->ports[0];
-	p->send_cb = h264dec_in_send_cb;
-
-	p = base->ports[1];
-	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->recv_cb = h264dec_out_recv_cb;
 }
 
 struct jpegdec_args {
