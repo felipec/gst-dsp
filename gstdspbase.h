@@ -48,11 +48,22 @@ struct du_port_t {
 	int dir;
 };
 
+struct td_codec {
+	const struct dsp_uuid *uuid;
+	const char *filename;
+	void (*setup_params)(GstDspBase *base);
+	void (*create_args)(GstDspBase *base, unsigned *profile_id, void **arg_data);
+	bool (*handle_extra_data)(GstDspBase *base, GstBuffer *buf);
+	void (*flush_buffer)(GstDspBase *base);
+	void (*send_params)(GstDspBase *base, struct dsp_node *node);
+};
+
 struct GstDspBase {
 	GstElement element;
 
 	GstPad *sinkpad, *srcpad;
 
+	struct td_codec *codec;
 	int dsp_handle;
 	void *proc;
 	struct dsp_node *node;
