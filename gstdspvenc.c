@@ -81,12 +81,8 @@ generate_sink_template(void)
 	return caps;
 }
 
-struct foo_data {
-	unsigned long size;
-	unsigned short data[42];
-};
-
 struct jpegenc_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -120,8 +116,10 @@ static inline void *
 get_jpegenc_args(GstDspVEnc *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct jpegenc_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -134,16 +132,13 @@ get_jpegenc_args(GstDspVEnc *self)
 		.color_format = 1,
 	};
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 struct mp4venc_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -189,8 +184,10 @@ static inline void *
 get_mp4venc_args(GstDspVEnc *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct mp4venc_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -231,16 +228,13 @@ get_mp4venc_args(GstDspVEnc *self)
 		args.rate_control = 1;
 	}
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 struct h264venc_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -280,8 +274,10 @@ static inline void *
 get_h264venc_args(GstDspVEnc *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct h264venc_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -312,13 +308,9 @@ get_h264venc_args(GstDspVEnc *self)
 	else
 		args.rc_algorithm = 1; /* low delay CBR */
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 static inline void *

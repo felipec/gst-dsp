@@ -112,12 +112,8 @@ generate_src_template(void)
 	return caps;
 }
 
-struct foo_data {
-	unsigned long size;
-	unsigned short data[42];
-};
-
 struct mp4vdec_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -147,8 +143,10 @@ static inline void *
 get_mp4v_args(GstDspVDec *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct mp4vdec_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -168,13 +166,9 @@ get_mp4v_args(GstDspVDec *self)
 	if (base->alg == GSTDSP_H263DEC)
 		args.profile = 8;
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 struct mp4vdec_in_params {
@@ -235,6 +229,7 @@ setup_mp4vdec_params(GstDspBase *base)
 }
 
 struct h264vdec_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -265,8 +260,10 @@ static inline void *
 get_h264_args(GstDspVDec *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct h264vdec_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -282,13 +279,9 @@ get_h264_args(GstDspVDec *self)
 		.max_level = -1,
 	};
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 static GstBuffer *
@@ -511,6 +504,7 @@ setup_h264params(GstDspBase *base)
 }
 
 struct wmvdec_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -541,8 +535,10 @@ static inline void *
 get_wmv_args(GstDspVDec *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct wmvdec_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -559,13 +555,9 @@ get_wmv_args(GstDspVDec *self)
 		.stream_format = self->wmv_is_vc1 ? 1 : 2, /* 1 = wvc1, 2 = wmv3 */
 	};
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 struct wmvdec_in_params {
@@ -753,6 +745,7 @@ setup_wmvparams(GstDspBase *base)
 }
 
 struct jpegdec_args {
+	uint32_t size;
 	uint16_t num_streams;
 
 	uint16_t in_id;
@@ -831,8 +824,10 @@ static inline void *
 get_jpeg_args(GstDspVDec *self)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
+	void *arg_data;
 
 	struct jpegdec_args args = {
+		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
@@ -846,13 +841,9 @@ get_jpeg_args(GstDspVDec *self)
 		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1,
 	};
 
-	struct foo_data *cb_data;
-
-	cb_data = malloc(sizeof(*cb_data));
-	cb_data->size = sizeof(args);
-	memcpy(&cb_data->data, &args, sizeof(args));
-
-	return cb_data;
+	arg_data = malloc(sizeof(args));
+	memcpy(arg_data, &args, sizeof(args));
+	return arg_data;
 }
 
 static void
