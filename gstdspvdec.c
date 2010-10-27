@@ -139,10 +139,10 @@ struct mp4vdec_args {
 	uint32_t display_width;
 };
 
-static inline void
-get_mp4v_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
+static void
+create_mp4vdec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	struct mp4vdec_args args = {
 		.size = sizeof(args) - 4,
@@ -220,7 +220,7 @@ setup_mp4vparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->performance_mode = 0;
 }
 
-static inline void
+static void
 setup_mp4vdec_params(GstDspBase *base)
 {
 	struct mp4vdec_in_params *in_param;
@@ -241,6 +241,16 @@ static bool handle_mp4vdec_extra_data(GstDspBase *base, GstBuffer *buf)
 		base->skip_hack++;
 	return gstdsp_send_codec_data(base, buf);
 }
+
+struct td_codec td_mp4vdec_codec = {
+	.uuid = &(const struct dsp_uuid) { 0x7e4b8541, 0x47a1, 0x11d6, 0xb1, 0x56,
+		{ 0x00, 0xb0, 0xd0, 0x17, 0x67, 0x4b } },
+	.filename = "mp4vdec_sn.dll64P",
+	.setup_params = setup_mp4vdec_params,
+	.create_args = create_mp4vdec_args,
+	.handle_extra_data = handle_mp4vdec_extra_data,
+	.flush_buffer = gstdsp_base_flush_buffer,
+};
 
 struct h264vdec_args {
 	uint32_t size;
@@ -270,10 +280,10 @@ struct h264vdec_args {
 	uint32_t display_width;
 };
 
-static inline void
-get_h264_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
+static void
+create_h264dec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	struct h264vdec_args args = {
 		.size = sizeof(args) - 4,
@@ -508,8 +518,8 @@ h264dec_in_send_cb(GstDspBase *base,
 	}
 }
 
-static inline void
-setup_h264params(GstDspBase *base)
+static void
+setup_h264dec_params(GstDspBase *base)
 {
 	struct h264dec_out_stream_params *out_param;
 	du_port_t *p;
@@ -533,6 +543,15 @@ static bool handle_h264dec_extra_data(GstDspBase *base, GstBuffer *buf)
 	}
 	return gstdsp_send_codec_data(base, buf);
 }
+
+struct td_codec td_h264dec_codec = {
+	.uuid = &(const struct dsp_uuid) { 0xCB1E9F0F, 0x9D5A, 0x4434, 0x84, 0x49,
+		{ 0x1F, 0xED, 0x2F, 0x99, 0x2D, 0xF7 } },
+	.filename = "h264vdec_sn.dll64P",
+	.setup_params = setup_h264dec_params,
+	.create_args = create_h264dec_args,
+	.handle_extra_data = handle_h264dec_extra_data,
+};
 
 struct wmvdec_args {
 	uint32_t size;
@@ -562,10 +581,10 @@ struct wmvdec_args {
 	uint32_t stride_width;
 };
 
-static inline void
-get_wmv_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
+static void
+create_wmvdec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	struct wmvdec_args args = {
 		.size = sizeof(args) - 4,
@@ -745,8 +764,8 @@ wmvdec_out_recv_cb(GstDspBase *base,
 			 param->error_code, param->display_id, param->frame_type);
 }
 
-static inline void
-wmvdec_send_params(GstDspBase *base,
+static void
+send_wmvdec_params(GstDspBase *base,
 		   struct dsp_node *node)
 {
 	struct wmvdec_dyn_params *params;
@@ -763,8 +782,8 @@ wmvdec_send_params(GstDspBase *base,
 	gstdsp_send_alg_ctrl(base, node, b);
 }
 
-static inline void
-setup_wmvparams(GstDspBase *base)
+static void
+setup_wmvdec_params(GstDspBase *base)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct wmvdec_in_params *in_param;
@@ -791,6 +810,17 @@ static bool handle_wmvdec_extra_data(GstDspBase *base, GstBuffer *buf)
 		wmvdec_send_rcv_buffer(base, buf);
 	return true;
 }
+
+struct td_codec td_wmvdec_codec = {
+	.uuid = &(const struct dsp_uuid) { 0x609DAB97, 0x3DFC, 0x471F, 0x8A, 0xB9,
+		{ 0x4E, 0x56, 0xE8, 0x34, 0x50, 0x1B } },
+	.filename = "wmv9dec_sn.dll64P",
+	.setup_params = setup_wmvdec_params,
+	.create_args = create_wmvdec_args,
+	.handle_extra_data = handle_wmvdec_extra_data,
+	.send_params = send_wmvdec_params,
+	.flush_buffer = gstdsp_base_flush_buffer,
+};
 
 struct jpegdec_args {
 	uint32_t size;
@@ -868,10 +898,10 @@ struct jpegdec_out_params {
 	int32_t dsp_error;
 };
 
-static inline void
-get_jpeg_args(GstDspVDec *self, unsigned *profile_id, void **arg_data)
+static void
+create_jpegdec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	struct jpegdec_args args = {
 		.size = sizeof(args) - 4,
@@ -931,7 +961,7 @@ setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->rgb_format = 9;
 }
 
-static inline void
+static void
 setup_jpegdec_params(GstDspBase *base)
 {
 	struct jpegdec_in_params *in_param;
@@ -945,31 +975,27 @@ setup_jpegdec_params(GstDspBase *base)
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 }
 
+struct td_codec td_jpegdec_codec = {
+	.uuid = &(const struct dsp_uuid) { 0x5D9CB711, 0x4645, 0x11d6, 0xb0, 0xdc,
+		{ 0x00, 0xc0, 0x4f, 0x1f, 0xc0, 0x36 } },
+	.filename = "jpegdec_sn.dll64P",
+	.setup_params = setup_jpegdec_params,
+	.create_args = create_jpegdec_args,
+};
+
 static void *
 create_node(GstDspBase *base)
 {
 	GstDspVDec *self;
+	struct td_codec *codec;
 	int dsp_handle;
 	struct dsp_node *node;
-	const struct dsp_uuid *alg_uuid;
-	const char *alg_fn;
-	const struct dsp_uuid mp4v_dec_uuid = { 0x7e4b8541, 0x47a1, 0x11d6, 0xb1, 0x56,
-		{ 0x00, 0xb0, 0xd0, 0x17, 0x67, 0x4b } };
-
-	const struct dsp_uuid h264v_dec_uuid = { 0xCB1E9F0F, 0x9D5A, 0x4434, 0x84, 0x49,
-	    { 0x1F, 0xED, 0x2F, 0x99, 0x2D, 0xF7 } };
 
 	const struct dsp_uuid usn_uuid = { 0x79A3C8B3, 0x95F2, 0x403F, 0x9A, 0x4B,
 		{ 0xCF, 0x80, 0x57, 0x73, 0x05, 0x41 } };
 
 	const struct dsp_uuid ringio_uuid = { 0x47698bfb, 0xa7ee, 0x417e, 0xa6, 0x7a,
 		{ 0x41, 0xc0, 0x27, 0x9e, 0xb8, 0x05 } };
-
-	const struct dsp_uuid wmv_dec_uuid = { 0x609DAB97, 0x3DFC, 0x471F, 0x8A, 0xB9,
-		{ 0x4E, 0x56, 0xE8, 0x34, 0x50, 0x1B } };
-
-	const struct dsp_uuid jpeg_dec_uuid = { 0x5D9CB711, 0x4645, 0x11d6, 0xb0, 0xdc,
-		{ 0x00, 0xc0, 0x4f, 0x1f, 0xc0, 0x36 } };
 
 	const struct dsp_uuid conversions_uuid = { 0x722DD0DA, 0xF532, 0x4238, 0xB8, 0x46,
 		{ 0xAB, 0xFF, 0x5D, 0xA4, 0xBA, 0x02 } };
@@ -987,40 +1013,23 @@ create_node(GstDspBase *base)
 		return NULL;
 	}
 
-	switch (base->alg) {
-	case GSTDSP_MPEG4VDEC:
-	case GSTDSP_H263DEC:
-		alg_uuid = &mp4v_dec_uuid;
-		alg_fn = "mp4vdec_sn.dll64P";
-		break;
-	case GSTDSP_H264DEC:
-		alg_uuid = &h264v_dec_uuid;
-		alg_fn = "h264vdec_sn.dll64P";
-		break;
-	case GSTDSP_WMVDEC:
-		alg_uuid = &wmv_dec_uuid;
-		alg_fn = "wmv9dec_sn.dll64P";
-		break;
-	case GSTDSP_JPEGDEC:
-		alg_uuid = &jpeg_dec_uuid;
-		alg_fn = "jpegdec_sn.dll64P";
-		break;
-	default:
+	codec = base->codec;
+	if (!codec) {
 		pr_err(self, "unknown algorithm");
 		return NULL;
 	}
 
-	pr_info(base, "algo=%s", alg_fn);
+	pr_info(base, "algo=%s", codec->filename);
 
 	/* SN_API == 0 doesn't have it, so don't fail */
 	gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P");
 
-	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
+	if (!gstdsp_register(dsp_handle, codec->uuid, DSP_DCD_LIBRARYTYPE, codec->filename)) {
 		pr_err(self, "failed to register algo node library");
 		return NULL;
 	}
 
-	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
+	if (!gstdsp_register(dsp_handle, codec->uuid, DSP_DCD_NODETYPE, codec->filename)) {
 		pr_err(self, "failed to register algo node");
 		return NULL;
 	}
@@ -1033,26 +1042,9 @@ create_node(GstDspBase *base)
 		};
 		void *arg_data;
 
-		switch (base->alg) {
-		case GSTDSP_MPEG4VDEC:
-		case GSTDSP_H263DEC:
-			get_mp4v_args(self, &attrs.profile_id, &arg_data);
-			break;
-		case GSTDSP_H264DEC:
-			get_h264_args(self, &attrs.profile_id, &arg_data);
-			break;
-		case GSTDSP_WMVDEC:
-			get_wmv_args(self, &attrs.profile_id, &arg_data);
-			break;
-		case GSTDSP_JPEGDEC:
-			get_jpeg_args(self, &attrs.profile_id, &arg_data);
-			break;
-		default:
-			arg_data = NULL;
-			break;
-		}
+		codec->create_args(base, &attrs.profile_id, &arg_data);
 
-		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, arg_data, &attrs, &node)) {
+		if (!dsp_node_allocate(dsp_handle, base->proc, codec->uuid, arg_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
 			free(arg_data);
 			return NULL;
@@ -1068,26 +1060,13 @@ create_node(GstDspBase *base)
 
 	pr_info(self, "dsp node created");
 
-	switch (base->alg) {
-	case GSTDSP_WMVDEC:
-		setup_wmvparams(base);
-		base->flush_buffer = gstdsp_base_flush_buffer;
-		wmvdec_send_params(base, node);
-		break;
-	case GSTDSP_H264DEC:
-		setup_h264params(base);
-		break;
-	case GSTDSP_MPEG4VDEC:
-	case GSTDSP_H263DEC:
-		setup_mp4vdec_params(base);
-		base->flush_buffer = gstdsp_base_flush_buffer;
-		break;
-	case GSTDSP_JPEGDEC:
-		setup_jpegdec_params(base);
-		break;
-	default:
-		break;
-	}
+	if (codec->setup_params)
+		codec->setup_params(base);
+
+	if (codec->send_params)
+		codec->send_params(base, node);
+
+	base->flush_buffer = codec->flush_buffer;
 
 	return node;
 }
@@ -1116,6 +1095,7 @@ handle_codec_data(GstDspVDec *self,
 	GstDspBase *base = GST_DSP_BASE(self);
 	const GValue *codec_data;
 	GstBuffer *buf;
+	struct td_codec *codec = base->codec;
 
 	codec_data = gst_structure_get_value(in_struc, "codec_data");
 	if (!codec_data)
@@ -1123,16 +1103,10 @@ handle_codec_data(GstDspVDec *self,
 
 	buf = gst_value_get_buffer(codec_data);
 
-	switch (base->alg) {
-	case GSTDSP_MPEG4VDEC:
-		return handle_mp4vdec_extra_data(base, buf);
-	case GSTDSP_WMVDEC:
-		return handle_wmvdec_extra_data(base, buf);
-	case GSTDSP_H264DEC:
-		return handle_h264dec_extra_data(base, buf);
-	default:
+	if (codec->handle_extra_data)
+		return codec->handle_extra_data(base, buf);
+	else
 		return gstdsp_send_codec_data(base, buf);
-	}
 }
 
 static inline void
@@ -1227,6 +1201,7 @@ sink_setcaps(GstPad *pad,
 	GstCaps *out_caps;
 	const char *name;
 	gboolean ret;
+	struct td_codec *codec;
 
 	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
@@ -1268,6 +1243,27 @@ sink_setcaps(GstPad *pad,
 	}
 	else
 		base->alg = GSTDSP_MPEG4VDEC;
+
+	switch (base->alg) {
+	case GSTDSP_MPEG4VDEC:
+	case GSTDSP_H263DEC:
+		codec = &td_mp4vdec_codec;
+		break;
+	case GSTDSP_H264DEC:
+		codec = &td_h264dec_codec;
+		break;
+	case GSTDSP_WMVDEC:
+		codec = &td_wmvdec_codec;
+		break;
+	case GSTDSP_JPEGDEC:
+		codec = &td_jpegdec_codec;
+		break;
+	default:
+		codec = NULL;
+		break;
+	}
+
+	base->codec = codec;
 
 	switch (base->alg) {
 	case GSTDSP_JPEGDEC:
