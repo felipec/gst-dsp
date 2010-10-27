@@ -24,6 +24,14 @@ typedef struct GstDspVDecClass GstDspVDecClass;
 
 #include "gstdspbase.h"
 
+enum {
+	GSTDSP_MPEG4VDEC,
+	GSTDSP_H264DEC,
+	GSTDSP_H263DEC,
+	GSTDSP_WMVDEC,
+	GSTDSP_JPEGDEC,
+};
+
 union vdec_priv_data {
 	struct {
 		gint lol;

@@ -22,13 +22,19 @@ prefix := /usr
 
 D = $(DESTDIR)
 
+tidsp.a: tidsp/td_mp4vdec.o tidsp/td_h264dec.o tidsp/td_wmvdec.o \
+	tidsp/td_jpegdec.o \
+	tidsp/td_mp4venc.o tidsp/td_jpegenc.o tidsp/td_h264enc.o
+tidsp.a: override CFLAGS += -fPIC -I.
+
 # plugin
 
 gst_plugin := libgstdsp.so
 
 $(gst_plugin): plugin.o gstdspdummy.o gstdspbase.o gstdspvdec.o \
 	gstdspvenc.o gstdsph263enc.o gstdspmp4venc.o gstdspjpegenc.o \
-	dsp_bridge.o util.o log.o gstdspparse.o async_queue.o gstdsph264enc.o
+	dsp_bridge.o util.o log.o gstdspparse.o async_queue.o gstdsph264enc.o \
+	tidsp.a
 $(gst_plugin): override CFLAGS += $(GST_CFLAGS) -fPIC \
 	-D VERSION='"$(version)"' -D DSPDIR='"$(dspdir)"'
 $(gst_plugin): override LIBS += $(GST_LIBS)
@@ -52,6 +58,9 @@ install: $(targets)
 
 %.so::
 	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS)
+
+%.a::
+	$(QUIET_LINK)$(AR) rcs $@ $^
 
 clean:
 	$(QUIET_CLEAN)$(RM) -v $(targets) *.o *.d

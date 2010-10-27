@@ -149,6 +149,11 @@ static inline bool gst_pad_take_caps(GstPad *pad, GstCaps *caps)
 	return ret;
 }
 
+extern struct td_codec td_mp4vdec_codec;
+extern struct td_codec td_h264dec_codec;
+extern struct td_codec td_wmvdec_codec;
+extern struct td_codec td_jpegdec_codec;
+
 extern struct td_codec td_mp4venc_codec;
 extern struct td_codec td_jpegenc_codec;
 extern struct td_codec td_h264enc_codec;
