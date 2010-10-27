@@ -15,7 +15,7 @@
 #include "gstdspbase.h"
 #include "gstdspvenc.h"
 
-struct mp4venc_args {
+struct create_args {
 	uint32_t size;
 	uint16_t num_streams;
 
@@ -58,12 +58,11 @@ struct mp4venc_args {
 	uint32_t h263_annex_t;
 };
 
-static void
-create_mp4venc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
+static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
 
-	struct mp4venc_args args = {
+	struct create_args args = {
 		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
@@ -120,8 +119,7 @@ create_mp4venc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 	memcpy(*arg_data, &args, sizeof(args));
 }
 
-static void
-mp4venc_try_extract_codec_data(GstDspBase *base, dmm_buffer_t *b)
+static void try_extract_codec_data(GstDspBase *base, dmm_buffer_t *b)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	guint8 gov[] = { 0x0, 0x0, 0x1, 0xB3 };
@@ -163,7 +161,7 @@ done:
 	self->priv.mpeg4.codec_data_done = TRUE;
 }
 
-struct mp4venc_in_stream_params {
+struct in_params {
 	uint32_t frame_index;
 	uint32_t framerate;
 	uint32_t bitrate;
@@ -193,7 +191,7 @@ struct mp4venc_in_stream_params {
 	uint32_t qp_min;
 };
 
-struct mp4venc_out_stream_params {
+struct out_params {
 	uint32_t bitstream_size;
 	uint32_t frame_type;
 	uint32_t mv_data_size;
@@ -206,25 +204,23 @@ struct mp4venc_out_stream_params {
 	uint32_t error_code;
 };
 
-static void
-mp4venc_out_recv_cb(GstDspBase *base,
-		    du_port_t *port,
-		    dmm_buffer_t *p,
-		    dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
-	struct mp4venc_out_stream_params *param;
+	struct out_params *param;
 	param = p->data;
 	b->keyframe = (param->frame_type == 1);
-	mp4venc_try_extract_codec_data(base, b);
+	try_extract_codec_data(base, b);
 }
 
-static void
-mp4venc_in_send_cb(GstDspBase *base,
-		   du_port_t *port,
-		   dmm_buffer_t *p,
-		   dmm_buffer_t *b)
+static void in_send_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
-	struct mp4venc_in_stream_params *param;
+	struct in_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	param = p->data;
@@ -239,10 +235,9 @@ mp4venc_in_send_cb(GstDspBase *base,
 	g_mutex_unlock(self->keyframe_mutex);
 }
 
-static void
-setup_mp4param_in(GstDspBase *base, dmm_buffer_t *tmp)
+static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 {
-	struct mp4venc_in_stream_params *in_param;
+	struct in_params *in_param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	in_param = tmp->data;
@@ -266,26 +261,25 @@ setup_mp4param_in(GstDspBase *base, dmm_buffer_t *tmp)
 	}
 }
 
-static void
-setup_mp4venc_params(GstDspBase *base)
+static void setup_params(GstDspBase *base)
 {
-	struct mp4venc_in_stream_params *in_param;
-	struct mp4venc_out_stream_params *out_param;
+	struct in_params *in_param;
+	struct out_params *out_param;
 	du_port_t *p;
 
 	p = base->ports[0];
-	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_mp4param_in);
-	p->send_cb = mp4venc_in_send_cb;
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_in_params);
+	p->send_cb = in_send_cb;
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->recv_cb = mp4venc_out_recv_cb;
+	p->recv_cb = out_recv_cb;
 }
 
 struct td_codec td_mp4venc_codec = {
-       .uuid = &(const struct dsp_uuid) { 0x98c2e8d8, 0x4644, 0x11d6, 0x81, 0x18,
+	.uuid = &(const struct dsp_uuid) { 0x98c2e8d8, 0x4644, 0x11d6, 0x81, 0x18,
 		{ 0x00, 0xb0, 0xd0, 0x8d, 0x72, 0x9f } },
-       .filename = "m4venc_sn.dll64P",
-       .setup_params = setup_mp4venc_params,
-       .create_args = create_mp4venc_args,
+	.filename = "m4venc_sn.dll64P",
+	.setup_params = setup_params,
+	.create_args = create_args,
 };

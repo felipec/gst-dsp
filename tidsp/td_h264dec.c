@@ -17,7 +17,7 @@
 #include "gstdspbase.h"
 #include "gstdspvdec.h"
 
-struct h264vdec_args {
+struct create_args {
 	uint32_t size;
 	uint16_t num_streams;
 
@@ -45,12 +45,11 @@ struct h264vdec_args {
 	uint32_t display_width;
 };
 
-static void
-create_h264dec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
+static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
-	struct h264vdec_args args = {
+	struct create_args args = {
 		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
@@ -78,9 +77,7 @@ create_h264dec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 	memcpy(*arg_data, &args, sizeof(args));
 }
 
-static GstBuffer *
-h264dec_transform_codec_data(GstDspVDec *self,
-			     GstBuffer *buf)
+static GstBuffer *transform_codec_data(GstDspVDec *self, GstBuffer *buf)
 {
 	guint8 *data, *outdata;
 	guint size, total_size = 0, len, num_sps, num_pps;
@@ -156,9 +153,7 @@ fail:
 	return NULL;
 }
 
-static void
-h264dec_transform_nal_encoding(GstDspVDec *self,
-			       dmm_buffer_t *b)
+static void transform_nal_encoding(GstDspVDec *self, dmm_buffer_t *b)
 {
 	guint8 *data;
 	gint size;
@@ -234,7 +229,7 @@ fail:
 	return;
 }
 
-struct h264dec_out_stream_params {
+struct out_params {
 	uint32_t display_id;
 	uint32_t bytes_consumed;
 	int32_t error_code;
@@ -244,20 +239,19 @@ struct h264dec_out_stream_params {
 	int8_t mb_err_status_out[1620];
 };
 
-static void
-h264dec_out_recv_cb(GstDspBase *base,
-		    du_port_t *port,
-		    dmm_buffer_t *p,
-		    dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
-	struct h264dec_out_stream_params *param;
+	struct out_params *param;
 	param = p->data;
 
 	pr_debug(base, "receive %d/%ld",
-		 b->len, base->output_buffer_size);
+			b->len, base->output_buffer_size);
 	pr_debug(base, "error: 0x%x, frame type: %d",
-		 param->error_code, param->frame_type);
+			param->error_code, param->frame_type);
 	if (param->error_code & 0xffff)
 		pr_err(base, "decode error");
 
@@ -265,43 +259,41 @@ h264dec_out_recv_cb(GstDspBase *base,
 	b->len = vdec->crop_width * vdec->crop_height * 2;
 }
 
-static void
-h264dec_in_send_cb(GstDspBase *base,
-		   du_port_t *port,
-		   dmm_buffer_t *p,
-		   dmm_buffer_t *b)
+static void in_send_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
 	/* transform MP4 format to bytestream format */
 	if (G_LIKELY(vdec->priv.h264.lol)) {
 		pr_debug(base, "transforming H264 buffer data");
 		/* intercept and transform into dsp expected format */
-		h264dec_transform_nal_encoding(vdec, b);
+		transform_nal_encoding(vdec, b);
 	} else {
 		/* no more need for callback */
 		port->send_cb = NULL;
 	}
 }
 
-static void
-setup_h264dec_params(GstDspBase *base)
+static void setup_params(GstDspBase *base)
 {
-	struct h264dec_out_stream_params *out_param;
+	struct out_params *out_param;
 	du_port_t *p;
 
 	p = base->ports[0];
-	p->send_cb = h264dec_in_send_cb;
+	p->send_cb = in_send_cb;
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->recv_cb = h264dec_out_recv_cb;
+	p->recv_cb = out_recv_cb;
 }
 
-static bool handle_h264dec_extra_data(GstDspBase *base, GstBuffer *buf)
+static bool handle_extra_data(GstDspBase *base, GstBuffer *buf)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
-	buf = h264dec_transform_codec_data(self, buf);
+	buf = transform_codec_data(self, buf);
 	if (!buf) {
 		gstdsp_got_error(base, 0, "invalid codec_data");
 		return false;
@@ -313,7 +305,7 @@ struct td_codec td_h264dec_codec = {
 	.uuid = &(const struct dsp_uuid) { 0xCB1E9F0F, 0x9D5A, 0x4434, 0x84, 0x49,
 		{ 0x1F, 0xED, 0x2F, 0x99, 0x2D, 0xF7 } },
 	.filename = "h264vdec_sn.dll64P",
-	.setup_params = setup_h264dec_params,
-	.create_args = create_h264dec_args,
-	.handle_extra_data = handle_h264dec_extra_data,
+	.setup_params = setup_params,
+	.create_args = create_args,
+	.handle_extra_data = handle_extra_data,
 };

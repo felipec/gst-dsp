@@ -14,7 +14,7 @@
 #include "gstdspbase.h"
 #include "gstdspjpegenc.h"
 
-struct jpegenc_args {
+struct create_args {
 	uint32_t size;
 	uint16_t num_streams;
 
@@ -43,10 +43,9 @@ struct jpegenc_args {
 	uint16_t max_app5_height;
 };
 
-static void
-create_jpegenc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
+static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	struct jpegenc_args args = {
+	struct create_args args = {
 		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
@@ -66,7 +65,7 @@ create_jpegenc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 	memcpy(*arg_data, &args, sizeof(args));
 }
 
-struct jpegenc_dyn_params {
+struct dyn_params {
 	uint32_t size;
 	uint32_t num_au; /* set to 0 */
 	uint32_t color_format;
@@ -85,15 +84,14 @@ struct jpegenc_dyn_params {
 	uint32_t resize;
 };
 
-static void
-send_jpegenc_params(GstDspBase *base, struct dsp_node *node)
+static void send_params(GstDspBase *base, struct dsp_node *node)
 {
-	struct jpegenc_dyn_params *params;
+	struct dyn_params *params;
 	dmm_buffer_t *b;
 	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	b = dmm_buffer_calloc(base->dsp_handle, base->proc,
-			      sizeof(*params), DMA_TO_DEVICE);
+			sizeof(*params), DMA_TO_DEVICE);
 
 	params = b->data;
 	params->size = sizeof(*params);
@@ -108,42 +106,40 @@ send_jpegenc_params(GstDspBase *base, struct dsp_node *node)
 	gstdsp_send_alg_ctrl(base, base->node, b);
 }
 
-struct jpegenc_in_stream_params {
+struct in_params {
 	uint32_t size;
 };
 
-struct jpegenc_out_stream_params {
+struct out_params {
 	uint32_t errorcode;
 };
 
-static void
-setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
+static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 {
-	struct jpegenc_in_stream_params *in_param;
+	struct in_params *in_param;
 
 	in_param = tmp->data;
 	in_param->size = sizeof(*in_param);
 }
 
-static void
-setup_jpegenc_params(GstDspBase *base)
+static void setup_params(GstDspBase *base)
 {
-	struct jpegenc_in_stream_params *in_param;
-	struct jpegenc_out_stream_params *out_param;
+	struct in_params *in_param;
+	struct out_params *out_param;
 	du_port_t *p;
 
 	p = base->ports[0];
-	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_jpegparams_in);
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_in_params);
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 }
 
 struct td_codec td_jpegenc_codec = {
-       .uuid = &(const struct dsp_uuid) { 0xcb70c0c1, 0x4c85, 0x11d6, 0xb1, 0x05,
+	.uuid = &(const struct dsp_uuid) { 0xcb70c0c1, 0x4c85, 0x11d6, 0xb1, 0x05,
 		{ 0x00, 0xc0, 0x4f, 0x32, 0x90, 0x31 } },
-       .filename = "jpegenc_sn.dll64P",
-       .setup_params = setup_jpegenc_params,
-       .create_args = create_jpegenc_args,
-       .send_params = send_jpegenc_params,
+	.filename = "jpegenc_sn.dll64P",
+	.setup_params = setup_params,
+	.create_args = create_args,
+	.send_params = send_params,
 };

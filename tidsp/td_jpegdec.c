@@ -14,7 +14,7 @@
 #include "gstdspbase.h"
 #include "gstdspvdec.h"
 
-struct jpegdec_args {
+struct create_args {
 	uint32_t size;
 	uint16_t num_streams;
 
@@ -38,64 +38,11 @@ struct jpegdec_args {
 	uint16_t is_argb32;
 };
 
-struct jpegdec_in_params {
-	int32_t buf_count;
-	uint32_t frame_count;
-	uint32_t frame_align;
-	uint32_t frame_size;
-	uint32_t display_width;
-	uint32_t reserved_0;
-	uint32_t reserved_1;
-	uint32_t reserved_2;
-	uint32_t reserved_3;
-	uint32_t resize_option;
-	uint32_t num_mcu;
-	uint32_t decode_header;
-	uint32_t max_height;
-	uint32_t max_width;
-	uint32_t max_scans;
-	uint32_t endianness;
-	uint32_t color_format;
-	uint32_t rgb_format;
-	uint32_t num_mcu_row;
-	uint32_t x_org;
-	uint32_t y_org;
-	uint32_t x_lenght;
-	uint32_t y_length;
-	uint32_t argb;
-	uint32_t total_size;
-};
-
-struct jpegdec_out_params {
-	int32_t buf_count;
-	uint32_t frame_count;
-	uint32_t frame_align;
-	uint32_t frame_size;
-	uint32_t img_format;
-	uint32_t width;
-	uint32_t height;
-	uint32_t progressive;
-	uint32_t error_code;
-	uint32_t reserved_0;
-	uint32_t reserved_1;
-	uint32_t reserved_2;
-	uint32_t last_mcu;
-	uint32_t stride[3];
-	uint32_t output_height;
-	uint32_t output_width;
-	uint32_t total_au;
-	uint32_t bytes_consumed;
-	uint32_t current_au;
-	uint32_t current_scan;
-	int32_t dsp_error;
-};
-
-static void
-create_jpegdec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
+static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
-	struct jpegdec_args args = {
+	struct create_args args = {
 		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
@@ -139,10 +86,61 @@ create_jpegdec_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 	memcpy(*arg_data, &args, sizeof(args));
 }
 
-static void
-setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
+struct in_params {
+	int32_t buf_count;
+	uint32_t frame_count;
+	uint32_t frame_align;
+	uint32_t frame_size;
+	uint32_t display_width;
+	uint32_t reserved_0;
+	uint32_t reserved_1;
+	uint32_t reserved_2;
+	uint32_t reserved_3;
+	uint32_t resize_option;
+	uint32_t num_mcu;
+	uint32_t decode_header;
+	uint32_t max_height;
+	uint32_t max_width;
+	uint32_t max_scans;
+	uint32_t endianness;
+	uint32_t color_format;
+	uint32_t rgb_format;
+	uint32_t num_mcu_row;
+	uint32_t x_org;
+	uint32_t y_org;
+	uint32_t x_lenght;
+	uint32_t y_length;
+	uint32_t argb;
+	uint32_t total_size;
+};
+
+struct out_params {
+	int32_t buf_count;
+	uint32_t frame_count;
+	uint32_t frame_align;
+	uint32_t frame_size;
+	uint32_t img_format;
+	uint32_t width;
+	uint32_t height;
+	uint32_t progressive;
+	uint32_t error_code;
+	uint32_t reserved_0;
+	uint32_t reserved_1;
+	uint32_t reserved_2;
+	uint32_t last_mcu;
+	uint32_t stride[3];
+	uint32_t output_height;
+	uint32_t output_width;
+	uint32_t total_au;
+	uint32_t bytes_consumed;
+	uint32_t current_au;
+	uint32_t current_scan;
+	int32_t dsp_error;
+};
+
+static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 {
-	struct jpegdec_in_params *in_param;
+	struct in_params *in_param;
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	in_param = tmp->data;
@@ -153,15 +151,14 @@ setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->rgb_format = 9;
 }
 
-static void
-setup_jpegdec_params(GstDspBase *base)
+static void setup_params(GstDspBase *base)
 {
-	struct jpegdec_in_params *in_param;
-	struct jpegdec_out_params *out_param;
+	struct in_params *in_param;
+	struct out_params *out_param;
 	du_port_t *p;
 
 	p = base->ports[0];
-	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_jpegparams_in);
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_in_params);
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
@@ -171,6 +168,6 @@ struct td_codec td_jpegdec_codec = {
 	.uuid = &(const struct dsp_uuid) { 0x5D9CB711, 0x4645, 0x11d6, 0xb0, 0xdc,
 		{ 0x00, 0xc0, 0x4f, 0x1f, 0xc0, 0x36 } },
 	.filename = "jpegdec_sn.dll64P",
-	.setup_params = setup_jpegdec_params,
-	.create_args = create_jpegdec_args,
+	.setup_params = setup_params,
+	.create_args = create_args,
 };

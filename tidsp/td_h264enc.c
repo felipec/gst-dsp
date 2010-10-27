@@ -17,7 +17,7 @@
 #include "gstdspbase.h"
 #include "gstdspvenc.h"
 
-struct h264venc_args {
+struct create_args {
 	uint32_t size;
 	uint16_t num_streams;
 
@@ -54,12 +54,11 @@ struct h264venc_args {
 	uint32_t rc_algo;
 };
 
-static void
-create_h264enc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
+static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
 
-	struct h264venc_args args = {
+	struct create_args args = {
 		.size = sizeof(args) - 4,
 		.num_streams = 2,
 		.in_id = 0,
@@ -102,7 +101,7 @@ create_h264enc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 	memcpy(*arg_data, &args, sizeof(args));
 }
 
-struct h264venc_in_stream_params {
+struct in_params {
 	uint32_t params_size;
 	uint32_t input_height;
 	uint32_t input_width;
@@ -155,7 +154,7 @@ struct h264venc_in_stream_params {
 	uint32_t frame_index;
 };
 
-struct h264venc_out_stream_params {
+struct out_params {
 	uint32_t bitstream_size;
 	int32_t frame_type;
 	uint32_t nalus_per_frame;
@@ -171,13 +170,12 @@ struct h264venc_out_stream_params {
 #endif
 };
 
-static void
-h264venc_in_send_cb(GstDspBase *base,
-		    du_port_t *port,
-		    dmm_buffer_t *p,
-		    dmm_buffer_t *b)
+static void in_send_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
-	struct h264venc_in_stream_params *param;
+	struct in_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	param = p->data;
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
@@ -200,8 +198,7 @@ h264venc_in_send_cb(GstDspBase *base,
 	}
 }
 
-static inline void
-gst_dsp_h264venc_create_codec_data(GstDspBase *base)
+static void create_codec_data(GstDspBase *base)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	guint8 *sps, *pps, *codec_data;
@@ -237,10 +234,9 @@ gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 	memcpy(codec_data + offset, pps, pps_size);
 }
 
-static void
-h264venc_strip_sps_pps_header(GstDspBase *base,
-			      dmm_buffer_t *b,
-			      struct h264venc_out_stream_params *param)
+static void strip_sps_pps_header(GstDspBase *base,
+		dmm_buffer_t *b,
+		struct out_params *param)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	char *data = b->data;
@@ -263,8 +259,7 @@ h264venc_strip_sps_pps_header(GstDspBase *base,
 	}
 }
 
-static void
-h264venc_ignore_sps_pps_header(GstDspBase *base, dmm_buffer_t *b)
+static void ignore_sps_pps_header(GstDspBase *base, dmm_buffer_t *b)
 {
 	char *data = b->data;
 
@@ -272,14 +267,13 @@ h264venc_ignore_sps_pps_header(GstDspBase *base, dmm_buffer_t *b)
 		base->skip_hack_2++;
 }
 
-static void
-h264venc_out_recv_cb(GstDspBase *base,
-		     du_port_t *port,
-		     dmm_buffer_t *p,
-		     dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base,
+		du_port_t *port,
+		dmm_buffer_t *p,
+		dmm_buffer_t *b)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
-	struct h264venc_out_stream_params *param;
+	struct out_params *param;
 	param = p->data;
 
 	pr_debug(base, "frame type: %d", param->frame_type);
@@ -290,7 +284,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 
 	if (self->priv.h264.bytestream) {
 		if (self->mode == 1 && b->keyframe)
-			h264venc_strip_sps_pps_header(base, b, param);
+			strip_sps_pps_header(base, b, param);
 		return;
 	}
 
@@ -298,7 +292,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 		/* prefix the NALU with a lenght field, not counting the start code */
 		*(uint32_t*)b->data = GINT_TO_BE(b->len - 4);
 		if (!self->priv.h264.bytestream)
-			h264venc_ignore_sps_pps_header(base, b);
+			ignore_sps_pps_header(base, b);
 	}
 	else {
 		if (!self->priv.h264.sps_received) {
@@ -314,7 +308,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 		}
 
 		if (self->priv.h264.pps_received && self->priv.h264.sps_received) {
-			gst_dsp_h264venc_create_codec_data(base);
+			create_codec_data(base);
 			if (gstdsp_set_codec_data_caps(base, self->priv.h264.codec_data)) {
 				self->priv.h264.codec_data_done = TRUE;
 				gst_buffer_replace(&self->priv.h264.sps, NULL);
@@ -326,10 +320,9 @@ h264venc_out_recv_cb(GstDspBase *base,
 	}
 }
 
-static void
-setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
+static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 {
-	struct h264venc_in_stream_params *in_param;
+	struct in_params *in_param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
 	int bits_per_mb;
 
@@ -386,26 +379,25 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 	}
 }
 
-static void
-setup_h264enc_params(GstDspBase *base)
+static void setup_params(GstDspBase *base)
 {
-	struct h264venc_in_stream_params *in_param;
-	struct h264venc_out_stream_params *out_param;
+	struct in_params *in_param;
+	struct out_params *out_param;
 	du_port_t *p;
 
 	p = base->ports[0];
-	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_h264params_in);
-	p->send_cb = h264venc_in_send_cb;
+	gstdsp_port_setup_params(base, p, sizeof(*in_param), setup_in_params);
+	p->send_cb = in_send_cb;
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
-	p->recv_cb = h264venc_out_recv_cb;
+	p->recv_cb = out_recv_cb;
 }
 
 struct td_codec td_h264enc_codec = {
-       .uuid = &(const struct dsp_uuid) { 0x63A3581A, 0x09D7, 0x4AD0, 0x80, 0xB8,
+	.uuid = &(const struct dsp_uuid) { 0x63A3581A, 0x09D7, 0x4AD0, 0x80, 0xB8,
 		{ 0x5F, 0x2C, 0x4D, 0x4D, 0x59, 0xC9 } },
-       .filename = "h264venc_sn.dll64P",
-       .setup_params = setup_h264enc_params,
-       .create_args = create_h264enc_args,
+	.filename = "h264venc_sn.dll64P",
+	.setup_params = setup_params,
+	.create_args = create_args,
 };
