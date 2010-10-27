@@ -140,7 +140,7 @@ struct mp4vdec_args {
 };
 
 static inline void *
-get_mp4v_args(GstDspVDec *self)
+get_mp4v_args(GstDspVDec *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -165,6 +165,15 @@ get_mp4v_args(GstDspVDec *self)
 
 	if (base->alg == GSTDSP_H263DEC)
 		args.profile = 8;
+
+	if (self->width * self->height > 640 * 480)
+		*profile_id = 4;
+	else if (self->width * self->height > 352 * 288)
+		*profile_id = 3;
+	else if (self->width * self->height > 176 * 144)
+		*profile_id = 2;
+	else
+		*profile_id = 1;
 
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
@@ -257,7 +266,7 @@ struct h264vdec_args {
 };
 
 static inline void *
-get_h264_args(GstDspVDec *self)
+get_h264_args(GstDspVDec *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -278,6 +287,13 @@ get_h264_args(GstDspVDec *self)
 		.endianness = 1,
 		.max_level = -1,
 	};
+
+	if (self->width * self->height > 352 * 288)
+		*profile_id = 3;
+	else if (self->width * self->height > 176 * 144)
+		*profile_id = 2;
+	else
+		*profile_id = 1;
 
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
@@ -532,7 +548,7 @@ struct wmvdec_args {
 };
 
 static inline void *
-get_wmv_args(GstDspVDec *self)
+get_wmv_args(GstDspVDec *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -554,6 +570,15 @@ get_wmv_args(GstDspVDec *self)
 		.max_level = -1,
 		.stream_format = self->wmv_is_vc1 ? 1 : 2, /* 1 = wvc1, 2 = wmv3 */
 	};
+
+	if (self->width * self->height > 640 * 480)
+		*profile_id = 4;
+	else if (self->width * self->height > 352 * 288)
+		*profile_id = 3;
+	else if (self->width * self->height > 176 * 144)
+		*profile_id = 2;
+	else
+		*profile_id = 1;
 
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
@@ -821,7 +846,7 @@ struct jpegdec_out_params {
 };
 
 static inline void *
-get_jpeg_args(GstDspVDec *self)
+get_jpeg_args(GstDspVDec *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -840,6 +865,31 @@ get_jpeg_args(GstDspVDec *self)
 		.progressive = self->jpeg_is_interlaced ? 1 : 0,
 		.color_format = self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y') ? 4 : 1,
 	};
+
+	if (self->jpeg_is_interlaced) {
+		if (self->width * self->height > 2560 * 2048)
+			*profile_id = 9;
+		else if (self->width * self->height > 2560 * 1600)
+			*profile_id = 8;
+		else if (self->width * self->height > 2048 * 1536)
+			*profile_id = 7;
+		else if (self->width * self->height > 1920 * 1200)
+			*profile_id = 6;
+		else if (self->width * self->height > 1280 * 1024)
+			*profile_id = 5;
+		else if (self->width * self->height > 800 * 600)
+			*profile_id = 4;
+		else if (self->width * self->height > 640 * 480)
+			*profile_id = 3;
+		else if (self->width * self->height > 352 * 288)
+			*profile_id = 2;
+		else if (self->width * self->height > 176 * 144)
+			*profile_id = 1;
+		else
+			*profile_id = 0;
+	}
+	else
+		*profile_id = -1;
 
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
@@ -965,62 +1015,16 @@ create_node(GstDspBase *base)
 		switch (base->alg) {
 		case GSTDSP_MPEG4VDEC:
 		case GSTDSP_H263DEC:
-			if (self->width * self->height > 640 * 480)
-				attrs.profile_id = 4;
-			else if (self->width * self->height > 352 * 288)
-				attrs.profile_id = 3;
-			else if (self->width * self->height > 176 * 144)
-				attrs.profile_id = 2;
-			else
-				attrs.profile_id = 1;
-			cb_data = get_mp4v_args(self);
+			cb_data = get_mp4v_args(self, &attrs.profile_id);
 			break;
 		case GSTDSP_H264DEC:
-			if (self->width * self->height > 352 * 288)
-				attrs.profile_id = 3;
-			else if (self->width * self->height > 176 * 144)
-				attrs.profile_id = 2;
-			else
-				attrs.profile_id = 1;
-			cb_data = get_h264_args(self);
+			cb_data = get_h264_args(self, &attrs.profile_id);
 			break;
 		case GSTDSP_WMVDEC:
-			if (self->width * self->height > 640 * 480)
-				attrs.profile_id = 4;
-			else if (self->width * self->height > 352 * 288)
-				attrs.profile_id = 3;
-			else if (self->width * self->height > 176 * 144)
-				attrs.profile_id = 2;
-			else
-				attrs.profile_id = 1;
-			cb_data = get_wmv_args(self);
+			cb_data = get_wmv_args(self, &attrs.profile_id);
 			break;
 		case GSTDSP_JPEGDEC:
-			if (self->jpeg_is_interlaced) {
-				if (self->width * self->height > 2560 * 2048)
-					attrs.profile_id = 9;
-				else if (self->width * self->height > 2560 * 1600)
-					attrs.profile_id = 8;
-				else if (self->width * self->height > 2048 * 1536)
-					attrs.profile_id = 7;
-				else if (self->width * self->height > 1920 * 1200)
-					attrs.profile_id = 6;
-				else if (self->width * self->height > 1280 * 1024)
-					attrs.profile_id = 5;
-				else if (self->width * self->height > 800 * 600)
-					attrs.profile_id = 4;
-				else if (self->width * self->height > 640 * 480)
-					attrs.profile_id = 3;
-				else if (self->width * self->height > 352 * 288)
-					attrs.profile_id = 2;
-				else if (self->width * self->height > 176 * 144)
-					attrs.profile_id = 1;
-				else
-					attrs.profile_id = 0;
-			}
-			else
-				attrs.profile_id = -1;
-			cb_data = get_jpeg_args(self);
+			cb_data = get_jpeg_args(self, &attrs.profile_id);
 			break;
 		default:
 			cb_data = NULL;

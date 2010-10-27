@@ -113,7 +113,7 @@ struct jpegenc_args {
 #include "gstdspjpegenc.h"
 
 static inline void *
-get_jpegenc_args(GstDspVEnc *self)
+get_jpegenc_args(GstDspVEnc *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -131,6 +131,8 @@ get_jpegenc_args(GstDspVEnc *self)
 		.max_height = JPEGENC_MAX_HEIGHT + 32,
 		.color_format = 1,
 	};
+
+	*profile_id = 1;
 
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
@@ -181,7 +183,7 @@ struct mp4venc_args {
 };
 
 static inline void *
-get_mp4venc_args(GstDspVEnc *self)
+get_mp4venc_args(GstDspVEnc *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -228,6 +230,17 @@ get_mp4venc_args(GstDspVEnc *self)
 		args.rate_control = 1;
 	}
 
+	if (self->width * self->height > 720 * 480)
+		*profile_id = 4;
+	else if (self->width * self->height > 640 * 480)
+		*profile_id = 3;
+	else if (self->width * self->height > 352 * 288)
+		*profile_id = 2;
+	else if (self->width * self->height > 176 * 144)
+		*profile_id = 1;
+	else
+		*profile_id = 0;
+
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
 	return arg_data;
@@ -271,7 +284,7 @@ struct h264venc_args {
 };
 
 static inline void *
-get_h264venc_args(GstDspVEnc *self)
+get_h264venc_args(GstDspVEnc *self, unsigned *profile_id)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	void *arg_data;
@@ -307,6 +320,13 @@ get_h264venc_args(GstDspVEnc *self)
 		args.rc_algorithm = 0; /* storage VBR */
 	else
 		args.rc_algorithm = 1; /* low delay CBR */
+
+	if (self->width * self->height > 352 * 288)
+		*profile_id = 2;
+	else if (self->width * self->height > 176 * 144)
+		*profile_id = 1;
+	else
+		*profile_id = 0;
 
 	arg_data = malloc(sizeof(args));
 	memcpy(arg_data, &args, sizeof(args));
@@ -390,31 +410,14 @@ create_node(GstDspVEnc *self)
 
 		switch (base->alg) {
 		case GSTDSP_JPEGENC:
-			attrs.profile_id = 1;
-			cb_data = get_jpegenc_args(self);
+			cb_data = get_jpegenc_args(self, &attrs.profile_id);
 			break;
 		case GSTDSP_H263ENC:
 		case GSTDSP_MP4VENC:
-			if (self->width * self->height > 720 * 480)
-				attrs.profile_id = 4;
-			else if (self->width * self->height > 640 * 480)
-				attrs.profile_id = 3;
-			else if (self->width * self->height > 352 * 288)
-				attrs.profile_id = 2;
-			else if (self->width * self->height > 176 * 144)
-				attrs.profile_id = 1;
-			else
-				attrs.profile_id = 0;
-			cb_data = get_mp4venc_args(self);
+			cb_data = get_mp4venc_args(self, &attrs.profile_id);
 			break;
 		case GSTDSP_H264ENC:
-			if (self->width * self->height > 352 * 288)
-				attrs.profile_id = 2;
-			else if (self->width * self->height > 176 * 144)
-				attrs.profile_id = 1;
-			else
-				attrs.profile_id = 0;
-			cb_data = get_h264venc_args(self);
+			cb_data = get_h264venc_args(self, &attrs.profile_id);
 			break;
 		default:
 			cb_data = NULL;
