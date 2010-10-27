@@ -538,27 +538,6 @@ h264venc_in_send_cb(GstDspBase *base,
 	}
 }
 
-static inline gboolean
-gst_dsp_set_codec_data_caps(GstDspBase *base,
-			    GstBuffer *buf)
-{
-	GstCaps *caps = NULL;
-	GstStructure *structure;
-	GValue value = { .g_type = 0 };
-
-	caps = gst_pad_get_negotiated_caps(base->srcpad);
-	caps = gst_caps_make_writable(caps);
-	structure = gst_caps_get_structure(caps, 0);
-
-	g_value_init(&value, GST_TYPE_BUFFER);
-
-	gst_value_set_buffer(&value, buf);
-	gst_structure_set_value(structure, "codec_data", &value);
-	g_value_unset(&value);
-
-	return gst_pad_take_caps(base->srcpad, caps);
-}
-
 static inline void
 gst_dsp_h264venc_create_codec_data(GstDspBase *base)
 {
@@ -674,7 +653,7 @@ h264venc_out_recv_cb(GstDspBase *base,
 
 		if (self->priv.h264.pps_received && self->priv.h264.sps_received) {
 			gst_dsp_h264venc_create_codec_data(base);
-			if (gst_dsp_set_codec_data_caps(base, self->priv.h264.codec_data)) {
+			if (gstdsp_set_codec_data_caps(base, self->priv.h264.codec_data)) {
 				self->priv.h264.codec_data_done = TRUE;
 				gst_buffer_replace(&self->priv.h264.sps, NULL);
 				gst_buffer_replace(&self->priv.h264.pps, NULL);
@@ -830,7 +809,7 @@ mp4venc_try_extract_codec_data(GstDspBase *base, dmm_buffer_t *b)
 	codec_buf = gst_buffer_new();
 	GST_BUFFER_DATA(codec_buf) = b->data;
 	GST_BUFFER_SIZE(codec_buf) = data - (guint8 *) b->data;
-	gst_dsp_set_codec_data_caps(base, codec_buf);
+	gstdsp_set_codec_data_caps(base, codec_buf);
 done:
 	self->priv.mpeg4.codec_data_done = TRUE;
 }

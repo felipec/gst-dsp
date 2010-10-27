@@ -1056,6 +1056,27 @@ gstdsp_send_codec_data(GstDspBase *self,
 	return TRUE;
 }
 
+gboolean
+gstdsp_set_codec_data_caps(GstDspBase *base,
+		GstBuffer *buf)
+{
+	GstCaps *caps = NULL;
+	GstStructure *structure;
+	GValue value = { .g_type = 0 };
+
+	caps = gst_pad_get_negotiated_caps(base->srcpad);
+	caps = gst_caps_make_writable(caps);
+	structure = gst_caps_get_structure(caps, 0);
+
+	g_value_init(&value, GST_TYPE_BUFFER);
+
+	gst_value_set_buffer(&value, buf);
+	gst_structure_set_value(structure, "codec_data", &value);
+	g_value_unset(&value);
+
+	return gst_pad_take_caps(base->srcpad, caps);
+}
+
 static GstFlowReturn
 pad_chain(GstPad *pad,
 	  GstBuffer *buf)
