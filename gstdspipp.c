@@ -1388,6 +1388,9 @@ static gboolean sink_setcaps(GstPad *pad, GstCaps *caps)
 	if (!gst_pad_take_caps(base->srcpad, out_caps))
 		return FALSE;
 
+	du_port_alloc_buffers(base->ports[0], 1);
+	du_port_alloc_buffers(base->ports[1], 1);
+
 	base->node = create_node(self);
 
 	if (!base->node) {
@@ -1543,8 +1546,6 @@ static void instance_init(GTypeInstance *instance, gpointer g_class)
 	base->send_buffer = send_buffer;
 	base->send_play_message = send_play_message;
 	base->send_stop_message = send_stop_message;
-	du_port_alloc_buffers(base->ports[0], 1);
-	du_port_alloc_buffers(base->ports[1], 1);
 	self->msg_sem = g_sem_new(1);
 
 	/* initialize params to normal strength */
