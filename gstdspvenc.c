@@ -112,10 +112,10 @@ struct jpegenc_args {
 
 #include "gstdspjpegenc.h"
 
-static inline void
-get_jpegenc_args(GstDspVEnc *self, unsigned *profile_id, void **arg_data)
+static void
+create_jpegenc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	struct jpegenc_args args = {
 		.size = sizeof(args) - 4,
@@ -180,10 +180,10 @@ struct mp4venc_args {
 	uint32_t h263_annex_t;
 };
 
-static inline void
-get_mp4venc_args(GstDspVEnc *self, unsigned *profile_id, void **arg_data)
+static void
+create_mp4venc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	struct mp4venc_args args = {
 		.size = sizeof(args) - 4,
@@ -279,10 +279,10 @@ struct h264venc_args {
 	uint32_t rc_algo;
 };
 
-static inline void
-get_h264venc_args(GstDspVEnc *self, unsigned *profile_id, void **arg_data)
+static void
+create_h264enc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
+	GstDspVEnc *self = GST_DSP_VENC(base);
 
 	struct h264venc_args args = {
 		.size = sizeof(args) - 4,
@@ -333,20 +333,10 @@ create_node(GstDspVEnc *self)
 	GstDspBase *base;
 	int dsp_handle;
 	struct dsp_node *node;
-	const struct dsp_uuid *alg_uuid;
-	const char *alg_fn;
+	struct td_codec *codec;
 
 	const struct dsp_uuid usn_uuid = { 0x79A3C8B3, 0x95F2, 0x403F, 0x9A, 0x4B,
 		{ 0xCF, 0x80, 0x57, 0x73, 0x05, 0x41 } };
-
-	const struct dsp_uuid jpeg_enc_uuid = { 0xcb70c0c1, 0x4c85, 0x11d6, 0xb1, 0x05,
-		{ 0x00, 0xc0, 0x4f, 0x32, 0x90, 0x31 } };
-
-	const struct dsp_uuid mp4v_enc_uuid = { 0x98c2e8d8, 0x4644, 0x11d6, 0x81, 0x18,
-		{ 0x00, 0xb0, 0xd0, 0x8d, 0x72, 0x9f } };
-
-	const struct dsp_uuid h264_enc_uuid = { 0x63A3581A, 0x09D7, 0x4AD0, 0x80, 0xB8,
-		{ 0x5F, 0x2C, 0x4D, 0x4D, 0x59, 0xC9 } };
 
 	const struct dsp_uuid conversions_uuid = { 0x722DD0DA, 0xF532, 0x4238, 0xB8, 0x46,
 		{ 0xAB, 0xFF, 0x5D, 0xA4, 0xBA, 0x02 } };
@@ -359,31 +349,18 @@ create_node(GstDspVEnc *self)
 		return NULL;
 	}
 
-	switch (base->alg) {
-	case GSTDSP_JPEGENC:
-		alg_uuid = &jpeg_enc_uuid;
-		alg_fn = "jpegenc_sn.dll64P";
-		break;
-	case GSTDSP_H263ENC:
-	case GSTDSP_MP4VENC:
-		alg_uuid = &mp4v_enc_uuid;
-		alg_fn = "m4venc_sn.dll64P";
-		break;
-	case GSTDSP_H264ENC:
-		alg_uuid = &h264_enc_uuid;
-		alg_fn = "h264venc_sn.dll64P";
-		break;
-	default:
+	codec = base->codec;
+	if (!codec) {
 		pr_err(self, "unknown algorithm");
 		return NULL;
 	}
 
-	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_LIBRARYTYPE, alg_fn)) {
+	if (!gstdsp_register(dsp_handle, codec->uuid, DSP_DCD_LIBRARYTYPE, codec->filename)) {
 		pr_err(self, "failed to register algo node library");
 		return NULL;
 	}
 
-	if (!gstdsp_register(dsp_handle, alg_uuid, DSP_DCD_NODETYPE, alg_fn)) {
+	if (!gstdsp_register(dsp_handle, codec->uuid, DSP_DCD_NODETYPE, codec->filename)) {
 		pr_err(self, "failed to register algo node");
 		return NULL;
 	}
@@ -402,22 +379,9 @@ create_node(GstDspVEnc *self)
 		};
 		void *arg_data;
 
-		switch (base->alg) {
-		case GSTDSP_JPEGENC:
-			get_jpegenc_args(self, &attrs.profile_id, &arg_data);
-			break;
-		case GSTDSP_H263ENC:
-		case GSTDSP_MP4VENC:
-			get_mp4venc_args(self, &attrs.profile_id, &arg_data);
-			break;
-		case GSTDSP_H264ENC:
-			get_h264venc_args(self, &attrs.profile_id, &arg_data);
-			break;
-		default:
-			arg_data = NULL;
-		}
+		codec->create_args(base, &attrs.profile_id, &arg_data);
 
-		if (!dsp_node_allocate(dsp_handle, base->proc, alg_uuid, arg_data, &attrs, &node)) {
+		if (!dsp_node_allocate(dsp_handle, base->proc, codec->uuid, arg_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
 			free(arg_data);
 			return NULL;
@@ -455,8 +419,8 @@ struct jpegenc_dyn_params {
 	uint32_t resize;
 };
 
-static inline void
-jpegenc_send_params(GstDspBase *base)
+static void
+send_jpegenc_params(GstDspBase *base, struct dsp_node *node)
 {
 	struct jpegenc_dyn_params *params;
 	dmm_buffer_t *b;
@@ -783,8 +747,8 @@ setup_h264params_in(GstDspBase *base, dmm_buffer_t *tmp)
 	}
 }
 
-static inline void
-setup_h264params(GstDspBase *base)
+static void
+setup_h264enc_params(GstDspBase *base)
 {
 	struct h264venc_in_stream_params *in_param;
 	struct h264venc_out_stream_params *out_param;
@@ -816,8 +780,8 @@ setup_jpegparams_in(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->size = sizeof(*in_param);
 }
 
-static inline void
-setup_jpegparams(GstDspBase *base)
+static void
+setup_jpegenc_params(GstDspBase *base)
 {
 	struct jpegenc_in_stream_params *in_param;
 	struct jpegenc_out_stream_params *out_param;
@@ -976,8 +940,8 @@ setup_mp4param_in(GstDspBase *base, dmm_buffer_t *tmp)
 	}
 }
 
-static inline void
-setup_mp4params(GstDspBase *base)
+static void
+setup_mp4venc_params(GstDspBase *base)
 {
 	struct mp4venc_in_stream_params *in_param;
 	struct mp4venc_out_stream_params *out_param;
@@ -991,6 +955,31 @@ setup_mp4params(GstDspBase *base)
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
 	p->recv_cb = mp4venc_out_recv_cb;
 }
+
+struct td_codec td_h264enc_codec = {
+       .uuid = &(const struct dsp_uuid) { 0x63A3581A, 0x09D7, 0x4AD0, 0x80, 0xB8,
+		{ 0x5F, 0x2C, 0x4D, 0x4D, 0x59, 0xC9 } },
+       .filename = "h264venc_sn.dll64P",
+       .setup_params = setup_h264enc_params,
+       .create_args = create_h264enc_args,
+};
+
+struct td_codec td_jpegenc_codec = {
+       .uuid = &(const struct dsp_uuid) { 0xcb70c0c1, 0x4c85, 0x11d6, 0xb1, 0x05,
+		{ 0x00, 0xc0, 0x4f, 0x32, 0x90, 0x31 } },
+       .filename = "jpegenc_sn.dll64P",
+       .setup_params = setup_jpegenc_params,
+       .create_args = create_jpegenc_args,
+       .send_params = send_jpegenc_params,
+};
+
+struct td_codec td_mp4venc_codec = {
+       .uuid = &(const struct dsp_uuid) { 0x98c2e8d8, 0x4644, 0x11d6, 0x81, 0x18,
+		{ 0x00, 0xb0, 0xd0, 0x8d, 0x72, 0x9f } },
+       .filename = "m4venc_sn.dll64P",
+       .setup_params = setup_mp4venc_params,
+       .create_args = create_mp4venc_args,
+};
 
 static void check_supported_levels(GstDspVEnc *self, gint tgt_level)
 {
@@ -1082,9 +1071,14 @@ sink_setcaps(GstPad *pad,
 	gint width = 0, height = 0;
 	GstCaps *allowed_caps;
 	gint tgt_level = -1;
+	struct td_codec *codec;
 
 	self = GST_DSP_VENC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
+	codec = base->codec;
+
+	if (!codec)
+		return FALSE;
 
 	{
 		gchar *str = gst_caps_to_string(caps);
@@ -1217,34 +1211,16 @@ sink_setcaps(GstPad *pad,
 		return FALSE;
 	}
 
-	/* setup stream params */
-	switch (base->alg) {
-	case GSTDSP_H263ENC:
-	case GSTDSP_MP4VENC:
-		setup_mp4params(base);
-		break;
-	case GSTDSP_H264ENC:
-		setup_h264params(base);
-		break;
-	case GSTDSP_JPEGENC:
-		setup_jpegparams(base);
-	default:
-		break;
-	}
+	if (codec->setup_params)
+		codec->setup_params(base);
 
 	if (!gstdsp_start(base)) {
 		pr_err(self, "dsp start failed");
 		return FALSE;
 	}
 
-	/* send dynamic params */
-	switch (base->alg) {
-	case GSTDSP_JPEGENC:
-		jpegenc_send_params(base);
-		break;
-	default:
-		break;
-	}
+	if (codec->send_params)
+		codec->send_params(base, base->node);
 
 	return TRUE;
 }

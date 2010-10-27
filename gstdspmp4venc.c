@@ -61,6 +61,7 @@ instance_init(GTypeInstance *instance,
 	GstDspVEnc *self = GST_DSP_VENC(instance);
 
 	base->alg = GSTDSP_MP4VENC;
+	base->codec = &td_mp4venc_codec;
 	self->supported_levels = levels;
 	self->nr_supported_levels = ARRAY_SIZE(levels);
 }

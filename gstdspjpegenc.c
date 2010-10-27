@@ -40,6 +40,7 @@ instance_init(GTypeInstance *instance,
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
 	base->alg = GSTDSP_JPEGENC;
+	base->codec = &td_jpegenc_codec;
 }
 
 static void

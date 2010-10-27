@@ -71,6 +71,7 @@ instance_init(GTypeInstance *instance,
 	GstDspBase *base = GST_DSP_BASE(instance);
 	GstDspVEnc *self = GST_DSP_VENC(instance);
 	base->alg = GSTDSP_H264ENC;
+	base->codec = &td_h264enc_codec;
 
 	self->priv.h264.bytestream = true;
 	self->supported_levels = levels;
