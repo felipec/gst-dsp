@@ -115,8 +115,6 @@ struct jpegenc_args {
 static void
 create_jpegenc_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 {
-	GstDspVEnc *self = GST_DSP_VENC(base);
-
 	struct jpegenc_args args = {
 		.size = sizeof(args) - 4,
 		.num_streams = 2,
