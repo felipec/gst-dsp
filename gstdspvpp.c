@@ -205,7 +205,7 @@ sink_setcaps(GstPad *pad,
 
 	in_struc = gst_caps_get_structure(caps, 0);
 
-	base->codec = NULL;
+	base->codec = &td_vpp_codec;
 
 	du_port_alloc_buffers(base->ports[0], 4);
 	du_port_alloc_buffers(base->ports[1], 4);

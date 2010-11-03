@@ -24,7 +24,8 @@ D = $(DESTDIR)
 
 tidsp.a: tidsp/td_mp4vdec.o tidsp/td_h264dec.o tidsp/td_wmvdec.o \
 	tidsp/td_jpegdec.o \
-	tidsp/td_mp4venc.o tidsp/td_jpegenc.o tidsp/td_h264enc.o
+	tidsp/td_mp4venc.o tidsp/td_jpegenc.o tidsp/td_h264enc.o \
+	tidsp/td_vpp.o
 tidsp.a: override CFLAGS += -fPIC -I.
 
 # plugin

@@ -163,6 +163,8 @@ extern struct td_codec td_mp4venc_codec;
 extern struct td_codec td_jpegenc_codec;
 extern struct td_codec td_h264enc_codec;
 
+extern struct td_codec td_vpp_codec;
+
 G_END_DECLS
 
 #endif /* GST_DSP_BASE_H */
