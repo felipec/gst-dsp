@@ -23,7 +23,7 @@
 static inline bool
 send_buffer(GstDspBase *self,
 	    dmm_buffer_t *buffer,
-	    unsigned int id);
+	    unsigned index);
 
 static inline void
 map_buffer(GstDspBase *self,
@@ -153,7 +153,7 @@ static inline void
 got_message(GstDspBase *self,
 	    struct dsp_msg *msg)
 {
-	uint32_t id;
+	int32_t id;
 	uint32_t command_id;
 
 	id = msg->cmd & 0x000000ff;
@@ -853,18 +853,18 @@ map_buffer(GstDspBase *self,
 static inline bool
 send_buffer(GstDspBase *self,
 	    dmm_buffer_t *buffer,
-	    unsigned int id)
+	    unsigned index)
 {
 	dsp_comm_t *msg_data;
 	dmm_buffer_t *tmp = NULL, *param = NULL;
 	du_port_t *port;
 	guint i;
 
-	pr_debug(self, "sending %s buffer", id == 0 ? "input" : "output");
+	pr_debug(self, "sending %s buffer", index == 0 ? "input" : "output");
 
 	buffer->len = buffer->size;
 
-	port = self->ports[id];
+	port = self->ports[index];
 
 	for (i = 0; i < port->num_buffers; i++) {
 		if (!port->comm[i]->used) {
@@ -892,8 +892,8 @@ send_buffer(GstDspBase *self,
 
 	msg_data->buffer_data = (uint32_t) buffer->map;
 	msg_data->buffer_size = buffer->size;
-	msg_data->stream_id = id;
-	msg_data->buffer_len = id == 0 ? buffer->len : 0;
+	msg_data->stream_id = index;
+	msg_data->buffer_len = index == 0 ? buffer->len : 0;
 
 	msg_data->user_data = (uint32_t) buffer;
 
@@ -906,7 +906,7 @@ send_buffer(GstDspBase *self,
 	dmm_buffer_begin(tmp, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
-			 0x0600 | id, (uint32_t) tmp->map, 0);
+			 0x0600 | index, (uint32_t) tmp->map, 0);
 
 	return true;
 }
