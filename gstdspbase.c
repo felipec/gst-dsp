@@ -31,13 +31,13 @@ map_buffer(GstDspBase *self,
 	   dmm_buffer_t *d_buf);
 
 du_port_t *
-du_port_new(guint index,
+du_port_new(int id,
 	    int dir)
 {
 	du_port_t *p;
 	p = calloc(1, sizeof(*p));
 
-	p->index = index;
+	p->id = id;
 	p->queue = async_queue_new();
 	p->dir = dir;
 
@@ -163,11 +163,20 @@ got_message(GstDspBase *self,
 	case 0x0600:
 		{
 			dmm_buffer_t *b;
-			du_port_t *p = self->ports[id];
+			du_port_t *p;
 			dmm_buffer_t *cur = NULL;
 			dsp_comm_t *msg_data;
 			dmm_buffer_t *param;
 			unsigned i;
+
+			for (i = 0; i < ARRAY_SIZE(self->ports); i++)
+				if (self->ports[i]->id == id) {
+					p = self->ports[i];
+					break;
+				}
+
+			if (i >= ARRAY_SIZE(self->ports))
+				g_error("bad port index: %i", id);
 
 			pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 
@@ -892,7 +901,7 @@ send_buffer(GstDspBase *self,
 
 	msg_data->buffer_data = (uint32_t) buffer->map;
 	msg_data->buffer_size = buffer->size;
-	msg_data->stream_id = index;
+	msg_data->stream_id = port->id;
 	msg_data->buffer_len = index == 0 ? buffer->len : 0;
 
 	msg_data->user_data = (uint32_t) buffer;
@@ -906,7 +915,7 @@ send_buffer(GstDspBase *self,
 	dmm_buffer_begin(tmp, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
-			 0x0600 | index, (uint32_t) tmp->map, 0);
+			 0x0600 | port->id, (uint32_t) tmp->map, 0);
 
 	return true;
 }

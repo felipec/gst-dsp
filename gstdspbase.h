@@ -37,7 +37,7 @@ typedef void (*port_buffer_cb_t) (GstDspBase *base,
 				  dmm_buffer_t *b);
 
 struct du_port_t {
-	guint index;
+	int id;
 	dmm_buffer_t **buffers;
 	dmm_buffer_t **comm; /**< arm-dsp communication structure */
 	dmm_buffer_t **params;
@@ -114,7 +114,7 @@ struct _GstDspBaseClass {
 
 GType gst_dsp_base_get_type(void);
 
-du_port_t *du_port_new(guint index, int dir);
+du_port_t *du_port_new(int id, int dir);
 void du_port_free(du_port_t *p);
 void du_port_alloc_buffers(du_port_t *p, guint num_buffers);
 
