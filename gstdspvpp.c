@@ -154,6 +154,7 @@ configure_caps(GstDspVpp *self,
 	GstStructure *out_struc, *in_struc;
 	const GValue *aspect_ratio;
 	const GValue *framerate;
+	GstCaps *allowed_caps;
 
 	base = GST_DSP_BASE(self);
 
@@ -167,6 +168,17 @@ configure_caps(GstDspVpp *self,
 		self->out_width = self->width;
 	if (gst_structure_get_int(in_struc, "height", &self->height))
 		self->out_height = self->height;
+
+	allowed_caps = gst_pad_get_allowed_caps(base->srcpad);
+	if (allowed_caps) {
+		if (gst_caps_get_size(allowed_caps) > 0) {
+			GstStructure *s;
+			s = gst_caps_get_structure(allowed_caps, 0);
+			gst_structure_get_int(s, "width", &self->out_width);
+			gst_structure_get_int(s, "height", &self->out_height);
+		}
+		gst_caps_unref(allowed_caps);
+	}
 
 	gst_structure_set(out_struc, "width", G_TYPE_INT, self->out_width, NULL);
 	gst_structure_set(out_struc, "height", G_TYPE_INT, self->out_height, NULL);
