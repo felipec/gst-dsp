@@ -19,12 +19,12 @@ G_BEGIN_DECLS
 #define GST_DSP_DUMMY_TYPE (gst_dsp_dummy_get_type())
 #define GST_DSP_DUMMY_CLASS(obj) (GstDspDummyClass *) (obj)
 
-typedef struct GstDspDummy GstDspDummy;
-typedef struct GstDspDummyClass GstDspDummyClass;
+typedef struct _GstDspDummy GstDspDummy;
+typedef struct _GstDspDummyClass GstDspDummyClass;
 
 #include "dmm_buffer.h"
 
-struct GstDspDummy {
+struct _GstDspDummy {
 	GstElement element;
 
 	GstPad *sinkpad, *srcpad;
@@ -38,7 +38,7 @@ struct GstDspDummy {
 	unsigned dsp_error;
 };
 
-struct GstDspDummyClass {
+struct _GstDspDummyClass {
 	GstElementClass parent_class;
 };
 

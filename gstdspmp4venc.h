@@ -19,16 +19,16 @@ G_BEGIN_DECLS
 #define GST_DSP_MP4VENC_TYPE (gst_dsp_mp4venc_get_type())
 #define GST_DSP_MP4VENC_CLASS(obj) (GstDspMp4VEncClass *)(obj)
 
-typedef struct GstDspMp4VEnc GstDspMp4VEnc;
-typedef struct GstDspMp4VEncClass GstDspMp4VEncClass;
+typedef struct _GstDspMp4VEnc GstDspMp4VEnc;
+typedef struct _GstDspMp4VEncClass GstDspMp4VEncClass;
 
 #include "gstdspvenc.h"
 
-struct GstDspMp4VEnc {
+struct _GstDspMp4VEnc {
 	GstDspVEnc element;
 };
 
-struct GstDspMp4VEncClass {
+struct _GstDspMp4VEncClass {
 	GstDspVEncClass parent_class;
 };
 

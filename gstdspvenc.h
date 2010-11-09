@@ -19,8 +19,8 @@ G_BEGIN_DECLS
 #define GST_DSP_VENC_TYPE (gst_dsp_venc_get_type())
 #define GST_DSP_VENC_CLASS(obj) (GstDspVEncClass *)(obj)
 
-typedef struct GstDspVEnc GstDspVEnc;
-typedef struct GstDspVEncClass GstDspVEncClass;
+typedef struct _GstDspVEnc GstDspVEnc;
+typedef struct _GstDspVEncClass GstDspVEncClass;
 
 #include "gstdspbase.h"
 
@@ -49,7 +49,7 @@ enum {
 	GSTDSP_H264ENC,
 };
 
-struct GstDspVEnc {
+struct _GstDspVEnc {
 	GstDspBase element;
 	gint width, height;
 	guint32 color_format;
@@ -71,7 +71,7 @@ struct GstDspVEnc {
 	gint level;
 };
 
-struct GstDspVEncClass {
+struct _GstDspVEncClass {
 	GstDspBaseClass parent_class;
 };
 

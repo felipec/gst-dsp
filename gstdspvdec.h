@@ -19,8 +19,8 @@ G_BEGIN_DECLS
 #define GST_DSP_VDEC_TYPE (gst_dsp_vdec_get_type())
 #define GST_DSP_VDEC_CLASS(obj) (GstDspVDecClass *)(obj)
 
-typedef struct GstDspVDec GstDspVDec;
-typedef struct GstDspVDecClass GstDspVDecClass;
+typedef struct _GstDspVDec GstDspVDec;
+typedef struct _GstDspVDecClass GstDspVDecClass;
 
 #include "gstdspbase.h"
 
@@ -38,7 +38,7 @@ union vdec_priv_data {
 	} h264;
 };
 
-struct GstDspVDec {
+struct _GstDspVDec {
 	GstDspBase element;
 	gint width, height;
 	gint crop_width, crop_height;
@@ -52,7 +52,7 @@ struct GstDspVDec {
 	union vdec_priv_data priv;
 };
 
-struct GstDspVDecClass {
+struct _GstDspVDecClass {
 	GstDspBaseClass parent_class;
 };
 

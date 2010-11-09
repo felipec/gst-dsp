@@ -22,8 +22,8 @@ G_BEGIN_DECLS
 
 /* #define TS_COUNT */
 
-typedef struct GstDspBase GstDspBase;
-typedef struct GstDspBaseClass GstDspBaseClass;
+typedef struct _GstDspBase GstDspBase;
+typedef struct _GstDspBaseClass GstDspBaseClass;
 
 typedef struct du_port_t du_port_t;
 
@@ -58,7 +58,7 @@ struct td_codec {
 	void (*send_params)(GstDspBase *base, struct dsp_node *node);
 };
 
-struct GstDspBase {
+struct _GstDspBase {
 	GstElement element;
 
 	GstPad *sinkpad, *srcpad;
@@ -100,7 +100,7 @@ struct GstDspBase {
 	guint skip_hack_2; /* don't process x number of buffers */
 };
 
-struct GstDspBaseClass {
+struct _GstDspBaseClass {
 	GstElementClass parent_class;
 
 	gboolean (*sink_event)(GstDspBase *base, GstEvent *event);

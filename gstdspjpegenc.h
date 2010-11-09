@@ -19,19 +19,19 @@ G_BEGIN_DECLS
 #define GST_DSP_JPEGENC_TYPE (gst_dsp_jpegenc_get_type())
 #define GST_DSP_JPEGENC_CLASS(obj) (GstDspJpegEncClass *)(obj)
 
-typedef struct GstDspJpegEnc GstDspJpegEnc;
-typedef struct GstDspJpegEncClass GstDspJpegEncClass;
+typedef struct _GstDspJpegEnc GstDspJpegEnc;
+typedef struct _GstDspJpegEncClass GstDspJpegEncClass;
 
 #include "gstdspvenc.h"
 
 #define JPEGENC_MAX_WIDTH 4096
 #define JPEGENC_MAX_HEIGHT 4096
 
-struct GstDspJpegEnc {
+struct _GstDspJpegEnc {
 	GstDspVEnc element;
 };
 
-struct GstDspJpegEncClass {
+struct _GstDspJpegEncClass {
 	GstDspVEncClass parent_class;
 };
 

@@ -19,16 +19,16 @@ G_BEGIN_DECLS
 #define GST_DSP_H263ENC_TYPE (gst_dsp_h263enc_get_type())
 #define GST_DSP_H263ENC_CLASS(obj) (GstDspH263EncClass *)(obj)
 
-typedef struct GstDspH263Enc GstDspH263Enc;
-typedef struct GstDspH263EncClass GstDspH263EncClass;
+typedef struct _GstDspH263Enc GstDspH263Enc;
+typedef struct _GstDspH263EncClass GstDspH263EncClass;
 
 #include "gstdspvenc.h"
 
-struct GstDspH263Enc {
+struct _GstDspH263Enc {
 	GstDspVEnc element;
 };
 
-struct GstDspH263EncClass {
+struct _GstDspH263EncClass {
 	GstDspVEncClass parent_class;
 };
 

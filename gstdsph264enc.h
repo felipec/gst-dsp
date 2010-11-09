@@ -22,16 +22,16 @@ G_BEGIN_DECLS
 #define GST_DSP_H264ENC_TYPE (gst_dsp_h264enc_get_type())
 #define GST_DSP_H264ENC_CLASS(obj) (GstDspH264EncClass *)(obj)
 
-typedef struct GstDspH264Enc GstDspH264Enc;
-typedef struct GstDspH264EncClass GstDspH264EncClass;
+typedef struct _GstDspH264Enc GstDspH264Enc;
+typedef struct _GstDspH264EncClass GstDspH264EncClass;
 
 #include "gstdspvenc.h"
 
-struct GstDspH264Enc {
+struct _GstDspH264Enc {
 	GstDspVEnc element;
 };
 
-struct GstDspH264EncClass {
+struct _GstDspH264EncClass {
 	GstDspVEncClass parent_class;
 };
 
