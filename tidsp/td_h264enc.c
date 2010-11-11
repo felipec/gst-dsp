@@ -189,7 +189,7 @@ static void in_send_cb(GstDspBase *base,
 	g_mutex_unlock(self->keyframe_mutex);
 
 	/* hack to manually force keyframes */
-	if (!(self->mode == 1 && self->intra_refresh)) {
+	if (!self->intra_refresh) {
 		param->force_i_frame |= self->force_i_frame_counter >=
 			self->keyframe_interval * self->framerate;
 		if (param->force_i_frame)
@@ -350,11 +350,11 @@ static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->max_mv_per_mb = 4;
 	in_param->intra_4x4_enable_idc = 2;
 
-	if (self->mode == 1 && self->intra_refresh) {
-		unsigned pixels;
-
-		/* Max delay in CBR, unit is is 1/30th of a second */
+	if (self->mode == 1)
 		in_param->intra_frame_interval = 0;
+
+	if (self->intra_refresh) {
+		unsigned pixels;
 
 		/* For refreshing all the macroblocks in 3 sec */
 		in_param->air_mb_period = self->framerate * 3;
