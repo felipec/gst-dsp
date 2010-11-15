@@ -55,7 +55,7 @@ GstPluginDesc gst_plugin_desc = {
 	.plugin_init = plugin_init,
 	.version = VERSION,
 	.license = "LGPL",
-	.source = "none",
+	.source = "gst-dsp",
 	.package = "none",
 	.origin = "none",
 };
