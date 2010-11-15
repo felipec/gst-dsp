@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
+[
+  <!ENTITY % local.common.attrib "xmlns:xi  CDATA  #FIXED 'http://www.w3.org/2003/XInclude'">
+]>
+<book id="index">
+  <bookinfo>
+    <title>gst-dsp Reference Manual</title>
+  </bookinfo>
+
+  <chapter id="elements">
+    <title>Elements</title>
+    <xi:include href="xml/element-dspvdec.xml"/>
+    <xi:include href="xml/element-dsph263enc.xml"/>
+    <xi:include href="xml/element-dsph264enc.xml"/>
+    <xi:include href="xml/element-dspjpegenc.xml"/>
+    <xi:include href="xml/element-dspmp4venc.xml"/>
+    <xi:include href="xml/element-dspdummy.xml"/>
+  </chapter>
+
+  <chapter id="base">
+    <title>Base</title>
+    <xi:include href="xml/gstdspbase.xml"/>
+    <xi:include href="xml/gstdspvenc.xml"/>
+  </chapter>
+
+  <chapter id="object-tree">
+    <title>Object Hierarchy</title>
+    <xi:include href="xml/tree_index.sgml"/>
+  </chapter>
+
+  <index id="api-index-full">
+    <title>API Index</title>
+    <xi:include href="xml/api-index-full.xml"/>
+  </index>
+
+</book>

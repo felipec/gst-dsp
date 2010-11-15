@@ -41,6 +41,12 @@ $(gst_plugin): override LIBS += $(GST_LIBS)
 
 targets += $(gst_plugin)
 
+doc: $(gst_plugin)
+	$(MAKE) -C doc
+
+doc-install: doc
+	$(MAKE) -C doc install
+
 all: $(targets)
 
 # pretty print
@@ -49,6 +55,8 @@ QUIET_CC    = @echo '   CC         '$@;
 QUIET_LINK  = @echo '   LINK       '$@;
 QUIET_CLEAN = @echo '   CLEAN      '$@;
 endif
+
+.PHONY: doc doc-install
 
 install: $(targets)
 	install -m 755 -D libgstdsp.so $(D)$(prefix)/lib/gstreamer-0.10/libgstdsp.so
