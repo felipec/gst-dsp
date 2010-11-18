@@ -1491,6 +1491,8 @@ static gboolean sink_event(GstDspBase *base, GstEvent *event)
 		if (gst_structure_get_int(structure, "ratio-downsample-cb-cr", &tmp))
 			param->ratio_downsample_cb_cr = tmp;
 
+		gst_event_unref(event);
+
 		return true;
 	}
 	default:
