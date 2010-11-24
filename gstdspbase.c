@@ -212,7 +212,7 @@ got_message(GstDspBase *self,
 		}
 
 		tb->comm->used = FALSE;
-		async_queue_push(p->queue, b);
+		async_queue_push(p->queue, tb);
 		break;
 	}
 	case 0x0500:
@@ -262,7 +262,7 @@ setup_buffers(GstDspBase *self)
 	for (i = 0; i < p->num_buffers; i++) {
 		p->buffers[i].data = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
 		b->alignment = 0;
-		async_queue_push(p->queue, b);
+		async_queue_push(p->queue, &p->buffers[i]);
 	}
 
 	p = self->ports[1];
@@ -341,28 +341,31 @@ output_loop(gpointer data)
 	gboolean keyframe = FALSE;
 	GstEvent *event;
 	du_port_t *p;
+	struct td_buffer *tb;
 
 	pad = data;
 	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
 	p = self->ports[1];
 
 	pr_debug(self, "begin");
-	b = async_queue_pop(p->queue);
+	tb = async_queue_pop(p->queue);
 
 	/*
-	 * queue might have been disabled above, so perhaps b == NULL,
+	 * queue might have been disabled above, so perhaps tb == NULL,
 	 * but then right here in between self->status may have been set to
 	 * OK by e.g. FLUSH_STOP
 	 */
-	if (G_UNLIKELY(!b)) {
+	if (G_UNLIKELY(!tb)) {
 		pr_info(self, "no buffer");
 		ret = check_status(self);
 		goto nok;
 	}
 
+	b = tb->data;
+
 	ret = check_status(self);
 	if (G_UNLIKELY(ret != GST_FLOW_OK)) {
-		async_queue_push(p->queue, b);
+		async_queue_push(p->queue, tb);
 		goto end;
 	}
 
@@ -429,7 +432,7 @@ output_loop(gpointer data)
 
 		if (G_UNLIKELY(ret != GST_FLOW_OK)) {
 			pr_info(self, "couldn't allocate buffer: %s", gst_flow_get_name(ret));
-			async_queue_push(p->queue, b);
+			async_queue_push(p->queue, tb);
 			goto nok;
 		}
 
@@ -506,7 +509,7 @@ leave:
 			send_buffer(self, b, 1);
 		else
 			/* we'll need to allocate on the next run */
-			async_queue_push(p->queue, b);
+			async_queue_push(p->queue, tb);
 	}
 	else {
 		if (!b->data)
@@ -525,12 +528,12 @@ end:
 void
 gstdsp_base_flush_buffer(GstDspBase *self)
 {
-	dmm_buffer_t *b;
-	b = async_queue_pop(self->ports[0]->queue);
-	if (!b)
+	struct td_buffer *tb;
+	tb = async_queue_pop(self->ports[0]->queue);
+	if (!tb)
 		return;
-	dmm_buffer_allocate(b, 1);
-	send_buffer(self, b, 0);
+	dmm_buffer_allocate(tb->data, 1);
+	send_buffer(self, tb->data, 0);
 }
 
 void
@@ -1057,7 +1060,7 @@ gboolean
 gstdsp_send_codec_data(GstDspBase *self,
 		       GstBuffer *buf)
 {
-	dmm_buffer_t *b;
+	struct td_buffer *tb;
 
 	if (G_UNLIKELY(!self->node)) {
 		if (!init_node(self, buf)) {
@@ -1072,14 +1075,14 @@ gstdsp_send_codec_data(GstDspBase *self,
 	 * Since the port's async_queue might be disabled/flushing,
 	 * we forcibly pop a buffer here.
 	 */
-	b = async_queue_pop_forced(self->ports[0]->queue);
+	tb = async_queue_pop_forced(self->ports[0]->queue);
 	/* there should always be one available, as we are just starting */
-	g_assert(b);
+	g_assert(tb);
 
-	dmm_buffer_allocate(b, GST_BUFFER_SIZE(buf));
-	memcpy(b->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
+	dmm_buffer_allocate(tb->data, GST_BUFFER_SIZE(buf));
+	memcpy(tb->data->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 
-	send_buffer(self, b, 0);
+	send_buffer(self, tb->data, 0);
 
 	return TRUE;
 }
@@ -1113,6 +1116,7 @@ pad_chain(GstPad *pad,
 	dmm_buffer_t *b;
 	GstFlowReturn ret = GST_FLOW_OK;
 	du_port_t *p;
+	struct td_buffer *tb;
 
 	self = GST_DSP_BASE(GST_OBJECT_PARENT(pad));
 	p = self->ports[0];
@@ -1127,15 +1131,17 @@ pad_chain(GstPad *pad,
 		}
 	}
 
-	b = async_queue_pop(p->queue);
+	tb = async_queue_pop(p->queue);
 
 	ret = g_atomic_int_get(&self->status);
 	if (ret != GST_FLOW_OK) {
 		pr_info(self, "status: %s", gst_flow_get_name(self->status));
-		if (b)
-			async_queue_push(p->queue, b);
+		if (tb)
+			async_queue_push(p->queue, tb);
 		goto leave;
 	}
+
+	b = tb->data;
 
 	if (GST_BUFFER_SIZE(buf) >= self->input_buffer_size)
 		map_buffer(self, buf, b);
