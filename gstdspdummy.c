@@ -324,7 +324,6 @@ map_buffer(GstDspDummy *self,
 	if (d_buf->alignment == 0 || buffer_is_aligned(g_buf, d_buf)) {
 		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
 		gst_buffer_ref(g_buf);
-		d_buf->user_data = g_buf;
 		return;
 	}
 

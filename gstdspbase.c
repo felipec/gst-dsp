@@ -25,7 +25,7 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb);
 static inline void
 map_buffer(GstDspBase *self,
 	   GstBuffer *g_buf,
-	   dmm_buffer_t *d_buf);
+	   struct td_buffer *tb);
 
 du_port_t *
 du_port_new(int id,
@@ -74,8 +74,8 @@ du_port_flush(du_port_t *p)
 		tb->comm->used = FALSE;
 		if (!b)
 			continue;
-		if (b->user_data)
-			gst_buffer_unref(b->user_data);
+		if (tb->user_data)
+			gst_buffer_unref(tb->user_data);
 		dmm_buffer_free(b);
 		tb->data = NULL;
 	}
@@ -202,9 +202,9 @@ got_message(GstDspBase *self,
 			p->recv_cb(self, tb);
 
 		if (id == 0) {
-			if (b->user_data) {
-				gst_buffer_unref(b->user_data);
-				b->user_data = NULL;
+			if (tb->user_data) {
+				gst_buffer_unref(tb->user_data);
+				tb->user_data = NULL;
 			}
 		}
 
@@ -279,7 +279,7 @@ setup_buffers(GstDspBase *self)
 				dmm_buffer_allocate(b, self->output_buffer_size);
 				b->need_copy = true;
 			} else {
-				map_buffer(self, buf, b);
+				map_buffer(self, buf, &p->buffers[i]);
 				gst_buffer_unref(buf);
 			}
 		}
@@ -433,10 +433,10 @@ output_loop(gpointer data)
 			goto nok;
 		}
 
-		if (b->user_data) {
-			out_buf = b->user_data;
-			b->user_data = NULL;
-			map_buffer(self, new_buf, b);
+		if (tb->user_data) {
+			out_buf = tb->user_data;
+			tb->user_data = NULL;
+			map_buffer(self, new_buf, tb);
 			gst_buffer_unref(new_buf);
 		}
 		else
@@ -855,12 +855,14 @@ buffer_is_aligned(GstBuffer *buf, dmm_buffer_t *b)
 static inline void
 map_buffer(GstDspBase *self,
 	   GstBuffer *g_buf,
-	   dmm_buffer_t *d_buf)
+	   struct td_buffer *tb)
 {
+	dmm_buffer_t *d_buf = tb->data;
+
 	if (d_buf->alignment == 0 || buffer_is_aligned(g_buf, d_buf)) {
 		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
 		gst_buffer_ref(g_buf);
-		d_buf->user_data = g_buf;
+		tb->user_data = g_buf;
 		return;
 	}
 
@@ -1124,7 +1126,7 @@ pad_chain(GstPad *pad,
 	b = tb->data;
 
 	if (GST_BUFFER_SIZE(buf) >= self->input_buffer_size)
-		map_buffer(self, buf, b);
+		map_buffer(self, buf, tb);
 	else {
 		dmm_buffer_allocate(b, self->input_buffer_size);
 		b->need_copy = true;

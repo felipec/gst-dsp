@@ -153,12 +153,13 @@ fail:
 	return NULL;
 }
 
-static void transform_nal_encoding(GstDspVDec *self, dmm_buffer_t *b)
+static void transform_nal_encoding(GstDspVDec *self, struct td_buffer *tb)
 {
 	guint8 *data;
 	gint size;
 	gint lol;
 	guint val, nal;
+	dmm_buffer_t *b = tb->data;
 
 	data = b->data;
 	size = b->size;
@@ -216,9 +217,9 @@ static void transform_nal_encoding(GstDspVDec *self, dmm_buffer_t *b)
 			size -= lol + val;
 		}
 		/* now release original data */
-		if (b->user_data) {
-			gst_buffer_unref(b->user_data);
-			b->user_data = NULL;
+		if (tb->user_data) {
+			gst_buffer_unref(tb->user_data);
+			tb->user_data = NULL;
 		}
 		free(alloc_data);
 	}
@@ -267,7 +268,7 @@ static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 	if (G_LIKELY(vdec->priv.h264.lol)) {
 		pr_debug(base, "transforming H264 buffer data");
 		/* intercept and transform into dsp expected format */
-		transform_nal_encoding(vdec, tb->data);
+		transform_nal_encoding(vdec, tb);
 	} else {
 		/* no more need for callback */
 		tb->port->send_cb = NULL;

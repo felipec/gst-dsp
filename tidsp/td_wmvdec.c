@@ -137,10 +137,11 @@ static inline void send_rcv_buffer(GstDspBase *base, GstBuffer *buf)
 	gst_buffer_unref(rcv_buf);
 }
 
-static inline void prefix_vc1(GstDspVDec *self, dmm_buffer_t *b)
+static inline void prefix_vc1(GstDspVDec *self, struct td_buffer *tb)
 {
 	guint8 *input_data, *output_data, *alloc_data;
 	gint input_size, output_size;
+	dmm_buffer_t *b = tb->data;
 
 	input_data = b->data;
 	input_size = b->size;
@@ -180,9 +181,9 @@ static inline void prefix_vc1(GstDspVDec *self, dmm_buffer_t *b)
 	b->len = output_size;
 
 	/* release original data */
-	if (b->user_data) {
-		gst_buffer_unref(b->user_data);
-		b->user_data = NULL;
+	if (tb->user_data) {
+		gst_buffer_unref(tb->user_data);
+		tb->user_data = NULL;
 	}
 	g_free(alloc_data);
 	return;
@@ -195,7 +196,7 @@ static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 	param = tb->params->data;
 
 	if (self->wmv_is_vc1)
-		prefix_vc1(self, tb->data);
+		prefix_vc1(self, tb);
 
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 }

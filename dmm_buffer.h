@@ -40,7 +40,6 @@ typedef struct {
 	void *map;
 	bool need_copy;
 	size_t alignment;
-	void *user_data;
 	bool used;
 	bool keyframe;
 	int dir;
