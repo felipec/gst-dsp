@@ -877,7 +877,6 @@ map_buffer(GstDspBase *self,
 static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 {
 	dsp_comm_t *msg_data;
-	dmm_buffer_t *tmp = NULL, *param = NULL;
 	du_port_t *port;
 	int index = tb->port->id;
 	dmm_buffer_t *buffer = tb->data;
@@ -888,17 +887,14 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 
 	port = self->ports[index];
 
-	tmp = tb->comm;
-	param = tb->params;
-	tmp->used = TRUE;
-
-	msg_data = tmp->data;
+	tb->comm->used = TRUE;
+	msg_data = tb->comm->data;
 
 	if (port->send_cb)
 		port->send_cb(self, tb);
 
-	if (param)
-		dmm_buffer_begin(param, param->size);
+	if (tb->params)
+		dmm_buffer_begin(tb->params, tb->params->size);
 
 	dmm_buffer_map(buffer);
 
@@ -911,16 +907,16 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 
 	msg_data->user_data = (uint32_t) buffer;
 
-	if (param) {
-		msg_data->param_data = (uint32_t) param->map;
-		msg_data->param_size = param->size;
-		msg_data->param_virt = (uint32_t) param;
+	if (tb->params) {
+		msg_data->param_data = (uint32_t) tb->params->map;
+		msg_data->param_size = tb->params->size;
+		msg_data->param_virt = (uint32_t) tb->params;
 	}
 
-	dmm_buffer_begin(tmp, sizeof(*msg_data));
+	dmm_buffer_begin(tb->comm, sizeof(*msg_data));
 
 	dsp_send_message(self->dsp_handle, self->node,
-			 0x0600 | port->id, (uint32_t) tmp->map, 0);
+			 0x0600 | port->id, (uint32_t) tb->comm->map, 0);
 
 	return true;
 }
