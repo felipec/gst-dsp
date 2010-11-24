@@ -160,65 +160,64 @@ got_message(GstDspBase *self,
 	command_id = msg->cmd & 0xffffff00;
 
 	switch (command_id) {
-	case 0x0600:
-		{
-			dmm_buffer_t *b;
-			du_port_t *p;
-			dmm_buffer_t *cur = NULL;
-			dsp_comm_t *msg_data;
-			dmm_buffer_t *param;
-			unsigned i;
+	case 0x0600: {
+		dmm_buffer_t *b;
+		du_port_t *p;
+		dmm_buffer_t *cur = NULL;
+		dsp_comm_t *msg_data;
+		dmm_buffer_t *param;
+		unsigned i;
 
-			for (i = 0; i < ARRAY_SIZE(self->ports); i++)
-				if (self->ports[i]->id == id) {
-					p = self->ports[i];
-					break;
-				}
-
-			if (i >= ARRAY_SIZE(self->ports))
-				g_error("bad port index: %i", id);
-
-			pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
-
-			for (i = 0; i < p->num_buffers; i++) {
-				if (msg->arg_1 == (uint32_t) p->comm[i]->map) {
-					cur = p->comm[i];
-					break;
-				}
+		for (i = 0; i < ARRAY_SIZE(self->ports); i++)
+			if (self->ports[i]->id == id) {
+				p = self->ports[i];
+				break;
 			}
 
-			if (!cur)
-				g_error("buffer mismatch");
+		if (i >= ARRAY_SIZE(self->ports))
+			g_error("bad port index: %i", id);
 
-			dmm_buffer_end(cur, cur->size);
+		pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 
-			msg_data = cur->data;
-			b = (void *) msg_data->user_data;
-			b->len = msg_data->buffer_len;
-
-			if (G_UNLIKELY(b->len > b->size))
-				g_error("wrong buffer size");
-
-			dmm_buffer_unmap(b);
-
-			param = (void *) msg_data->param_virt;
-			if (param)
-				dmm_buffer_end(param, param->size);
-
-			if (p->recv_cb)
-				p->recv_cb(self, p, param, b);
-
-			if (id == 0) {
-				if (b->user_data) {
-					gst_buffer_unref(b->user_data);
-					b->user_data = NULL;
-				}
+		for (i = 0; i < p->num_buffers; i++) {
+			if (msg->arg_1 == (uint32_t) p->comm[i]->map) {
+				cur = p->comm[i];
+				break;
 			}
-
-			cur->used = FALSE;
-			async_queue_push(p->queue, b);
 		}
+
+		if (!cur)
+			g_error("buffer mismatch");
+
+		dmm_buffer_end(cur, cur->size);
+
+		msg_data = cur->data;
+		b = (void *) msg_data->user_data;
+		b->len = msg_data->buffer_len;
+
+		if (G_UNLIKELY(b->len > b->size))
+			g_error("wrong buffer size");
+
+		dmm_buffer_unmap(b);
+
+		param = (void *) msg_data->param_virt;
+		if (param)
+			dmm_buffer_end(param, param->size);
+
+		if (p->recv_cb)
+			p->recv_cb(self, p, param, b);
+
+		if (id == 0) {
+			if (b->user_data) {
+				gst_buffer_unref(b->user_data);
+				b->user_data = NULL;
+			}
+		}
+
+		cur->used = FALSE;
+		async_queue_push(p->queue, b);
 		break;
+	}
 	case 0x0500:
 		pr_debug(self, "got flush");
 		break;
