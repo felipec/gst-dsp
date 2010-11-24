@@ -1423,7 +1423,7 @@ static gboolean sink_event(GstDspBase *base, GstEvent *event)
 
 	switch (GST_EVENT_TYPE(event)) {
 	case GST_EVENT_CUSTOM_DOWNSTREAM: {
-		int tmp;
+		unsigned tmp;
 		struct ipp_eenf_params *param = &self->eenf_params;
 
 		if (!gst_structure_has_name(structure, "application/x-gst-ipp"))
@@ -1431,64 +1431,64 @@ static gboolean sink_event(GstDspBase *base, GstEvent *event)
 
 		pr_info(self, "custom eenf params received");
 
-		if (gst_structure_get_int(structure, "edge-enhancement-strength", &tmp))
+		if (gst_structure_get_uint(structure, "edge-enhancement-strength", &tmp))
 			param->edge_enhancement_strength = tmp;
 
-		if (gst_structure_get_int(structure, "weak-edge-threshold", &tmp))
+		if (gst_structure_get_uint(structure, "weak-edge-threshold", &tmp))
 			param->weak_edge_threshold = tmp;
 
-		if (gst_structure_get_int(structure, "strong-edge-threshold", &tmp))
+		if (gst_structure_get_uint(structure, "strong-edge-threshold", &tmp))
 			param->strong_edge_threshold = tmp;
 
-		if (gst_structure_get_int(structure, "luma-noise-filter-strength-low", &tmp))
+		if (gst_structure_get_uint(structure, "luma-noise-filter-strength-low", &tmp))
 			param->low_freq_luma_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "luma-noise-filter-strength-mid", &tmp))
+		if (gst_structure_get_uint(structure, "luma-noise-filter-strength-mid", &tmp))
 			param->mid_freq_luma_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "luma-noise-filter-strength-high", &tmp))
+		if (gst_structure_get_uint(structure, "luma-noise-filter-strength-high", &tmp))
 			param->high_freq_luma_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "cb-noise-filter-strength-low", &tmp))
+		if (gst_structure_get_uint(structure, "cb-noise-filter-strength-low", &tmp))
 			param->low_freq_cb_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "cb-noise-filter-strength-mid", &tmp))
+		if (gst_structure_get_uint(structure, "cb-noise-filter-strength-mid", &tmp))
 			param->mid_freq_cb_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "cb-noise-filter-strength-high", &tmp))
+		if (gst_structure_get_uint(structure, "cb-noise-filter-strength-high", &tmp))
 			param->high_freq_cb_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "cr-noise-filter-strength-low", &tmp))
+		if (gst_structure_get_uint(structure, "cr-noise-filter-strength-low", &tmp))
 			param->low_freq_cr_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "cr-noise-filter-strength-mid", &tmp))
+		if (gst_structure_get_uint(structure, "cr-noise-filter-strength-mid", &tmp))
 			param->mid_freq_cr_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "cr-noise-filter-strength-high", &tmp))
+		if (gst_structure_get_uint(structure, "cr-noise-filter-strength-high", &tmp))
 			param->high_freq_cr_noise_filter_strength = tmp;
 
-		if (gst_structure_get_int(structure, "shading-vert-param1", &tmp))
+		if (gst_structure_get_uint(structure, "shading-vert-param1", &tmp))
 			param->shading_vert_param_1 = tmp;
 
-		if (gst_structure_get_int(structure, "shading-vert-param2", &tmp))
+		if (gst_structure_get_uint(structure, "shading-vert-param2", &tmp))
 			param->shading_vert_param_2 = tmp;
 
-		if (gst_structure_get_int(structure, "shading-horz-param1", &tmp))
+		if (gst_structure_get_uint(structure, "shading-horz-param1", &tmp))
 			param->shading_horz_param_1 = tmp;
 
-		if (gst_structure_get_int(structure, "shading-horz-param2", &tmp))
+		if (gst_structure_get_uint(structure, "shading-horz-param2", &tmp))
 			param->shading_horz_param_2 = tmp;
 
-		if (gst_structure_get_int(structure, "shading-gain-scale", &tmp))
+		if (gst_structure_get_uint(structure, "shading-gain-scale", &tmp))
 			param->shading_gain_scale = tmp;
 
-		if (gst_structure_get_int(structure, "shading-gain-offset", &tmp))
+		if (gst_structure_get_uint(structure, "shading-gain-offset", &tmp))
 			param->shading_gain_offset = tmp;
 
-		if (gst_structure_get_int(structure, "shading-gain-maxvalue", &tmp))
+		if (gst_structure_get_uint(structure, "shading-gain-maxvalue", &tmp))
 			param->shading_gain_max_value = tmp;
 
-		if (gst_structure_get_int(structure, "ratio-downsample-cb-cr", &tmp))
+		if (gst_structure_get_uint(structure, "ratio-downsample-cb-cr", &tmp))
 			param->ratio_downsample_cb_cr = tmp;
 
 		gst_event_unref(event);
