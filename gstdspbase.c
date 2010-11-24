@@ -68,16 +68,17 @@ static inline void
 du_port_flush(du_port_t *p)
 {
 	guint i;
-	for (i = 0; i < p->num_buffers; i++)
-		p->buffers[i].comm->used = FALSE;
-	for (i = 0; i < p->num_buffers; i++) {
-		dmm_buffer_t *b = p->buffers[i].data;
+	struct td_buffer *tb = p->buffers;
+
+	for (i = 0; i < p->num_buffers; i++, tb++) {
+		dmm_buffer_t *b = tb->data;
+		tb->comm->used = FALSE;
 		if (!b)
 			continue;
 		if (b->user_data)
 			gst_buffer_unref(b->user_data);
 		dmm_buffer_free(b);
-		p->buffers[i].data = NULL;
+		tb->data = NULL;
 	}
 	async_queue_flush(p->queue);
 }
@@ -157,10 +158,10 @@ got_message(GstDspBase *self,
 	case 0x0600: {
 		dmm_buffer_t *b;
 		du_port_t *p;
-		dmm_buffer_t *cur = NULL;
 		dsp_comm_t *msg_data;
 		dmm_buffer_t *param;
 		unsigned i;
+		struct td_buffer *tb = NULL;
 
 		for (i = 0; i < ARRAY_SIZE(self->ports); i++)
 			if (self->ports[i]->id == id) {
@@ -175,17 +176,17 @@ got_message(GstDspBase *self,
 
 		for (i = 0; i < p->num_buffers; i++) {
 			if (msg->arg_1 == (uint32_t) p->buffers[i].comm->map) {
-				cur = p->buffers[i].comm;
+				tb = &p->buffers[i];
 				break;
 			}
 		}
 
-		if (!cur)
+		if (!tb)
 			g_error("buffer mismatch");
 
-		dmm_buffer_end(cur, cur->size);
+		dmm_buffer_end(tb->comm, tb->comm->size);
 
-		msg_data = cur->data;
+		msg_data = tb->comm->data;
 		b = (void *) msg_data->user_data;
 		b->len = msg_data->buffer_len;
 
@@ -208,7 +209,7 @@ got_message(GstDspBase *self,
 			}
 		}
 
-		cur->used = FALSE;
+		tb->comm->used = FALSE;
 		async_queue_push(p->queue, b);
 		break;
 	}
@@ -264,8 +265,7 @@ setup_buffers(GstDspBase *self)
 
 	p = self->ports[1];
 	for (i = 0; i < p->num_buffers; i++) {
-		b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
-		p->buffers[i].data = b;
+		p->buffers[i].data = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
 
 		if (self->use_pad_alloc) {
 			GstFlowReturn ret;
@@ -702,9 +702,10 @@ gstdsp_start(GstDspBase *self)
 		du_port_t *p = self->ports[i];
 		guint j;
 		for (j = 0; j < p->num_buffers; j++) {
-			p->buffers[j].comm = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
-			dmm_buffer_allocate(p->buffers[j].comm, sizeof(dsp_comm_t));
-			dmm_buffer_map(p->buffers[j].comm);
+			struct td_buffer *tb = &p->buffers[j];
+			tb->comm = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
+			dmm_buffer_allocate(tb->comm, sizeof(*tb->comm));
+			dmm_buffer_map(tb->comm);
 		}
 	}
 
