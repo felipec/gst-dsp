@@ -22,8 +22,9 @@ set_framesize(GstDspBase *base,
 	      gint height)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
+
 	/* update the framesize only if it hasn't been set yet. */
-	if (vdec->width == 0 || vdec->height == 0) {
+	if (vdec->crop_width == 0 || vdec->crop_height == 0) {
 		GstCaps *out_caps;
 		GstStructure *struc;
 
@@ -32,6 +33,8 @@ set_framesize(GstDspBase *base,
 		gst_structure_set(struc,
 				  "width", G_TYPE_INT, width,
 				  "height", G_TYPE_INT, height, NULL);
+		vdec->crop_width = width;
+		vdec->crop_height = height;
 	}
 
 	if (vdec->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'))
