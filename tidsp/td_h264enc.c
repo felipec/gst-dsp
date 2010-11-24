@@ -170,14 +170,11 @@ struct out_params {
 #endif
 };
 
-static void in_send_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	struct in_params *param;
 	GstDspVEnc *self = GST_DSP_VENC(base);
-	param = p->data;
+	param = tb->params->data;
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 	param->bitrate = g_atomic_int_get(&self->bitrate);
 	g_mutex_lock(self->keyframe_mutex);
@@ -267,14 +264,12 @@ static void ignore_sps_pps_header(GstDspBase *base, dmm_buffer_t *b)
 		base->skip_hack_2++;
 }
 
-static void out_recv_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspVEnc *self = GST_DSP_VENC(base);
+	dmm_buffer_t *b = tb->data;
 	struct out_params *param;
-	param = p->data;
+	param = tb->params->data;
 
 	pr_debug(base, "frame type: %d", param->frame_type);
 	b->keyframe = (param->frame_type == 1 || param->frame_type == 4);

@@ -31,10 +31,9 @@ typedef struct du_port_t du_port_t;
 #include "sem.h"
 #include "async_queue.h"
 
-typedef void (*port_buffer_cb_t) (GstDspBase *base,
-				  du_port_t *port,
-				  dmm_buffer_t *p,
-				  dmm_buffer_t *b);
+struct td_buffer;
+
+typedef void (*port_buffer_cb_t) (GstDspBase *base, struct td_buffer *tb);
 
 struct td_buffer {
 	struct du_port_t *port;

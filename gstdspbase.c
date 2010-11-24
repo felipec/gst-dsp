@@ -202,7 +202,7 @@ got_message(GstDspBase *self,
 			dmm_buffer_end(param, param->size);
 
 		if (p->recv_cb)
-			p->recv_cb(self, p, param, b);
+			p->recv_cb(self, tb);
 
 		if (id == 0) {
 			if (b->user_data) {
@@ -908,7 +908,7 @@ send_buffer(GstDspBase *self,
 	msg_data = tmp->data;
 
 	if (port->send_cb)
-		port->send_cb(self, port, param, buffer);
+		port->send_cb(self, tb);
 
 	if (param)
 		dmm_buffer_begin(param, param->size);

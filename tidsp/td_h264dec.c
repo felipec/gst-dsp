@@ -239,14 +239,12 @@ struct out_params {
 	int8_t mb_err_status_out[1620];
 };
 
-static void out_recv_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
+	dmm_buffer_t *b = tb->data;
 	struct out_params *param;
-	param = p->data;
+	param = tb->params->data;
 
 	pr_debug(base, "receive %d/%ld",
 			b->len, base->output_buffer_size);
@@ -262,20 +260,17 @@ static void out_recv_cb(GstDspBase *base,
 		b->len = vdec->crop_width * vdec->crop_height * 3 / 2;
 }
 
-static void in_send_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
 	/* transform MP4 format to bytestream format */
 	if (G_LIKELY(vdec->priv.h264.lol)) {
 		pr_debug(base, "transforming H264 buffer data");
 		/* intercept and transform into dsp expected format */
-		transform_nal_encoding(vdec, b);
+		transform_nal_encoding(vdec, tb->data);
 	} else {
 		/* no more need for callback */
-		port->send_cb = NULL;
+		tb->port->send_cb = NULL;
 	}
 }
 

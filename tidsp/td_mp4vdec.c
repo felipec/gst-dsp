@@ -96,16 +96,13 @@ struct out_params {
 	uint8_t mb_error_buf[(720 * 576) / 256];
 };
 
-static void out_recv_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct out_params *param;
-	param = p->data;
+	param = tb->params->data;
 
-	b->keyframe = (param->frame_type == 0);
+	tb->data->keyframe = (param->frame_type == 0);
 
 	pr_debug(self, "error: 0x%x, frame number: %u, frame type: %u",
 			param->error_code, param->frame_index, param->frame_type);

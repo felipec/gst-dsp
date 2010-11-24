@@ -188,29 +188,23 @@ static inline void prefix_vc1(GstDspVDec *self, dmm_buffer_t *b)
 	return;
 }
 
-static void in_send_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct in_params *param;
-	param = p->data;
+	param = tb->params->data;
 
 	if (self->wmv_is_vc1)
-		prefix_vc1(self, b);
+		prefix_vc1(self, tb->data);
 
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
 }
 
-static void out_recv_cb(GstDspBase *base,
-		du_port_t *port,
-		dmm_buffer_t *p,
-		dmm_buffer_t *b)
+static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct out_params *param;
-	param = p->data;
+	param = tb->params->data;
 
 	if (param->frame_type == 0xFFFFFFFF)
 		pr_warning(self, "empty frame received, frame number: %d",
