@@ -20,10 +20,7 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
-static inline bool
-send_buffer(GstDspBase *self,
-	    dmm_buffer_t *buffer,
-	    unsigned index);
+static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb);
 
 static inline void
 map_buffer(GstDspBase *self,
@@ -289,7 +286,7 @@ setup_buffers(GstDspBase *self)
 		else
 			dmm_buffer_allocate(b, self->output_buffer_size);
 
-		self->send_buffer(self, b, 1);
+		self->send_buffer(self, &p->buffers[i]);
 	}
 }
 
@@ -394,7 +391,7 @@ output_loop(gpointer data)
 	/* a pending reallocation from the previous run */
 	if (G_UNLIKELY(!b->data)) {
 		dmm_buffer_allocate(b, self->output_buffer_size);
-		send_buffer(self, b, 1);
+		send_buffer(self, tb);
 		goto end;
 	}
 
@@ -506,7 +503,7 @@ leave:
 		 * EOS and flush.
 		 */
 		if (b->data)
-			send_buffer(self, b, 1);
+			send_buffer(self, tb);
 		else
 			/* we'll need to allocate on the next run */
 			async_queue_push(p->queue, tb);
@@ -514,7 +511,7 @@ leave:
 	else {
 		if (!b->data)
 			dmm_buffer_allocate(b, self->output_buffer_size);
-		self->send_buffer(self, b, 1);
+		self->send_buffer(self, tb);
 	}
 
 nok:
@@ -533,7 +530,7 @@ gstdsp_base_flush_buffer(GstDspBase *self)
 	if (!tb)
 		return;
 	dmm_buffer_allocate(tb->data, 1);
-	send_buffer(self, tb->data, 0);
+	send_buffer(self, tb);
 }
 
 void
@@ -877,16 +874,13 @@ map_buffer(GstDspBase *self,
 	d_buf->need_copy = true;
 }
 
-static inline bool
-send_buffer(GstDspBase *self,
-	    dmm_buffer_t *buffer,
-	    unsigned index)
+static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 {
 	dsp_comm_t *msg_data;
 	dmm_buffer_t *tmp = NULL, *param = NULL;
 	du_port_t *port;
-	guint i;
-	struct td_buffer *tb = NULL;
+	int index = tb->port->id;
+	dmm_buffer_t *buffer = tb->data;
 
 	pr_debug(self, "sending %s buffer", index == 0 ? "input" : "output");
 
@@ -894,19 +888,9 @@ send_buffer(GstDspBase *self,
 
 	port = self->ports[index];
 
-	/* TODO receive td_buffer directly */
-	for (i = 0; i < port->num_buffers; i++) {
-		if (port->buffers[i].data == buffer) {
-			tb = &port->buffers[i];
-			tmp = tb->comm;
-			param = tb->params;
-			tmp->used = TRUE;
-			break;
-		}
-	}
-
-	if (!tmp)
-		g_error("buffer mismatch");
+	tmp = tb->comm;
+	param = tb->params;
+	tmp->used = TRUE;
 
 	msg_data = tmp->data;
 
@@ -1082,7 +1066,7 @@ gstdsp_send_codec_data(GstDspBase *self,
 	dmm_buffer_allocate(tb->data, GST_BUFFER_SIZE(buf));
 	memcpy(tb->data->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
 
-	send_buffer(self, tb->data, 0);
+	send_buffer(self, tb);
 
 	return TRUE;
 }
@@ -1162,7 +1146,7 @@ pad_chain(GstPad *pad,
 	self->ts_count++;
 	g_mutex_unlock(self->ts_mutex);
 
-	self->send_buffer(self, b, 0);
+	self->send_buffer(self, tb);
 
 leave:
 

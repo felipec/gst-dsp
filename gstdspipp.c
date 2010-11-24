@@ -1135,13 +1135,13 @@ get_eenf_dyn_params(GstDspIpp *self)
 	dmm_buffer_map(self->status_params);
 }
 
-static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
+static bool send_buffer(GstDspBase *base, struct td_buffer *tb)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
 	bool ok;
 
 	/* no need to send output buffer to dsp */
-	if (id == 1)
+	if (tb->port->id == 1)
 		return true;
 
 	if (base->dsp_error)
@@ -1154,9 +1154,9 @@ static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
 	if (!ok)
 		return ok;
 
-	dmm_buffer_map(b);
+	dmm_buffer_map(tb->data);
 
-	return queue_buffer(GST_DSP_IPP(base), b);
+	return queue_buffer(GST_DSP_IPP(base), tb->data);
 }
 
 static bool send_play_message(GstDspBase *base)
