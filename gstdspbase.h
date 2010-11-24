@@ -58,6 +58,11 @@ struct td_codec {
 	void (*send_params)(GstDspBase *base, struct dsp_node *node);
 };
 
+struct ts_item {
+	GstClockTime time;
+	GstEvent *event;
+};
+
 struct _GstDspBase {
 	GstElement element;
 
@@ -78,8 +83,7 @@ struct _GstDspBase {
 
 	du_port_t *ports[2];
 	dmm_buffer_t *alg_ctrl;
-	GstClockTime ts_array[20];
-	GstEvent *event_array[20];
+	struct ts_item ts_array[20];
 	guint ts_in_pos, ts_out_pos, ts_push_pos;
 	GMutex *ts_mutex;
 	gulong ts_count;

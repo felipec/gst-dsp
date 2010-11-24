@@ -361,8 +361,8 @@ output_loop(gpointer data)
 
 	/* first clear pending events */
 	g_mutex_lock(self->ts_mutex);
-	while ((event = self->event_array[self->ts_out_pos])) {
-		self->event_array[self->ts_out_pos] = NULL;
+	while ((event = self->ts_array[self->ts_out_pos].event)) {
+		self->ts_array[self->ts_out_pos].event = NULL;
 		flush_buffer = (self->ts_out_pos != self->ts_push_pos);
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 		if (G_LIKELY(!flush_buffer)) {
@@ -396,7 +396,7 @@ output_loop(gpointer data)
 	if (G_UNLIKELY(flush_buffer)) {
 		g_mutex_lock(self->ts_mutex);
 		pr_debug(self, "ignored flushed output buffer for %" GST_TIME_FORMAT,
-			 GST_TIME_ARGS((self->ts_array[self->ts_out_pos])));
+			 GST_TIME_ARGS((self->ts_array[self->ts_out_pos].time)));
 		self->ts_count--;
 		self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 		g_mutex_unlock(self->ts_mutex);
@@ -458,7 +458,7 @@ output_loop(gpointer data)
 		GST_BUFFER_FLAGS(out_buf) |= GST_BUFFER_FLAG_DELTA_UNIT;
 
 	g_mutex_lock(self->ts_mutex);
-	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos];
+	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos].time;
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 	self->ts_push_pos = self->ts_out_pos;
 	self->ts_count--;
@@ -769,10 +769,10 @@ _dsp_stop(GstDspBase *self)
 		}
 	}
 
-	for (i = 0; i < ARRAY_SIZE(self->event_array); i++) {
-		if (self->event_array[i]) {
-			gst_event_unref(self->event_array[i]);
-			self->event_array[i] = NULL;
+	for (i = 0; i < ARRAY_SIZE(self->ts_array); i++) {
+		if (self->ts_array[i].event) {
+			gst_event_unref(self->ts_array[i].event);
+			self->ts_array[i].event = NULL;
 		}
 	}
 	self->ts_in_pos = self->ts_out_pos = self->ts_push_pos = 0;
@@ -1122,7 +1122,7 @@ pad_chain(GstPad *pad,
 	}
 
 	g_mutex_lock(self->ts_mutex);
-	self->ts_array[self->ts_in_pos] = GST_BUFFER_TIMESTAMP(buf);
+	self->ts_array[self->ts_in_pos].time = GST_BUFFER_TIMESTAMP(buf);
 	self->ts_in_pos = (self->ts_in_pos + 1) % ARRAY_SIZE(self->ts_array);
 	self->ts_count++;
 	g_mutex_unlock(self->ts_mutex);
@@ -1198,7 +1198,7 @@ sink_event(GstDspBase *self,
 	case GST_EVENT_NEWSEGMENT:
 		g_mutex_lock(self->ts_mutex);
 		pr_debug(self, "storing event");
-		self->event_array[self->ts_in_pos] = event;
+		self->ts_array[self->ts_in_pos].event = event;
 		self->ts_in_pos = (self->ts_in_pos + 1) % ARRAY_SIZE(self->ts_array);
 		g_mutex_unlock(self->ts_mutex);
 		break;
