@@ -272,13 +272,13 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 	param = tb->params->data;
 
 	pr_debug(base, "frame type: %d", param->frame_type);
-	b->keyframe = (param->frame_type == 1 || param->frame_type == 4);
+	tb->keyframe = (param->frame_type == 1 || param->frame_type == 4);
 
 	if (b->len == 0)
 		return;
 
 	if (self->priv.h264.bytestream) {
-		if (self->mode == 1 && b->keyframe)
+		if (self->mode == 1 && tb->keyframe)
 			strip_sps_pps_header(base, b, param);
 		return;
 	}

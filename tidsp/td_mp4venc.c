@@ -208,7 +208,7 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 {
 	struct out_params *param;
 	param = tb->params->data;
-	tb->data->keyframe = (param->frame_type == 1);
+	tb->keyframe = (param->frame_type == 1);
 	try_extract_codec_data(base, tb->data);
 }
 

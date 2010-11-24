@@ -42,6 +42,7 @@ struct td_buffer {
 	dmm_buffer_t *params;
 	void *user_data;
 	bool used;
+	bool keyframe;
 };
 
 struct du_port_t {

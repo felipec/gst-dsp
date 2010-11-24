@@ -40,7 +40,6 @@ typedef struct {
 	void *map;
 	bool need_copy;
 	size_t alignment;
-	bool keyframe;
 	int dir;
 } dmm_buffer_t;
 

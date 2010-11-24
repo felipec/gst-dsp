@@ -102,7 +102,7 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 	struct out_params *param;
 	param = tb->params->data;
 
-	tb->data->keyframe = (param->frame_type == 0);
+	tb->keyframe = (param->frame_type == 0);
 
 	pr_debug(self, "error: 0x%x, frame number: %u, frame type: %u",
 			param->error_code, param->frame_index, param->frame_type);

@@ -416,7 +416,7 @@ output_loop(gpointer data)
 	}
 
 	/* now go after the data, but let's first see if it is keyframe */
-	keyframe = b->keyframe;
+	keyframe = tb->keyframe;
 
 	if (self->use_pad_alloc) {
 		GstBuffer *new_buf;
