@@ -71,7 +71,7 @@ du_port_flush(du_port_t *p)
 
 	for (i = 0; i < p->num_buffers; i++, tb++) {
 		dmm_buffer_t *b = tb->data;
-		tb->comm->used = FALSE;
+		tb->used = FALSE;
 		if (!b)
 			continue;
 		if (tb->user_data)
@@ -208,7 +208,7 @@ got_message(GstDspBase *self,
 			}
 		}
 
-		tb->comm->used = FALSE;
+		tb->used = FALSE;
 		async_queue_push(p->queue, tb);
 		break;
 	}
@@ -889,7 +889,7 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 
 	port = self->ports[index];
 
-	tb->comm->used = TRUE;
+	tb->used = TRUE;
 	msg_data = tb->comm->data;
 
 	if (port->send_cb)
