@@ -62,6 +62,8 @@ du_port_alloc_buffers(du_port_t *p, guint num_buffers)
 	p->num_buffers = num_buffers;
 	free(p->buffers);
 	p->buffers = calloc(num_buffers, sizeof(*p->buffers));
+	for (unsigned i = 0; i < p->num_buffers; i++)
+		p->buffers[i].port = p;
 }
 
 static inline void

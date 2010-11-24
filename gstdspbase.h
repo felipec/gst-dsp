@@ -37,6 +37,7 @@ typedef void (*port_buffer_cb_t) (GstDspBase *base,
 				  dmm_buffer_t *b);
 
 struct td_buffer {
+	struct du_port_t *port;
 	dmm_buffer_t *data;
 	dmm_buffer_t *comm;
 	dmm_buffer_t *params;
