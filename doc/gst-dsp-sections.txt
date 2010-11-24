@@ -1,11 +1,12 @@
 <SECTION>
 <FILE>gstdspbase</FILE>
-<TITLE>GstDspBase</TITLE>
+<TITLE>dspbase</TITLE>
+GstDspBase
+<SUBSECTION Standard>
 GST_DSP_BASE
 GST_DSP_BASE_TYPE
 GST_DSP_BASE_CLASS
 GST_DSP_BASE_GET_CLASS
-GstDspBase
 GstDspBaseClass
 du_port_t
 port_buffer_cb_t
@@ -26,64 +27,65 @@ gstdsp_post_error
 gstdsp_send_alg_ctrl
 gstdsp_base_flush_buffer
 gstdsp_setup_params_func
+gstdsp_debug
 </SECTION>
 
 <SECTION>
-<FILE>gstdspvdec</FILE>
-<TITLE>GstDspVDec</TITLE>
+<FILE>element-dspvdec</FILE>
+<TITLE>dspvdec</TITLE>
+GstDspVDec
+<SUBSECTION Standard>
 GST_DSP_VDEC
 GST_DSP_VDEC_TYPE
 GST_DSP_VDEC_CLASS
-GstDspVDec
 GstDspVDecClass
 gst_dsp_vdec_get_type
 </SECTION>
 
 <SECTION>
-<FILE>gstdsph263enc</FILE>
-<TITLE>GstDspH263Enc</TITLE>
+<FILE>element-dsph263enc</FILE>
+<TITLE>dsph263enc</TITLE>
+GstDspH263Enc
+<SUBSECTION Standard>
 GST_DSP_H263ENC
 GST_DSP_H263ENC_TYPE
 GST_DSP_H263ENC_CLASS
-GstDspH263Enc
 GstDspH263EncClass
 gst_dsp_h263enc_get_type
 </SECTION>
 
 <SECTION>
-<FILE>gstdsph264enc</FILE>
-<TITLE>GstDspH264Enc</TITLE>
+<FILE>element-dsph264enc</FILE>
+<TITLE>dsph264enc</TITLE>
+GstDspH264Enc
+<SUBSECTION Standard>
 GST_DSP_H264ENC
 GST_DSP_H264ENC_TYPE
 GST_DSP_H264ENC_CLASS
-GstDspH264Enc
 GstDspH264EncClass
 gst_dsp_h264enc_get_type
 </SECTION>
 
 <SECTION>
-<FILE>plugin</FILE>
-gstdsp_debug
-</SECTION>
-
-<SECTION>
 <FILE>gstdspvenc</FILE>
-<TITLE>GstDspVEnc</TITLE>
+<TITLE>dspvenc</TITLE>
+GstDspVEnc
+<SUBSECTION Standard>
 GST_DSP_VENC
 GST_DSP_VENC_TYPE
 GST_DSP_VENC_CLASS
-GstDspVEnc
 GstDspVEncClass
 gst_dsp_venc_get_type
 </SECTION>
 
 <SECTION>
-<FILE>gstdspjpegenc</FILE>
-<TITLE>GstDspJpegEnc</TITLE>
+<FILE>element-dspjpegenc</FILE>
+<TITLE>dspjpegenc</TITLE>
+GstDspJpegEnc
+<SUBSECTION Standard>
 GST_DSP_JPEGENC
 GST_DSP_JPEGENC_TYPE
 GST_DSP_JPEGENC_CLASS
-GstDspJpegEnc
 GstDspJpegEncClass
 JPEGENC_MAX_WIDTH
 JPEGENC_MAX_HEIGHT
@@ -91,23 +93,25 @@ gst_dsp_jpegenc_get_type
 </SECTION>
 
 <SECTION>
-<FILE>gstdspdummy</FILE>
-<TITLE>GstDspDummy</TITLE>
+<FILE>element-dspdummy</FILE>
+<TITLE>dspdummy</TITLE>
+GstDspDummy
+<SUBSECTION Standard>
 GST_DSP_DUMMY
 GST_DSP_DUMMY_TYPE
 GST_DSP_DUMMY_CLASS
-GstDspDummy
 GstDspDummyClass
 gst_dsp_dummy_get_type
 </SECTION>
 
 <SECTION>
-<FILE>gstdspmp4venc</FILE>
-<TITLE>GstDspMp4VEnc</TITLE>
+<FILE>element-dspmp4venc</FILE>
+<TITLE>dspmp4venc</TITLE>
+GstDspMp4VEnc
+<SUBSECTION Standard>
 GST_DSP_MP4VENC
 GST_DSP_MP4VENC_TYPE
 GST_DSP_MP4VENC_CLASS
-GstDspMp4VEnc
 GstDspMp4VEncClass
 gst_dsp_mp4venc_get_type
 </SECTION>
