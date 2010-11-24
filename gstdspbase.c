@@ -883,6 +883,7 @@ send_buffer(GstDspBase *self,
 	dmm_buffer_t *tmp = NULL, *param = NULL;
 	du_port_t *port;
 	guint i;
+	struct td_buffer *tb = NULL;
 
 	pr_debug(self, "sending %s buffer", index == 0 ? "input" : "output");
 
@@ -890,10 +891,12 @@ send_buffer(GstDspBase *self,
 
 	port = self->ports[index];
 
+	/* TODO receive td_buffer directly */
 	for (i = 0; i < port->num_buffers; i++) {
-		if (!port->buffers[i].comm->used) {
-			tmp = port->buffers[i].comm;
-			param = port->buffers[i].params;
+		if (port->buffers[i].data == buffer) {
+			tb = &port->buffers[i];
+			tmp = tb->comm;
+			param = tb->params;
 			tmp->used = TRUE;
 			break;
 		}
