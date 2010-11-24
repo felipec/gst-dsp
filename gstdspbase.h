@@ -36,11 +36,15 @@ typedef void (*port_buffer_cb_t) (GstDspBase *base,
 				  dmm_buffer_t *p,
 				  dmm_buffer_t *b);
 
+struct td_buffer {
+	dmm_buffer_t *data;
+	dmm_buffer_t *comm;
+	dmm_buffer_t *params;
+};
+
 struct du_port_t {
 	int id;
-	dmm_buffer_t **buffers;
-	dmm_buffer_t **comm; /**< arm-dsp communication structure */
-	dmm_buffer_t **params;
+	struct td_buffer *buffers;
 	guint num_buffers;
 	AsyncQueue *queue;
 	port_buffer_cb_t send_cb;
@@ -146,7 +150,7 @@ static inline void gstdsp_port_setup_params(GstDspBase *self,
 		if (func)
 			func(self, b);
 		dmm_buffer_map(b);
-		p->params[i] = b;
+		p->buffers[i].params = b;
 	}
 }
 

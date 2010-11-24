@@ -51,8 +51,6 @@ du_port_free(du_port_t *p)
 		return;
 
 	free(p->buffers);
-	free(p->comm);
-	free(p->params);
 	async_queue_free(p->queue);
 
 	free(p);
@@ -62,12 +60,8 @@ void
 du_port_alloc_buffers(du_port_t *p, guint num_buffers)
 {
 	p->num_buffers = num_buffers;
-	free(p->comm);
-	p->comm = calloc(num_buffers, sizeof(**p->comm));
 	free(p->buffers);
-	p->buffers = calloc(num_buffers, sizeof(**p->buffers));
-	free(p->params);
-	p->params = calloc(num_buffers, sizeof(**p->params));
+	p->buffers = calloc(num_buffers, sizeof(*p->buffers));
 }
 
 static inline void
@@ -75,15 +69,15 @@ du_port_flush(du_port_t *p)
 {
 	guint i;
 	for (i = 0; i < p->num_buffers; i++)
-		p->comm[i]->used = FALSE;
+		p->buffers[i].comm->used = FALSE;
 	for (i = 0; i < p->num_buffers; i++) {
-		dmm_buffer_t *b = p->buffers[i];
+		dmm_buffer_t *b = p->buffers[i].data;
 		if (!b)
 			continue;
 		if (b->user_data)
 			gst_buffer_unref(b->user_data);
 		dmm_buffer_free(b);
-		p->buffers[i] = NULL;
+		p->buffers[i].data = NULL;
 	}
 	async_queue_flush(p->queue);
 }
@@ -180,8 +174,8 @@ got_message(GstDspBase *self,
 		pr_debug(self, "got %s buffer", id == 0 ? "input" : "output");
 
 		for (i = 0; i < p->num_buffers; i++) {
-			if (msg->arg_1 == (uint32_t) p->comm[i]->map) {
-				cur = p->comm[i];
+			if (msg->arg_1 == (uint32_t) p->buffers[i].comm->map) {
+				cur = p->buffers[i].comm;
 				break;
 			}
 		}
@@ -263,7 +257,7 @@ setup_buffers(GstDspBase *self)
 
 	p = self->ports[0];
 	for (i = 0; i < p->num_buffers; i++) {
-		p->buffers[i] = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
+		p->buffers[i].data = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
 		b->alignment = 0;
 		async_queue_push(p->queue, b);
 	}
@@ -271,7 +265,7 @@ setup_buffers(GstDspBase *self)
 	p = self->ports[1];
 	for (i = 0; i < p->num_buffers; i++) {
 		b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
-		p->buffers[i] = b;
+		p->buffers[i].data = b;
 
 		if (self->use_pad_alloc) {
 			GstFlowReturn ret;
@@ -708,9 +702,9 @@ gstdsp_start(GstDspBase *self)
 		du_port_t *p = self->ports[i];
 		guint j;
 		for (j = 0; j < p->num_buffers; j++) {
-			p->comm[j] = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
-			dmm_buffer_allocate(p->comm[j], sizeof(dsp_comm_t));
-			dmm_buffer_map(p->comm[j]);
+			p->buffers[j].comm = dmm_buffer_new(self->dsp_handle, self->proc, DMA_BIDIRECTIONAL);
+			dmm_buffer_allocate(p->buffers[j].comm, sizeof(dsp_comm_t));
+			dmm_buffer_map(p->buffers[j].comm);
 		}
 	}
 
@@ -792,8 +786,8 @@ _dsp_stop(GstDspBase *self)
 		guint j;
 		du_port_t *port = self->ports[i];
 		for (j = 0; j < port->num_buffers; j++) {
-			dmm_buffer_free(port->params[j]);
-			port->params[j] = NULL;
+			dmm_buffer_free(port->buffers[j].params);
+			port->buffers[j].params = NULL;
 		}
 	}
 
@@ -834,8 +828,8 @@ leave:
 		du_port_t *p = self->ports[i];
 		guint j;
 		for (j = 0; j < p->num_buffers; j++) {
-			dmm_buffer_free(p->comm[j]);
-			p->comm[j] = NULL;
+			dmm_buffer_free(p->buffers[j].comm);
+			p->buffers[j].comm = NULL;
 		}
 		du_port_alloc_buffers(p, 0);
 	}
@@ -894,9 +888,9 @@ send_buffer(GstDspBase *self,
 	port = self->ports[index];
 
 	for (i = 0; i < port->num_buffers; i++) {
-		if (!port->comm[i]->used) {
-			tmp = port->comm[i];
-			param = port->params[i];
+		if (!port->buffers[i].comm->used) {
+			tmp = port->buffers[i].comm;
+			param = port->buffers[i].params;
 			tmp->used = TRUE;
 			break;
 		}

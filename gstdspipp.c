@@ -913,8 +913,8 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer)
 			queue_msg1->content_ptr = (uint32_t)in_buffer->map;
 		} else if (i == 1) {
 			port = base->ports[1];
-			dmm_buffer_map(port->buffers[0]);
-			self->out_buf_ptr = port->buffers[0];
+			dmm_buffer_map(port->buffers[0].data);
+			self->out_buf_ptr = port->buffers[0].data;
 			queue_msg1->content_size_used = base->output_buffer_size;
 			queue_msg1->content_size = base->output_buffer_size;
 			queue_msg1->content_ptr = (uint32_t)self->out_buf_ptr->map;
