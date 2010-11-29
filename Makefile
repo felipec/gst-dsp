@@ -83,4 +83,4 @@ dist:
 	rm -r $(base)
 	gzip /tmp/$(base).tar
 
--include *.d
+-include *.d tidsp/*.d
