@@ -76,8 +76,8 @@ struct GstDspIpp {
 
 	dmm_buffer_t *msg_ptr[3];
 	dmm_buffer_t *flt_graph;
-	dmm_buffer_t *in_buf_ptr;
-	dmm_buffer_t *out_buf_ptr;
+	struct td_buffer *in_buf_ptr;
+	struct td_buffer *out_buf_ptr;
 	dmm_buffer_t *intermediate_buf;
 	dmm_buffer_t *dyn_params;
 	dmm_buffer_t *status_params;

@@ -481,18 +481,20 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	if (command_id == DFGM_FREE_BUFF) {
 		send_processing_info_gstmessage(self, "ipp-stop-processing");
 		du_port_t *p = base->ports[1];
-		dmm_buffer_t *b;
+		struct td_buffer *tb;
 
 #ifdef OVERWRITE_INPUT_BUFFER
-		if (!(self->nr_algos & 0x01))
-			b = self->out_buf_ptr;
-		else
-			b = self->in_buf_ptr;
+		if (!(self->nr_algos & 0x01)) {
+			tb = self->out_buf_ptr;
+		} else {
+			tb = self->in_buf_ptr;
+			tb->port = p;
+		}
 #else
-		b = self->out_buf_ptr;
+		tb = self->out_buf_ptr;
 #endif
-		b->len = base->output_buffer_size;
-		async_queue_push(p->queue, b);
+		tb->data->len = base->output_buffer_size;
+		async_queue_push(p->queue, tb);
 	}
 
 	switch (command_id) {
@@ -875,7 +877,7 @@ struct queue_buff_msg_elem_1 {
 	uint32_t next_content_ptr;
 };
 
-static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer)
+static bool queue_buffer(GstDspIpp *self, struct td_buffer *tb)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	struct queue_buff_msg_elem_1 *queue_msg1;
@@ -907,17 +909,17 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer)
 		queue_msg1->port_num = i;
 		queue_msg1->reuse_allowed_flag = 0;
 		if (i == 0) {
-			self->in_buf_ptr = in_buffer;
+			self->in_buf_ptr = tb;
 			queue_msg1->content_size_used = base->input_buffer_size;
 			queue_msg1->content_size = base->input_buffer_size;
-			queue_msg1->content_ptr = (uint32_t)in_buffer->map;
+			queue_msg1->content_ptr = (uint32_t)tb->data->map;
 		} else if (i == 1) {
 			port = base->ports[1];
 			dmm_buffer_map(port->buffers[0].data);
-			self->out_buf_ptr = port->buffers[0].data;
+			self->out_buf_ptr = &port->buffers[0];
 			queue_msg1->content_size_used = base->output_buffer_size;
 			queue_msg1->content_size = base->output_buffer_size;
-			queue_msg1->content_ptr = (uint32_t)self->out_buf_ptr->map;
+			queue_msg1->content_ptr = (uint32_t)self->out_buf_ptr->data->map;
 		} else {
 			dmm_buffer_t *b = ipp_calloc(self, base->input_buffer_size, DMA_TO_DEVICE);
 			dmm_buffer_map(b);
@@ -1156,7 +1158,7 @@ static bool send_buffer(GstDspBase *base, struct td_buffer *tb)
 
 	dmm_buffer_map(tb->data);
 
-	return queue_buffer(GST_DSP_IPP(base), tb->data);
+	return queue_buffer(GST_DSP_IPP(base), tb);
 }
 
 static bool send_play_message(GstDspBase *base)
