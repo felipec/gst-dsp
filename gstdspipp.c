@@ -482,25 +482,18 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	if (command_id == DFGM_FREE_BUFF) {
 		send_processing_info_gstmessage(self, "ipp-stop-processing");
 		du_port_t *p = base->ports[1];
+		dmm_buffer_t *b;
 
 #ifdef OVERWRITE_INPUT_BUFFER
-		if (!(self->nr_algos & 0x01)) {
-			/* push the output buffer in to the queue. */
-			self->out_buf_ptr->len = base->output_buffer_size;
-			async_queue_push(p->queue, self->out_buf_ptr);
-		} else {
-			/*
-			 * Input buffer holds processed data.
-			 * push the input buffer in to the queue.
-			 */
-			self->in_buf_ptr->len = base->output_buffer_size;
-			async_queue_push(p->queue, self->in_buf_ptr);
-		}
+		if (!(self->nr_algos & 0x01))
+			b = self->out_buf_ptr;
+		else
+			b = self->in_buf_ptr;
 #else
-		/* push the output buffer in to the queue. */
-		self->out_buf_ptr->len = base->output_buffer_size;
-		async_queue_push(p->queue, self->out_buf_ptr);
+		b = self->out_buf_ptr;
 #endif
+		b->len = base->output_buffer_size;
+		async_queue_push(p->queue, b);
 	}
 
 	switch (command_id) {
@@ -886,7 +879,7 @@ struct queue_buff_msg_elem_1 {
 	uint32_t next_content_ptr;
 };
 
-static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer, int id)
+static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer)
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 	struct queue_buff_msg_elem_1 *queue_msg1;
@@ -1168,7 +1161,7 @@ static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
 
 	dmm_buffer_map(b);
 
-	return queue_buffer(GST_DSP_IPP(base), b, id);
+	return queue_buffer(GST_DSP_IPP(base), b);
 }
 
 static bool send_play_message(GstDspBase *base)
