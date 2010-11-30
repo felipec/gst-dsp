@@ -192,23 +192,6 @@ create_node(GstDspBase *base)
 	return node;
 }
 
-static inline bool
-destroy_node(GstDspVDec *self,
-	     int dsp_handle,
-	     struct dsp_node *node)
-{
-	if (node) {
-		if (!dsp_node_free(dsp_handle, node)) {
-			pr_err(self, "dsp node free failed");
-			return false;
-		}
-
-		pr_info(self, "dsp node deleted");
-	}
-
-	return true;
-}
-
 static inline gboolean
 handle_codec_data(GstDspVDec *self,
 		  GstStructure *in_struc)
