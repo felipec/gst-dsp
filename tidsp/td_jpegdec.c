@@ -43,7 +43,7 @@ static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	struct create_args args = {
-		.size = sizeof(args) - 4,
+		.size = 15 * sizeof(uint16_t), /* the SN seems to be wrongly picky */
 		.num_streams = 2,
 		.in_id = 0,
 		.in_type = 0,
