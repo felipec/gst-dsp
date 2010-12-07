@@ -31,6 +31,7 @@ static GstDspBaseClass *parent_class;
 
 static bool send_stop_message(GstDspBase *base);
 static gboolean sink_event(GstDspBase *base, GstEvent *event);
+static void send_processing_info_gstmessage(GstDspIpp *self, const gchar* info);
 
 enum {
 	PROP_0,
@@ -479,6 +480,7 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	}
 
 	if (command_id == DFGM_FREE_BUFF) {
+		send_processing_info_gstmessage(self, "ipp-stop-processing");
 		du_port_t *p = base->ports[1];
 
 #ifdef OVERWRITE_INPUT_BUFFER
@@ -561,6 +563,9 @@ static bool send_msg(GstDspIpp *self, int id,
 	self->msg_ptr[2] = arg3;
 
 	ipp_buffer_begin(self);
+
+	if (id == DFGM_QUEUE_BUFF)
+		send_processing_info_gstmessage(self, "ipp-start-processing");
 
 	return dsp_send_message(base->dsp_handle, base->node, id,
 				arg1 ? (uint32_t)arg1->map : 0,
@@ -1154,6 +1159,8 @@ static bool send_buffer(GstDspBase *base, dmm_buffer_t *b, guint id)
 	if (base->dsp_error)
 		return false;
 
+	send_processing_info_gstmessage(self, "ipp-start-init");
+
 	get_eenf_dyn_params(self);
 	ok = control_pipe(self);
 	if (!ok)
@@ -1501,6 +1508,19 @@ static gboolean sink_event(GstDspBase *base, GstEvent *event)
 
 leave:
 	return parent_class->sink_event(base, event);
+}
+
+static void send_processing_info_gstmessage(GstDspIpp *self, const gchar* info)
+{
+	GstStructure *s;
+	GstMessage *msg;
+
+	s = gst_structure_new(info, NULL);
+	msg = gst_message_new_element(GST_OBJECT(self), s);
+	pr_debug(self, "Sending message : %s", info);
+
+	if (gst_element_post_message(GST_ELEMENT(self), msg) == FALSE)
+		pr_warning(self, "Element has no bus, no message sent");
 }
 
 static void
