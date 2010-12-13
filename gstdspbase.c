@@ -459,6 +459,7 @@ output_loop(gpointer data)
 
 	g_mutex_lock(self->ts_mutex);
 	GST_BUFFER_TIMESTAMP(out_buf) = self->ts_array[self->ts_out_pos].time;
+	GST_BUFFER_DURATION(out_buf) = self->ts_array[self->ts_out_pos].duration;
 	self->ts_out_pos = (self->ts_out_pos + 1) % ARRAY_SIZE(self->ts_array);
 	self->ts_push_pos = self->ts_out_pos;
 	self->ts_count--;
@@ -1123,6 +1124,7 @@ pad_chain(GstPad *pad,
 
 	g_mutex_lock(self->ts_mutex);
 	self->ts_array[self->ts_in_pos].time = GST_BUFFER_TIMESTAMP(buf);
+	self->ts_array[self->ts_in_pos].duration = GST_BUFFER_DURATION(buf);
 	self->ts_in_pos = (self->ts_in_pos + 1) % ARRAY_SIZE(self->ts_array);
 	self->ts_count++;
 	g_mutex_unlock(self->ts_mutex);

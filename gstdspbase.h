@@ -60,6 +60,7 @@ struct td_codec {
 
 struct ts_item {
 	GstClockTime time;
+	GstClockTime duration;
 	GstEvent *event;
 };
 
