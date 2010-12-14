@@ -160,9 +160,10 @@ static inline void prefix_vc1(GstDspVDec *self, struct td_buffer *tb)
 		output_data += 4;
 		memcpy(output_data, input_data, input_size);
 	} else {
-		GstBuffer *buf = self->codec_data;
+		GstDspBase *base = GST_DSP_BASE(self);
+		GstBuffer *buf = base->codec_data;
 
-		self->codec_data = NULL;
+		base->codec_data = NULL;
 
 		output_size = GST_BUFFER_SIZE(buf) + 4 + input_size;
 		dmm_buffer_allocate(b, output_size);
@@ -244,7 +245,7 @@ static bool handle_extra_data(GstDspBase *base, GstBuffer *buf)
 {
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	if (self->wmv_is_vc1)
-		self->codec_data = gst_buffer_ref(buf);
+		base->codec_data = gst_buffer_ref(buf);
 	else
 		send_rcv_buffer(base, buf);
 	return true;
