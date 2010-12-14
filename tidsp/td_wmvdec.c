@@ -160,14 +160,17 @@ static inline void prefix_vc1(GstDspVDec *self, struct td_buffer *tb)
 		output_data += 4;
 		memcpy(output_data, input_data, input_size);
 	} else {
-		output_size = GST_BUFFER_SIZE(self->codec_data) + 4 + input_size;
+		GstBuffer *buf = self->codec_data;
+
+		self->codec_data = NULL;
+
+		output_size = GST_BUFFER_SIZE(buf) + 4 + input_size;
 		dmm_buffer_allocate(b, output_size);
 		output_data = b->data;
 
 		/* copy codec data to the beginning of the first buffer */
-		memcpy(output_data, GST_BUFFER_DATA(self->codec_data),
-				GST_BUFFER_SIZE(self->codec_data));
-		output_data += GST_BUFFER_SIZE(self->codec_data);
+		memcpy(output_data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));
+		output_data += GST_BUFFER_SIZE(buf);
 
 		/* prefix frame data with 0x0000010d */
 		GST_WRITE_UINT32_BE(output_data, 0x10d);
@@ -175,8 +178,7 @@ static inline void prefix_vc1(GstDspVDec *self, struct td_buffer *tb)
 		memcpy(output_data, input_data, input_size);
 
 		self->codec_data_sent = TRUE;
-		gst_buffer_unref(self->codec_data);
-		self->codec_data = NULL;
+		gst_buffer_unref(buf);
 	}
 	b->len = output_size;
 

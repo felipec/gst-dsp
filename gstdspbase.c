@@ -711,7 +711,7 @@ gstdsp_start(GstDspBase *self)
 
 	if (!dsp_node_run(self->dsp_handle, self->node)) {
 		pr_err(self, "dsp node run failed");
-		return FALSE;
+		return false;
 	}
 
 	pr_info(self, "dsp node running");
@@ -751,7 +751,7 @@ gstdsp_start(GstDspBase *self)
 
 	setup_buffers(self);
 
-	return TRUE;
+	return true;
 }
 
 static bool
