@@ -202,18 +202,15 @@ handle_codec_data(GstDspVDec *self,
 	GstDspBase *base = GST_DSP_BASE(self);
 	const GValue *codec_data;
 	GstBuffer *buf;
-	struct td_codec *codec = base->codec;
 
 	codec_data = gst_structure_get_value(in_struc, "codec_data");
 	if (!codec_data)
 		return TRUE;
 
 	buf = gst_value_get_buffer(codec_data);
+	base->codec_data = gst_buffer_ref(buf);
 
-	if (codec->handle_extra_data)
-		return codec->handle_extra_data(base, buf);
-	else
-		return gstdsp_send_codec_data(base, buf);
+	return TRUE;
 }
 
 static inline void

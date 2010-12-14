@@ -754,6 +754,8 @@ send_play_message(GstDspBase *self)
 gboolean
 gstdsp_start(GstDspBase *self)
 {
+	struct td_codec *codec = self->codec;
+	bool ret = true;
 	guint i;
 
 	for (i = 0; i < ARRAY_SIZE(self->ports); i++) {
@@ -809,7 +811,19 @@ gstdsp_start(GstDspBase *self)
 
 	setup_buffers(self);
 
-	return true;
+	if (self->codec_data) {
+		GstBuffer *buf = self->codec_data;
+		self->codec_data = NULL;
+
+		if (codec->handle_extra_data)
+			ret = codec->handle_extra_data(self, buf);
+		else
+			ret = gstdsp_send_codec_data(self, buf);
+
+		gst_buffer_unref(buf);
+	}
+
+	return ret;
 }
 
 static bool
@@ -1069,9 +1083,17 @@ static inline gboolean
 init_node(GstDspBase *self,
 	  GstBuffer *buf)
 {
-	if (self->parse_func && !self->parse_func(self, buf))
-		pr_err(self, "error while parsing");
+	if (self->parse_func) {
+		if (self->codec_data && self->parse_func(self, self->codec_data))
+			goto ok;
 
+		if (self->parse_func(self, buf))
+			goto ok;
+
+		pr_err(self, "error while parsing");
+	}
+
+ok:
 #ifdef DEBUG
 	{
 		gchar *str = gst_caps_to_string(self->tmp_caps);
@@ -1107,13 +1129,6 @@ gstdsp_send_codec_data(GstDspBase *self,
 		       GstBuffer *buf)
 {
 	struct td_buffer *tb;
-
-	if (G_UNLIKELY(!self->node)) {
-		if (!init_node(self, buf)) {
-			pr_err(self, "couldn't start node");
-			return FALSE;
-		}
-	}
 
 	/*
 	 * codec-data must make it through as part of setcaps setup,
