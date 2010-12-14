@@ -195,22 +195,21 @@ create_node(GstDspBase *base)
 	return node;
 }
 
-static inline gboolean
-handle_codec_data(GstDspVDec *self,
-		  GstStructure *in_struc)
+static void save_codec_data(GstDspBase *base, GstStructure *in_struc)
 {
-	GstDspBase *base = GST_DSP_BASE(self);
 	const GValue *codec_data;
 	GstBuffer *buf;
 
 	codec_data = gst_structure_get_value(in_struc, "codec_data");
 	if (!codec_data)
-		return TRUE;
+		return;
 
 	buf = gst_value_get_buffer(codec_data);
-	base->codec_data = gst_buffer_ref(buf);
+	if (!buf)
+		return;
 
-	return TRUE;
+	gst_buffer_unref(base->codec_data);
+	base->codec_data = gst_buffer_ref(buf);
 }
 
 static inline void
@@ -396,7 +395,8 @@ skip_setup:
 	if (!ret)
 		return FALSE;
 
-	return handle_codec_data(self, in_struc);
+	save_codec_data(base, in_struc);
+	return TRUE;
 }
 
 static void
