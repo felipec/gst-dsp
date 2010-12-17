@@ -290,6 +290,8 @@ static void setup_params(GstDspBase *base)
 
 static bool handle_extra_data(GstDspBase *base, GstBuffer *buf)
 {
+	bool res;
+
 	GstDspVDec *self = GST_DSP_VDEC(base);
 
 	buf = transform_codec_data(self, buf);
@@ -297,7 +299,9 @@ static bool handle_extra_data(GstDspBase *base, GstBuffer *buf)
 		gstdsp_got_error(base, 0, "invalid codec_data");
 		return false;
 	}
-	return gstdsp_send_codec_data(base, buf);
+	res = gstdsp_send_codec_data(base, buf);
+	gst_buffer_unref(buf);
+	return res;
 }
 
 struct td_codec td_h264dec_codec = {
