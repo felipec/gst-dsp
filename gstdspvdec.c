@@ -62,7 +62,7 @@ generate_sink_template(void)
 
 	gst_caps_append_structure(caps, struc);
 
-	struc = gst_structure_new("video/x-h264",
+	struc = gst_structure_new("video/x-h264", "alignment", G_TYPE_STRING, "au",
 				  NULL);
 
 	gst_caps_append_structure(caps, struc);
