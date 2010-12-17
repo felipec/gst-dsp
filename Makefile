@@ -73,7 +73,7 @@ install: $(targets)
 	$(QUIET_LINK)$(AR) rcs $@ $^
 
 clean:
-	$(QUIET_CLEAN)$(RM) -v $(targets) *.o *.d
+	$(QUIET_CLEAN)$(RM) -v $(targets) *.o *.d tidsp/*.d tidsp/*.o
 
 dist: base := gst-dsp-$(version)
 dist:
