@@ -165,6 +165,7 @@ extern struct td_codec td_jpegenc_codec;
 extern struct td_codec td_h264enc_codec;
 
 extern struct td_codec td_vpp_codec;
+extern struct td_codec td_aacdec_codec;
 
 G_END_DECLS
 

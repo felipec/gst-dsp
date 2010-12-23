@@ -12,6 +12,7 @@
 
 #include "gstdspdummy.h"
 #include "gstdspvdec.h"
+#include "gstdspadec.h"
 #include "gstdsph263enc.h"
 #include "gstdspmp4venc.h"
 #include "gstdspjpegenc.h"
@@ -31,6 +32,9 @@ plugin_init(GstPlugin *plugin)
 		return FALSE;
 
 	if (!gst_element_register(plugin, "dspvdec", GST_RANK_PRIMARY, GST_DSP_VDEC_TYPE))
+		return FALSE;
+
+	if (!gst_element_register(plugin, "dspadec", GST_RANK_SECONDARY, GST_DSP_ADEC_TYPE))
 		return FALSE;
 
 	if (!gst_element_register(plugin, "dsph263enc", GST_RANK_PRIMARY, GST_DSP_H263ENC_TYPE))
