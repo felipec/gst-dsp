@@ -236,6 +236,14 @@ got_message(GstDspBase *self,
 			pr_debug(self, "playback completed");
 			break;
 		}
+
+		if (msg->arg_1 == 1 && (msg->arg_2 & 0x0600) == 0x0600) {
+			struct td_codec *codec = self->codec;
+			if (codec->update_params)
+				codec->update_params(self, self->node, msg->arg_2);
+			break;
+		}
+
 		pr_warning(self, "DSP event: cmd=0x%04X, arg1=%u, arg2=0x%04X",
 			   msg->cmd, msg->arg_1, msg->arg_2);
 		if ((msg->arg_2 & 0x0F00) == 0x0F00)

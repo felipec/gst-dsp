@@ -56,6 +56,7 @@ struct td_codec {
 	bool (*handle_extra_data)(GstDspBase *base, GstBuffer *buf);
 	void (*flush_buffer)(GstDspBase *base);
 	void (*send_params)(GstDspBase *base, struct dsp_node *node);
+	void (*update_params) (GstDspBase *base, struct dsp_node *node, uint32_t msg);
 };
 
 struct ts_item {
