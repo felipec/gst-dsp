@@ -37,7 +37,7 @@ enum {
 #define DEFAULT_MAX_BITRATE 0
 #define DEFAULT_MODE 0
 #define DEFAULT_KEYFRAME_INTERVAL 1
-#define DEFAULT_INTRA_REFRESH false
+#define DEFAULT_INTRA_REFRESH (DEFAULT_MODE == 1)
 
 #define GST_TYPE_DSPVENC_MODE gst_dspvenc_mode_get_type()
 static GType
@@ -489,6 +489,10 @@ set_property(GObject *obj,
 	}
 	case ARG_MODE:
 		self->mode = g_value_get_enum(value);
+		/* guess intra-refresh, if not manually set */
+		if (self->intra_refresh_set)
+			break;
+		self->intra_refresh = (self->mode == 1);
 		break;
 	case ARG_KEYFRAME_INTERVAL:
 		g_atomic_int_set(&self->keyframe_interval, g_value_get_int(value));
@@ -498,6 +502,7 @@ set_property(GObject *obj,
 		break;
 	case ARG_INTRA_REFRESH:
 		self->intra_refresh = g_value_get_boolean(value);
+		self->intra_refresh_set = true;
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
