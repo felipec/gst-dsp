@@ -65,6 +65,7 @@ struct td_codec {
 	void (*flush_buffer)(GstDspBase *base);
 	void (*send_params)(GstDspBase *base, struct dsp_node *node);
 	void (*update_params) (GstDspBase *base, struct dsp_node *node, uint32_t msg);
+	unsigned (*get_latency)(GstDspBase *base);
 };
 
 struct ts_item {

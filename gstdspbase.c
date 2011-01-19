@@ -1159,6 +1159,51 @@ gstdsp_send_codec_data(GstDspBase *self,
 	return TRUE;
 }
 
+static gboolean base_query(GstPad *pad, GstQuery *query)
+{
+	GstDspBase *base = GST_DSP_BASE(GST_PAD_PARENT(pad));
+	gboolean res;
+
+	pr_debug(base, "handling %s query",
+		gst_query_type_get_name(GST_QUERY_TYPE(query)));
+
+	res = gst_pad_peer_query(base->sinkpad, query);
+	if (!res)
+		return FALSE;
+
+	switch (GST_QUERY_TYPE(query)) {
+	case GST_QUERY_LATENCY: {
+		gboolean live;
+		GstClockTime min, max;
+
+		gst_query_parse_latency(query, &live, &min, &max);
+		pr_debug(base, "latency query live=%d, min=%" GST_TIME_FORMAT",max=%" GST_TIME_FORMAT,
+			live, GST_TIME_ARGS(min), GST_TIME_ARGS(max));
+
+		if (base->codec->get_latency) {
+			GstClockTime latency;
+
+			latency = base->codec->get_latency(base) * 1000000;
+
+			/* really need to avoid doing stuff with _NONE */
+			if (GST_CLOCK_TIME_IS_VALID(min))
+				min += latency;
+			if (GST_CLOCK_TIME_IS_VALID(max))
+				max += latency;
+		}
+
+		pr_debug(base, "latency query after live=%d, min=%" GST_TIME_FORMAT",max=%" GST_TIME_FORMAT,
+			live, GST_TIME_ARGS(min), GST_TIME_ARGS(max));
+		gst_query_set_latency(query, live, min, max);
+		break;
+	}
+	default:
+		/* peer handles other queries */
+		break;
+	}
+	return TRUE;
+}
+
 gboolean
 gstdsp_set_codec_data_caps(GstDspBase *base,
 		GstBuffer *buf)
@@ -1403,6 +1448,7 @@ instance_init(GTypeInstance *instance,
 	gst_pad_use_fixed_caps(self->srcpad);
 
 	gst_pad_set_event_function(self->srcpad, base_src_event);
+	gst_pad_set_query_function(self->srcpad, base_query);
 
 	gst_element_add_pad(GST_ELEMENT(self), self->sinkpad);
 	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);
