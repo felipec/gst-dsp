@@ -310,11 +310,13 @@ sink_setcaps(GstPad *pad,
 	self = GST_DSP_VDEC(GST_PAD_PARENT(pad));
 	base = GST_DSP_BASE(self);
 
+#ifdef DEBUG
 	{
 		gchar *str = gst_caps_to_string(caps);
 		pr_info(self, "sink caps: %s", str);
 		g_free(str);
 	}
+#endif
 
 	in_struc = gst_caps_get_structure(caps, 0);
 

@@ -1007,11 +1007,13 @@ init_node(GstDspBase *self,
 	if (self->parse_func && !self->parse_func(self, buf))
 		pr_err(self, "error while parsing");
 
+#ifdef DEBUG
 	{
 		gchar *str = gst_caps_to_string(self->tmp_caps);
 		pr_info(self, "src caps: %s", str);
 		g_free(str);
 	}
+#endif
 
 	if (!gst_pad_set_caps(self->srcpad, self->tmp_caps)) {
 		pr_err(self, "couldn't setup output caps");

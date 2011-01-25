@@ -253,11 +253,13 @@ sink_setcaps(GstPad *pad,
 	if (!codec)
 		return FALSE;
 
+#ifdef DEBUG
 	{
 		gchar *str = gst_caps_to_string(caps);
 		pr_info(self, "sink caps: %s", str);
 		g_free(str);
 	}
+#endif
 
 	in_struc = gst_caps_get_structure(caps, 0);
 
@@ -369,11 +371,13 @@ sink_setcaps(GstPad *pad,
 
 	gst_caps_append_structure(out_caps, out_struc);
 
+#ifdef DEBUG
 	{
 		gchar *str = gst_caps_to_string(out_caps);
 		pr_info(self, "src caps: %s", str);
 		g_free(str);
 	}
+#endif
 
 	if (!gst_pad_take_caps(base->srcpad, out_caps))
 		return FALSE;
