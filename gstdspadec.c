@@ -11,6 +11,7 @@
 #include "gstdspadec.h"
 
 #include "log.h"
+#include "util.h"
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
@@ -135,8 +136,7 @@ configure_caps(GstDspADec *self,
 {
 	GstDspBase *base;
 	GstStructure *out_struc, *in_struc;
-	uint channels;
-
+	int channels;
 
 	base = GST_DSP_BASE(self);
 
@@ -157,7 +157,9 @@ configure_caps(GstDspADec *self,
 
 	if (base->alg == GSTDSP_AACDEC) {
 		const char *fmt;
-		gst_structure_get_boolean(in_struc, "framed", &self->packetised);
+		gboolean tmp;
+		gst_structure_get_boolean(in_struc, "framed", &tmp);
+		self->packetized = tmp;
 		fmt = gst_structure_get_string(in_struc, "stream-format");
 		self->raw = strcmp(fmt, "raw") == 0;
 	}

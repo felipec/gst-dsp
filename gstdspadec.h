@@ -30,10 +30,10 @@ enum {
 
 struct GstDspADec {
 	GstDspBase element;
-	guint samplerate;
-	gboolean parametric_stereo;
-	gboolean packetised;
-	gboolean raw;
+	int samplerate;
+	bool parametric_stereo;
+	bool packetized;
+	bool raw;
 };
 
 struct GstDspADecClass {

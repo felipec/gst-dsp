@@ -43,10 +43,10 @@ static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 		.in_type = 0,
 		.in_count = base->ports[0]->num_buffers,
 		.out_id = 1,
-		.in_type = 0,
+		.out_type = 0,
 		.out_count = base->ports[1]->num_buffers,
 		.out_is_24bps = 0,
-		.in_is_framed = self->packetised ? 1 : 0,
+		.in_is_framed = self->packetized ? 1 : 0,
 	};
 
 	*profile_id = -1;
@@ -68,7 +68,7 @@ struct dyn_params {
 static inline int
 get_sample_rate_index(int rate)
 {
-	int i;
+	unsigned i;
 	int rates[] = { 96000, 88200, 64000, 48000, 44100, 32000,
 			24000, 22050, 16000, 12000, 11025, 8000 };
 
