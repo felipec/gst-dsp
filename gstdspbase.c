@@ -9,6 +9,7 @@
  */
 
 #include "gstdspbase.h"
+#include "gstdspbuffer.h"
 #include "plugin.h"
 
 #include "dsp_bridge.h"
@@ -457,11 +458,7 @@ output_loop(gpointer data)
 		GST_BUFFER_SIZE(out_buf) = b->len;
 	}
 	else {
-		out_buf = gst_buffer_new();
-		GST_BUFFER_DATA(out_buf) = b->data;
-		GST_BUFFER_MALLOCDATA(out_buf) = b->allocated_data;
-		GST_BUFFER_SIZE(out_buf) = b->len;
-		gst_buffer_set_caps(out_buf, GST_PAD_CAPS(self->srcpad));
+		out_buf = gst_dsp_buffer_new(self, tb);
 
 		/* invalidate data to force reallocation */
 		b->data = b->allocated_data = NULL;
@@ -1374,6 +1371,9 @@ gst_dsp_base_get_type(void)
 		};
 
 		type = g_type_register_static(GST_TYPE_ELEMENT, "GstDspBase", &type_info, 0);
+
+		/* cache buffer type */
+		gst_dsp_buffer_get_type();
 	}
 
 	return type;
