@@ -43,6 +43,7 @@ struct td_buffer {
 	void *user_data;
 	bool keyframe;
 	bool pinned;
+	bool clean;
 };
 
 struct du_port_t {

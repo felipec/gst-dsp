@@ -291,7 +291,7 @@ setup_buffers(GstDspBase *self)
 			if (self->use_pinned) {
 				buf = gst_dsp_buffer_new(self, tb);
 				dmm_buffer_map(b);
-				tb->pinned = true;
+				tb->pinned = tb->clean = true;
 			}
 		}
 
@@ -922,10 +922,14 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 	if (tb->params)
 		dmm_buffer_begin(tb->params, tb->params->size);
 
-	if (tb->pinned)
-		dmm_buffer_begin(buffer, buffer->len);
-	else
+	if (tb->pinned) {
+		if (G_LIKELY(!tb->clean))
+			dmm_buffer_begin(buffer, buffer->len);
+		else
+			tb->clean = false;
+	} else {
 		dmm_buffer_map(buffer);
+	}
 
 	memset(msg_data, 0, sizeof(*msg_data));
 
