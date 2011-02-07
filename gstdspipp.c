@@ -510,7 +510,7 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 		break;
 	case DFGM_EVENT_ERROR:
 		free_message_args(self);
-		gstdsp_got_error(base, 0, "DFGM Event Error");
+		gstdsp_got_error(base, -1, "DFGM Event Error");
 		base->done = TRUE;
 		break;
 	default:
