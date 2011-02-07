@@ -1163,8 +1163,7 @@ sink_event(GstDspBase *self,
 	pr_info(self, "event: %s", GST_EVENT_TYPE_NAME(event));
 
 	switch (GST_EVENT_TYPE(event)) {
-	case GST_EVENT_EOS:
-	{
+	case GST_EVENT_EOS: {
 		bool defer_eos = false;
 
 		g_mutex_lock(self->ts_mutex);
