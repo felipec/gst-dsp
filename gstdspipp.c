@@ -1172,38 +1172,10 @@ static bool send_play_message(GstDspBase *base)
 static void reset(GstDspBase *base)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
-	self->msg_sem->count = 1;
-}
-
-static bool send_stop_message(GstDspBase *base)
-{
-	GstDspIpp *self = GST_DSP_IPP(base);
-	bool ok = true;
 	unsigned i;
 
-	if (base->dsp_error)
-		goto cleanup;
+	self->msg_sem->count = 1;
 
-	ok = stop_processing(self);
-	if (!ok)
-		goto leave;
-
-	ok = destroy_pipe(self);
-	if (!ok)
-		goto leave;
-
-	ok = clear_algorithm(self);
-	if (!ok)
-		goto leave;
-
-	ok = destroy_xbf(self);
-	if (!ok)
-		goto leave;
-
-	/* let's wait for the previous msg to complete */
-	g_sem_down(self->msg_sem);
-
-cleanup:
 	for (i = 0; i < self->nr_algos; i++) {
 		struct ipp_algo *algo = self->algos[i];
 		if (!algo)
@@ -1236,6 +1208,34 @@ cleanup:
 		dmm_buffer_free(self->status_params);
 		self->status_params = NULL;
 	}
+}
+
+static bool send_stop_message(GstDspBase *base)
+{
+	GstDspIpp *self = GST_DSP_IPP(base);
+	bool ok = true;
+
+	if (base->dsp_error)
+		goto leave;
+
+	ok = stop_processing(self);
+	if (!ok)
+		goto leave;
+
+	ok = destroy_pipe(self);
+	if (!ok)
+		goto leave;
+
+	ok = clear_algorithm(self);
+	if (!ok)
+		goto leave;
+
+	ok = destroy_xbf(self);
+	if (!ok)
+		goto leave;
+
+	/* let's wait for the previous msg to complete */
+	g_sem_down(self->msg_sem);
 
 leave:
 	return ok;
