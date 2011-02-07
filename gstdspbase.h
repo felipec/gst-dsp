@@ -41,7 +41,6 @@ struct td_buffer {
 	dmm_buffer_t *comm;
 	dmm_buffer_t *params;
 	void *user_data;
-	bool used;
 	bool keyframe;
 };
 
