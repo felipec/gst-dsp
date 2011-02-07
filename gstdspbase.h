@@ -90,6 +90,7 @@ struct _GstDspBase {
 	GThread *dsp_thread, *out_thread;
 	gboolean done;
 	int deferred_eos;
+	int eos;
 
 	du_port_t *ports[2];
 	dmm_buffer_t *alg_ctrl;

@@ -321,6 +321,7 @@ pause_task(GstDspBase *self, GstFlowReturn status)
 	if (deferred_eos) {
 		pr_info(self, "send elapsed eos");
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
+		g_atomic_int_set(&self->eos, true);
 	}
 }
 
@@ -511,6 +512,7 @@ leave:
 	if (G_UNLIKELY(got_eos)) {
 		pr_info(self, "got eos");
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
+		g_atomic_int_set(&self->eos, true);
 		g_atomic_int_set(&self->deferred_eos, false);
 		ret = GST_FLOW_UNEXPECTED;
 		if (self->use_pinned) {
@@ -992,6 +994,7 @@ change_state(GstElement *element,
 		async_queue_enable(self->ports[0]->queue);
 		async_queue_enable(self->ports[1]->queue);
 		self->deferred_eos = false;
+		self->eos = false;
 		break;
 
 	case GST_STATE_CHANGE_PAUSED_TO_READY:
@@ -1212,8 +1215,10 @@ sink_event(GstDspBase *self,
 			if (self->flush_buffer)
 				self->flush_buffer(self);
 			gst_event_unref(event);
-		} else
+		} else {
 			ret = gst_pad_push_event(self->srcpad, event);
+			g_atomic_int_set(&self->eos, true);
+		}
 		break;
 	}
 	case GST_EVENT_FLUSH_START:
@@ -1229,6 +1234,8 @@ sink_event(GstDspBase *self,
 
 	case GST_EVENT_FLUSH_STOP:
 		ret = gst_pad_push_event(self->srcpad, event);
+
+		g_atomic_int_set(&self->eos, false);
 
 		g_mutex_lock(self->ts_mutex);
 		self->ts_push_pos = self->ts_in_pos;

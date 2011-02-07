@@ -47,8 +47,11 @@ static void finalize(GstMiniObject *obj)
 {
 	GstDspBuffer *dsp_buf = (GstDspBuffer *) obj;
 	GstDspBase *base = dsp_buf->base;
-	if (dsp_buf->tb->pinned)
+	if (dsp_buf->tb->pinned) {
+		if (G_UNLIKELY(g_atomic_int_get(&base->eos)))
+			dsp_buf->tb->clean = true;
 		base->send_buffer(base, dsp_buf->tb);
+	}
 	parent_class->finalize(obj);
 }
 
