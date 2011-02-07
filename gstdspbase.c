@@ -906,15 +906,13 @@ map_buffer(GstDspBase *self,
 static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 {
 	dsp_comm_t *msg_data;
-	du_port_t *port;
-	int index = tb->port->id;
+	du_port_t *port = tb->port;
+	int index = port->id;
 	dmm_buffer_t *buffer = tb->data;
 
 	pr_debug(self, "sending %s buffer", index == 0 ? "input" : "output");
 
 	buffer->len = buffer->size;
-
-	port = self->ports[index];
 
 	msg_data = tb->comm->data;
 
