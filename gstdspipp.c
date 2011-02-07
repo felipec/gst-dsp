@@ -1172,14 +1172,13 @@ static bool send_play_message(GstDspBase *base)
 static void reset(GstDspBase *base)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
-	unsigned i;
 
 	self->msg_sem->count = 1;
 
-	for (i = 0; i < self->nr_algos; i++) {
+	for (unsigned i = 0; i < self->nr_algos; i++) {
 		struct ipp_algo *algo = self->algos[i];
 		if (!algo)
-			break;
+			continue;
 		dmm_buffer_free(algo->create_params);
 		dmm_buffer_free(algo->b_algo_fxn);
 		dmm_buffer_free(algo->b_dma_fxn);
@@ -1189,25 +1188,14 @@ static void reset(GstDspBase *base)
 		self->algos[i] = NULL;
 	}
 
-	if (self->flt_graph) {
-		dmm_buffer_free(self->flt_graph);
-		self->flt_graph = NULL;
-	}
-
-	if (self->intermediate_buf) {
-		dmm_buffer_free(self->intermediate_buf);
-		self->intermediate_buf = NULL;
-	}
-
-	if (self->dyn_params) {
-		dmm_buffer_free(self->dyn_params);
-		self->dyn_params = NULL;
-	}
-
-	if (self->status_params) {
-		dmm_buffer_free(self->status_params);
-		self->status_params = NULL;
-	}
+	dmm_buffer_free(self->flt_graph);
+	self->flt_graph = NULL;
+	dmm_buffer_free(self->intermediate_buf);
+	self->intermediate_buf = NULL;
+	dmm_buffer_free(self->dyn_params);
+	self->dyn_params = NULL;
+	dmm_buffer_free(self->status_params);
+	self->status_params = NULL;
 }
 
 static bool send_stop_message(GstDspBase *base)
