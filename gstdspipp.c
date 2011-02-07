@@ -467,16 +467,15 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
 	int command_id = msg->cmd;
-	struct xbf_msg_elem_2 *msg_2;
-	int error_code = DFGM_ERROR_NONE;
+	int error_code = 0;
 	dmm_buffer_t **msg_ptr = self->msg_ptr;
 
 	ipp_buffer_end(self);
 
 	if (msg_ptr[1]) {
+		struct xbf_msg_elem_2 *msg_2;
 		msg_2 = msg_ptr[1]->data;
 		error_code = msg_2->error_code;
-		base->dsp_error = error_code;
 	}
 
 	if (command_id == DFGM_FREE_BUFF) {
@@ -511,8 +510,7 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 		break;
 	case DFGM_EVENT_ERROR:
 		free_message_args(self);
-		send_stop_message(base);
-		gstdsp_got_error(base, base->dsp_error, "DFGM Event Error");
+		gstdsp_got_error(base, 0, "DFGM Event Error");
 		base->done = TRUE;
 		break;
 	default:
@@ -528,13 +526,11 @@ static void got_message(GstDspBase *base, struct dsp_msg *msg)
 	case DFGM_ERROR_CREATE_XBF_PIPE:
 	case DFGM_ERROR_SET_ALGS:
 	case DFGM_ERROR_CREATE_XBF:
-		send_stop_message(base);
-		gstdsp_got_error(base, base->dsp_error, "DFGM algo error");
+		gstdsp_got_error(base, 0, "DFGM algo error");
 		base->done = TRUE;
 		break;
 	default:
-		send_stop_message(base);
-		gstdsp_got_error(base, base->dsp_error, "DFGM unhandled error");
+		gstdsp_got_error(base, 0, "DFGM unhandled error");
 		base->done = TRUE;
 		break;
 	}
