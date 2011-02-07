@@ -846,10 +846,10 @@ static bool control_pipe(GstDspIpp *self)
 
 	for (i = 0; i < nr_algos; i++) {
 		msg_1->control_tables[i].alg_inst = i;
-		msg_1->control_tables[i].control_cmd = -1 ;
+		msg_1->control_tables[i].control_cmd = -1;
 
 		if (i == eenf_idx) {
-			msg_1->control_tables[i].control_cmd = 1 ;
+			msg_1->control_tables[i].control_cmd = 1;
 			msg_1->control_tables[i].dyn_params_ptr = (uint32_t)self->dyn_params->map;
 			msg_1->control_tables[i].status_ptr = (uint32_t)self->status_params->map;
 		}
@@ -886,7 +886,7 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer)
 	struct queue_buff_msg_elem_1 *msg_elem_list;
 	dmm_buffer_t *msg_elem_array;
 	int32_t cur_idx = 0;
-	int i = 0 ;
+	int i = 0;
 	du_port_t *port;
 	int nr_algos = self->nr_algos;
 	int nr_buffers;
@@ -959,9 +959,8 @@ static bool queue_buffer(GstDspIpp *self, dmm_buffer_t *in_buffer)
 		cur_idx++;
 
 		if (i == nr_algos - 1) {
-			queue_msg1->next_content_ptr = 0 ;
-		}
-		else {
+			queue_msg1->next_content_ptr = 0;
+		} else {
 			queue_msg1->next_content_ptr = (uint32_t)((char *)msg_elem_array->map) +
 				(cur_idx)*sizeof(*msg_elem_list);
 			queue_msg1 = &msg_elem_list[cur_idx];
