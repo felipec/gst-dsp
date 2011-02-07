@@ -1169,6 +1169,12 @@ static bool send_play_message(GstDspBase *base)
 	return true;
 };
 
+static void reset(GstDspBase *base)
+{
+	GstDspIpp *self = GST_DSP_IPP(base);
+	self->msg_sem->count = 1;
+}
+
 static bool send_stop_message(GstDspBase *base)
 {
 	GstDspIpp *self = GST_DSP_IPP(base);
@@ -1230,8 +1236,6 @@ cleanup:
 		dmm_buffer_free(self->status_params);
 		self->status_params = NULL;
 	}
-
-	g_sem_up(self->msg_sem);
 
 leave:
 	return ok;
@@ -1561,6 +1565,7 @@ static void instance_init(GTypeInstance *instance, gpointer g_class)
 	base->send_buffer = send_buffer;
 	base->send_play_message = send_play_message;
 	base->send_stop_message = send_stop_message;
+	base->reset = reset;
 	self->msg_sem = g_sem_new(1);
 
 	/* initialize params to normal strength */
