@@ -247,7 +247,7 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 	struct out_params *param;
 	param = tb->params->data;
 
-	pr_debug(base, "receive %d/%ld",
+	pr_debug(base, "receive %zu/%ld",
 			b->len, base->output_buffer_size);
 	pr_debug(base, "error: 0x%x, frame type: %d",
 			param->error_code, param->frame_type);
