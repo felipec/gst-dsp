@@ -18,7 +18,11 @@ static GstDspBaseClass *parent_class;
 #define MAX_ALGS 16
 #define IPP_TIMEOUT (2000 * 1000)
 
+#if SN_API == 0
+#define INTERNAL_FORMAT IPP_YUV_422P
+#else
 #define INTERNAL_FORMAT IPP_YUV_420P
+#endif
 
 static bool send_stop_message(GstDspBase *base);
 
@@ -1142,9 +1146,11 @@ static inline GstCaps *generate_sink_template(void)
 				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'), NULL);
 	gst_caps_append_structure(caps, struc);
 
+#if SN_API > 0
 	struc = gst_structure_new("video/x-raw-yuv", "format",
 				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('I', '4', '2', '0'), NULL);
 	gst_caps_append_structure(caps, struc);
+#endif
 
 	return caps;
 }
