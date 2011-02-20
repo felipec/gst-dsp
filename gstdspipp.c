@@ -214,8 +214,7 @@ get_yuvc_params(GstDspIpp *self, int alg_id)
 	if (alg_id == YUV_I_TO_P) {
 		in_args->input_chroma_format = IPP_YUV_422ILE;
 		in_args->output_chroma_format = IPP_YUV_420P;
-	}
-	else {
+	} else {
 		in_args->input_chroma_format = IPP_YUV_420P;
 		in_args->output_chroma_format = IPP_YUV_422ILE;
 	}
@@ -762,9 +761,9 @@ static bool control_pipe(GstDspIpp *self)
 	int nr_algos = self->nr_algos;
 
 	/*
-	 * if the input format is YUV420p, YUV422i to YUV420p conversion
-	 * algorithm will not present in the ipp pipeline.In that case
-	 * position of eenf in the pipeline is 2.Otherwise eenf positiom is 3.
+	 * If the input format is YUV420p, YUV422i to YUV420p conversion
+	 * algorithm will not present in the ipp pipeline. In that case
+	 * position of eenf in the pipeline is 2. Otherwise eenf positiom is 3.
 	 */
 	if (self->in_pix_fmt == IPP_YUV_420P)
 		eenf_idx = 2;
@@ -1148,7 +1147,7 @@ static inline GstCaps *generate_sink_template(void)
 
 	caps = gst_caps_new_empty();
 	struc = gst_structure_new("video/x-raw-yuv", "format",
-				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('U','Y','V','Y'), NULL);
+				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'), NULL);
 	gst_caps_append_structure(caps, struc);
 
 	struc = gst_structure_new("video/x-raw-yuv", "format",
@@ -1165,7 +1164,7 @@ static inline GstCaps *generate_src_template(void)
 
 	caps = gst_caps_new_empty();
 	struc = gst_structure_new("video/x-raw-yuv", "format",
-				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('U','Y','V','Y'), NULL);
+				  GST_TYPE_FOURCC, GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'), NULL);
 	gst_caps_append_structure(caps, struc);
 	return caps;
 }
