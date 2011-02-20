@@ -18,6 +18,8 @@ static GstDspBaseClass *parent_class;
 #define MAX_ALGS 16
 #define IPP_TIMEOUT (2000 * 1000)
 
+#define INTERNAL_FORMAT IPP_YUV_420P
+
 static bool send_stop_message(GstDspBase *base);
 
 enum {
@@ -269,7 +271,7 @@ get_crcbs_params(GstDspIpp *self)
 	in_args->size = sizeof(*in_args);
 	in_args->input_width = self->width;
 	in_args->input_height = self->height;
-	in_args->input_chroma_format = IPP_YUV_420P;
+	in_args->input_chroma_format = INTERNAL_FORMAT;
 	dmm_buffer_map(tmp);
 
 	algo->in = tmp;
@@ -342,7 +344,7 @@ get_eenf_params(GstDspIpp *self)
 	tmp = ipp_calloc(self, sizeof(*in_args), DMA_TO_DEVICE);
 	in_args = tmp->data;
 	in_args->size = sizeof(*in_args);
-	in_args->input_chroma_format = IPP_YUV_420P;
+	in_args->input_chroma_format = INTERNAL_FORMAT;
 	in_args->in_full_width = self->width;
 	in_args->in_full_height = self->height;
 	in_args->input_width = self->width;
@@ -366,12 +368,12 @@ static bool setup_ipp_params(GstDspIpp *self)
 	int i = 0;
 	self->algos[i++] = get_star_params(self);
 
-	if (self->in_pix_fmt == IPP_YUV_422ILE)
-		self->algos[i++] = get_yuvc_params(self, IPP_YUV_422ILE, IPP_YUV_420P);
+	if (self->in_pix_fmt != INTERNAL_FORMAT)
+		self->algos[i++] = get_yuvc_params(self, IPP_YUV_422ILE, INTERNAL_FORMAT);
 
 	self->algos[i++] = get_crcbs_params(self);
 	self->algos[i++] = get_eenf_params(self);
-	self->algos[i++] = get_yuvc_params(self, IPP_YUV_420P, IPP_YUV_422ILE);
+	self->algos[i++] = get_yuvc_params(self, INTERNAL_FORMAT, IPP_YUV_422ILE);
 	self->nr_algos = i;
 
 	return true;
@@ -755,7 +757,7 @@ static bool control_pipe(GstDspIpp *self)
 	 * algorithm will not present in the ipp pipeline. In that case
 	 * position of eenf in the pipeline is 2. Otherwise eenf positiom is 3.
 	 */
-	if (self->in_pix_fmt == IPP_YUV_420P)
+	if (self->in_pix_fmt == INTERNAL_FORMAT)
 		eenf_idx = 2;
 	else
 		eenf_idx = 3;
