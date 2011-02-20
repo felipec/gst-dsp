@@ -83,11 +83,6 @@ enum {
 	CONTENT_TYPE_OUT_ARGS,
 };
 
-enum {
-	YUV_I_TO_P,
-	YUV_P_TO_I,
-};
-
 struct ipp_name_string {
 	int8_t str[25];
 	uint32_t size;
@@ -182,7 +177,7 @@ struct ipp_yuvc_algo_out_args {
 };
 
 static struct ipp_algo *
-get_yuvc_params(GstDspIpp *self, int alg_id)
+get_yuvc_params(GstDspIpp *self, int in_fmt, int out_fmt)
 {
 	struct ipp_algo *algo;
 	dmm_buffer_t *tmp;
@@ -211,13 +206,8 @@ get_yuvc_params(GstDspIpp *self, int alg_id)
 	in_args->input_width = self->width;
 	in_args->input_height = self->height;
 
-	if (alg_id == YUV_I_TO_P) {
-		in_args->input_chroma_format = IPP_YUV_422ILE;
-		in_args->output_chroma_format = IPP_YUV_420P;
-	} else {
-		in_args->input_chroma_format = IPP_YUV_420P;
-		in_args->output_chroma_format = IPP_YUV_422ILE;
-	}
+	in_args->input_chroma_format = in_fmt;
+	in_args->output_chroma_format = out_fmt;
 
 	dmm_buffer_map(tmp);
 
@@ -377,11 +367,11 @@ static bool setup_ipp_params(GstDspIpp *self)
 	self->algos[i++] = get_star_params(self);
 
 	if (self->in_pix_fmt == IPP_YUV_422ILE)
-		self->algos[i++] = get_yuvc_params(self, YUV_I_TO_P);
+		self->algos[i++] = get_yuvc_params(self, IPP_YUV_422ILE, IPP_YUV_420P);
 
 	self->algos[i++] = get_crcbs_params(self);
 	self->algos[i++] = get_eenf_params(self);
-	self->algos[i++] = get_yuvc_params(self, YUV_P_TO_I);
+	self->algos[i++] = get_yuvc_params(self, IPP_YUV_420P, IPP_YUV_422ILE);
 	self->nr_algos = i;
 
 	return true;
