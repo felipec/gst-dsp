@@ -369,6 +369,15 @@ output_loop(gpointer data)
 		goto leave;
 	}
 
+	/* check for too many buffers returned */
+	g_mutex_lock(self->ts_mutex);
+	if (G_UNLIKELY(b->len && !self->ts_count)) {
+		pr_warning(self, "no timestamp; unexpected buffer");
+		g_mutex_unlock(self->ts_mutex);
+		goto leave;
+	}
+	g_mutex_unlock(self->ts_mutex);
+
 	/* first clear pending events */
 	g_mutex_lock(self->ts_mutex);
 	while ((event = self->ts_array[self->ts_out_pos].event)) {
