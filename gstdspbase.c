@@ -192,7 +192,10 @@ got_message(GstDspBase *self,
 		if (G_UNLIKELY(b->len > b->size))
 			g_error("wrong buffer size");
 
-		dmm_buffer_unmap(b);
+		if (tb->pinned)
+			dmm_buffer_end(b, b->len);
+		else
+			dmm_buffer_unmap(b);
 
 		param = (void *) msg_data->param_virt;
 		if (param)
@@ -263,7 +266,8 @@ setup_buffers(GstDspBase *self)
 
 	p = self->ports[1];
 	for (i = 0; i < p->num_buffers; i++) {
-		p->buffers[i].data = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
+		struct td_buffer *tb = &p->buffers[i];
+		tb->data = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
 
 		if (self->use_pad_alloc) {
 			GstFlowReturn ret;
@@ -282,8 +286,14 @@ setup_buffers(GstDspBase *self)
 				gst_buffer_unref(buf);
 			}
 		}
-		else
+		else {
 			dmm_buffer_allocate(b, self->output_buffer_size);
+			if (self->use_pinned) {
+				buf = gst_dsp_buffer_new(self, tb);
+				dmm_buffer_map(b);
+				tb->pinned = true;
+			}
+		}
 
 		self->send_buffer(self, &p->buffers[i]);
 	}
@@ -460,8 +470,9 @@ output_loop(gpointer data)
 	else {
 		out_buf = gst_dsp_buffer_new(self, tb);
 
-		/* invalidate data to force reallocation */
-		b->data = b->allocated_data = NULL;
+		if (!self->use_pinned)
+			/* invalidate data to force reallocation */
+			b->data = b->allocated_data = NULL;
 	}
 
 	if (G_UNLIKELY(self->skip_hack > 0)) {
@@ -502,6 +513,11 @@ leave:
 		gst_pad_push_event(self->srcpad, gst_event_new_eos());
 		g_atomic_int_set(&self->deferred_eos, false);
 		ret = GST_FLOW_UNEXPECTED;
+		if (self->use_pinned) {
+			if (!tb->pinned)
+				self->send_buffer(self, tb);
+			goto nok;
+		}
 		/*
 		 * We don't want to allocate data unnecessarily; postpone after
 		 * EOS and flush.
@@ -513,6 +529,11 @@ leave:
 			async_queue_push(p->queue, tb);
 	}
 	else {
+		if (self->use_pinned) {
+			if (!tb->pinned)
+				self->send_buffer(self, tb);
+			goto nok;
+		}
 		if (!b->data)
 			dmm_buffer_allocate(b, self->output_buffer_size);
 		self->send_buffer(self, tb);
@@ -901,7 +922,10 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 	if (tb->params)
 		dmm_buffer_begin(tb->params, tb->params->size);
 
-	dmm_buffer_map(buffer);
+	if (tb->pinned)
+		dmm_buffer_begin(buffer, buffer->len);
+	else
+		dmm_buffer_map(buffer);
 
 	memset(msg_data, 0, sizeof(*msg_data));
 

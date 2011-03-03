@@ -45,6 +45,10 @@ GstBuffer *gst_dsp_buffer_new(GstDspBase *base, struct td_buffer *tb)
 
 static void finalize(GstMiniObject *obj)
 {
+	GstDspBuffer *dsp_buf = (GstDspBuffer *) obj;
+	GstDspBase *base = dsp_buf->base;
+	if (dsp_buf->tb->pinned)
+		base->send_buffer(base, dsp_buf->tb);
 	parent_class->finalize(obj);
 }
 
