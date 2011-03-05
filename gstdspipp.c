@@ -16,7 +16,7 @@
 static GstDspBaseClass *parent_class;
 
 #define MAX_ALGS 16
-#define IPP_TIMEOUT (2000 * 1000)
+#define IPP_TIMEOUT 2
 #define MAX_WIDTH 4096
 #define MAX_HEIGHT 3072
 #define MAX_TOTAL_PIXEL (4000 * 3008)
@@ -547,7 +547,10 @@ static bool send_msg(GstDspIpp *self, int id,
 {
 	GstDspBase *base = GST_DSP_BASE(self);
 
-	g_sem_down(self->msg_sem);
+	if (!g_sem_down_timed(self->msg_sem, IPP_TIMEOUT)) {
+		pr_err(self, "ipp send msg timed out");
+		return false;
+	}
 
 	self->msg_ptr[0] = arg1;
 	self->msg_ptr[1] = arg2;
@@ -1220,7 +1223,10 @@ static bool send_stop_message(GstDspBase *base)
 		goto leave;
 
 	/* let's wait for the previous msg to complete */
-	g_sem_down(self->msg_sem);
+	if (!g_sem_down_timed(self->msg_sem, IPP_TIMEOUT)) {
+		pr_err(self, "ipp send msg timed out");
+		return false;
+	}
 
 leave:
 	return ok;

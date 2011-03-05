@@ -787,7 +787,8 @@ static bool
 send_stop_message(GstDspBase *self)
 {
 	if (dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0))
-		g_sem_down(self->flush);
+		if (!g_sem_down_timed(self->flush, 2))
+			pr_warning(self, "timed out waiting for DSP STOP");
 	/** @todo find a way to stop wait_for_events */
 	return true;
 };
