@@ -64,6 +64,7 @@ instance_init(GTypeInstance *instance,
 	base->codec = &td_mp4venc_codec;
 	self->supported_levels = levels;
 	self->nr_supported_levels = ARRAY_SIZE(levels);
+	base->use_pinned = true;
 }
 
 static void
