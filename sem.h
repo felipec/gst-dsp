@@ -52,6 +52,26 @@ g_sem_down(GSem *sem)
 	g_mutex_unlock(sem->mutex);
 }
 
+static inline bool
+g_sem_down_timed(GSem *sem, int seconds)
+{
+	GTimeVal tv;
+
+	g_mutex_lock(sem->mutex);
+	while (sem->count == 0) {
+		g_get_current_time(&tv);
+		tv.tv_sec += seconds;
+		if (!g_cond_timed_wait(sem->condition, sem->mutex, &tv)) {
+			g_mutex_unlock(sem->mutex);
+			return false;
+		}
+	}
+	sem->count--;
+	g_mutex_unlock(sem->mutex);
+
+	return true;
+}
+
 static inline void
 g_sem_up(GSem *sem)
 {
