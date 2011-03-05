@@ -763,7 +763,6 @@ gstdsp_start(GstDspBase *self)
 static bool
 send_stop_message(GstDspBase *self)
 {
-	/* stop */
 	if (dsp_send_message(self->dsp_handle, self->node, 0x0200, 0, 0))
 		g_sem_down(self->flush);
 	/** @todo find a way to stop wait_for_events */
