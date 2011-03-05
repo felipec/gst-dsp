@@ -95,6 +95,12 @@ static GstBuffer *transform_codec_data(GstDspVDec *self, GstBuffer *buf)
 	if (size < 8)
 		goto fail;
 
+	val = GST_READ_UINT32_BE(data);
+	if (val == 1 || (val >> 8) == 1) {
+		pr_debug(self, "codec_data in byte-stream format not transformed");
+		return gst_buffer_ref(buf);
+	}
+
 	lol = (data[4] & (0x3)) + 1;
 	num_sps = data[5] & 0x1f;
 	data += 6;
