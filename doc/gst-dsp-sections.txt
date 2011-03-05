@@ -31,6 +31,19 @@ gstdsp_debug
 </SECTION>
 
 <SECTION>
+<FILE>element-dspipp</FILE>
+<TITLE>dspipp</TITLE>
+GstDspIpp
+<SUBSECTION Standard>
+GST_DSP_IPP
+GST_DSP_IPP_TYPE
+GST_DSP_IPP_CLASS
+IPP_MAX_NUM_OF_ALGOS
+GstDspIppClass
+gst_dsp_ipp_get_type
+</SECTION>
+
+<SECTION>
 <FILE>element-dspvdec</FILE>
 <TITLE>dspvdec</TITLE>
 GstDspVDec

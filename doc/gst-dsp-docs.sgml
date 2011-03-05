@@ -16,6 +16,7 @@
     <xi:include href="xml/element-dsph264enc.xml"/>
     <xi:include href="xml/element-dspjpegenc.xml"/>
     <xi:include href="xml/element-dspmp4venc.xml"/>
+    <xi:include href="xml/element-dspipp.xml"/>
     <xi:include href="xml/element-dspdummy.xml"/>
   </chapter>
 

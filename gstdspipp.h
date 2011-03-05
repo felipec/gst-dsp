@@ -24,8 +24,8 @@ G_BEGIN_DECLS
 
 #define IPP_MAX_NUM_OF_ALGOS 5
 
-typedef struct GstDspIpp GstDspIpp;
-typedef struct GstDspIppClass GstDspIppClass;
+typedef struct _GstDspIpp GstDspIpp;
+typedef struct _GstDspIppClass GstDspIppClass;
 
 struct ipp_algo {
 	dmm_buffer_t *create_params;
@@ -64,7 +64,7 @@ struct ipp_eenf_params {
 	int16_t ratio_downsample_cb_cr;
 };
 
-struct GstDspIpp {
+struct _GstDspIpp {
 	GstDspBase element;
 	int width, height;
 	int in_pix_fmt;
@@ -83,7 +83,7 @@ struct GstDspIpp {
 	dmm_buffer_t *status_params;
 };
 
-struct GstDspIppClass {
+struct _GstDspIppClass {
 	GstDspBaseClass parent_class;
 };
 
