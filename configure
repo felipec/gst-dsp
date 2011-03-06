@@ -1,0 +1,31 @@
+#! /bin/sh
+
+CC=${CC:-\$(CROSS_COMPILE)gcc}
+CFLAGS=${CFLAGS:--O2 -ggdb -Wall -Wextra -Wno-unused-parameter -Wmissing-prototypes -ansi}
+LDFLAGS=${LDFLAGS:--Wl,--no-undefined -Wl,--as-needed}
+
+GST_CFLAGS=$(pkg-config --cflags gstreamer-0.10)
+GST_LIBS=$(pkg-config --libs gstreamer-0.10)
+
+DSP_API=${DSP_API:-2}
+SN_API=${SN_API:-2}
+
+dspdir=${dspdir:-"/lib/dsp"}
+prefix=${prefix:-"/usr"}
+
+cat > Makefile.conf <<EOF
+CROSS_COMPILE ?= ${CROSS_COMPILE}
+CC := ${CC}
+
+CFLAGS := ${CFLAGS}
+LDFLAGS := ${LDFLAGS}
+
+GST_CFLAGS := ${GST_CFLAGS}
+GST_LIBS := ${GST_LIBS}
+
+DSP_API := ${DSP_API}
+SN_API := ${SN_API}
+
+dspdir := ${dspdir}
+prefix := ${prefix}
+EOF

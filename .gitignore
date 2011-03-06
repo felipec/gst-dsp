@@ -3,3 +3,4 @@
 *.a
 
 gst-dsp-parse
+Makefile.conf
