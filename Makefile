@@ -1,23 +1,11 @@
-CC := $(CROSS_COMPILE)gcc
-
-CFLAGS := -O2 -ggdb -Wall -Wextra -Wno-unused-parameter -Wmissing-prototypes -ansi
-LDFLAGS := -Wl,--no-undefined -Wl,--as-needed
+include Makefile.conf
 
 override CFLAGS += -std=c99 -D_GNU_SOURCE -DGST_DISABLE_DEPRECATED
-
-GST_CFLAGS := $(shell pkg-config --cflags gstreamer-0.10)
-GST_LIBS := $(shell pkg-config --libs gstreamer-0.10)
-
-DSP_API := 2
-SN_API := 2
-
 override CFLAGS += -DDSP_API=$(DSP_API) -DSN_API=$(SN_API)
 
 all:
 
 version := $(shell ./get-version)
-dspdir := /lib/dsp
-prefix := /usr
 
 D = $(DESTDIR)
 
