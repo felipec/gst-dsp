@@ -1,4 +1,3 @@
-CROSS_COMPILE ?= arm-linux-
 CC := $(CROSS_COMPILE)gcc
 
 CFLAGS := -O2 -ggdb -Wall -Wextra -Wno-unused-parameter -Wmissing-prototypes -ansi
