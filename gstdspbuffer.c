@@ -35,6 +35,8 @@ GstBuffer *gst_dsp_buffer_new(GstDspBase *base, struct td_buffer *tb)
 	dmm_buffer_t *b = tb->data;
 	buf = (GstBuffer *) gst_mini_object_new(type);
 	gst_buffer_set_caps(buf, GST_PAD_CAPS(base->srcpad));
+	if (!tb->pinned)
+		GST_BUFFER_MALLOCDATA(buf) = b->allocated_data;
 	GST_BUFFER_DATA(buf) = b->data;
 	GST_BUFFER_SIZE(buf) = b->len;
 	dsp_buf = (GstDspBuffer *) buf;
