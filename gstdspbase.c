@@ -289,7 +289,6 @@ setup_buffers(GstDspBase *self)
 		else {
 			dmm_buffer_allocate(b, self->output_buffer_size);
 			if (self->use_pinned) {
-				buf = gst_dsp_buffer_new(self, tb);
 				dmm_buffer_map(b);
 				tb->pinned = tb->clean = true;
 			}
