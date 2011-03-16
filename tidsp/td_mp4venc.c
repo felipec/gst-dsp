@@ -209,7 +209,8 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 	struct out_params *param;
 	param = tb->params->data;
 	tb->keyframe = (param->frame_type == 1);
-	try_extract_codec_data(base, tb->data);
+	if (base->alg == GSTDSP_MP4VENC)
+		try_extract_codec_data(base, tb->data);
 }
 
 static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
