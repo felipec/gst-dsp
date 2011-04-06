@@ -307,7 +307,6 @@ sink_setcaps(GstPad *pad,
 		else
 			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 2;
 		base->output_buffer_size = width * height;
-		self->quality = 90;
 		if (self->quality < 10)
 			base->output_buffer_size /= 10;
 		else if (self->quality < 100)

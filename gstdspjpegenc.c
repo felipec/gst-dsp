@@ -18,6 +18,57 @@
 
 #define GST_CAT_DEFAULT gstdsp_debug
 
+#define DEFAULT_ENCODING_QUALITY 90
+
+enum {
+	ARG_0,
+	ARG_QUALITY,
+};
+
+static void
+set_property(GObject *obj,
+	     guint prop_id,
+	     const GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspVEnc *self = GST_DSP_VENC(obj);
+
+	switch (prop_id) {
+	case ARG_QUALITY: {
+		if (GST_STATE(self) == GST_STATE_NULL) {
+			guint quality;
+			quality = g_value_get_uint(value);
+			g_atomic_int_set(&self->quality, quality);
+		} else {
+			GST_WARNING_OBJECT(self,
+					"encoding quality property can be set only in NULL state");
+		}
+		break;
+	}
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property(GObject *obj,
+	     guint prop_id,
+	     GValue *value,
+	     GParamSpec *pspec)
+{
+	GstDspVEnc *self = GST_DSP_VENC(obj);
+
+	switch (prop_id) {
+	case ARG_QUALITY:
+		g_value_set_uint(value, g_atomic_int_get(&self->quality));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, pspec);
+		break;
+	}
+}
+
 static inline GstCaps *
 generate_src_template(void)
 {
@@ -39,8 +90,12 @@ instance_init(GTypeInstance *instance,
 	      gpointer g_class)
 {
 	GstDspBase *base = GST_DSP_BASE(instance);
+	GstDspVEnc *self = GST_DSP_VENC(instance);
+
 	base->alg = GSTDSP_JPEGENC;
 	base->codec = &td_jpegenc_codec;
+
+	self->quality = DEFAULT_ENCODING_QUALITY;
 }
 
 static void
@@ -74,6 +129,22 @@ base_init(gpointer g_class)
 			    NULL);
 }
 
+static void
+class_init(gpointer g_class,
+	   gpointer class_data)
+{
+	GObjectClass *gobject_class;
+	gobject_class = (GObjectClass *) g_class;
+
+	gobject_class->set_property = set_property;
+	gobject_class->get_property = get_property;
+
+	g_object_class_install_property(gobject_class, ARG_QUALITY,
+					g_param_spec_uint("encoding-quality", "Encoding quality",
+							 "Encoding quality level", 1, 100, DEFAULT_ENCODING_QUALITY,
+							 G_PARAM_READWRITE));
+}
+
 GType
 gst_dsp_jpegenc_get_type(void)
 {
@@ -83,6 +154,7 @@ gst_dsp_jpegenc_get_type(void)
 		GTypeInfo type_info = {
 			.class_size = sizeof(GstDspJpegEncClass),
 			.base_init = base_init,
+			.class_init = class_init,
 			.instance_size = sizeof(GstDspJpegEnc),
 			.instance_init = instance_init,
 		};
