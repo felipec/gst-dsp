@@ -324,7 +324,7 @@ sink_setcaps(GstPad *pad,
 		break;
 	default:
 		du_port_alloc_buffers(base->ports[0], 2);
-		du_port_alloc_buffers(base->ports[1], 2);
+		du_port_alloc_buffers(base->ports[1], 4);
 		break;
 	}
 
