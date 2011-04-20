@@ -305,7 +305,7 @@ pause_task(GstDspBase *self, GstFlowReturn status)
 
 	/* synchronize to ensure we are not dropping the EOS event */
 	g_mutex_lock(self->ts_mutex);
-	g_atomic_int_compare_and_exchange(&self->status, GST_FLOW_OK, status);
+	(void) g_atomic_int_compare_and_exchange(&self->status, GST_FLOW_OK, status);
 	deferred_eos = g_atomic_int_compare_and_exchange(&self->deferred_eos, true, false);
 	g_mutex_unlock(self->ts_mutex);
 

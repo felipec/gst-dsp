@@ -133,7 +133,7 @@ static inline void send_rcv_buffer(GstDspBase *base, GstBuffer *buf)
 	rcv_struct->height = self->height;
 	rcv_struct->width = self->width;
 
-	gstdsp_send_codec_data(base, rcv_buf);
+	(void) gstdsp_send_codec_data(base, rcv_buf);
 	gst_buffer_unref(rcv_buf);
 }
 

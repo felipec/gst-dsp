@@ -122,7 +122,7 @@ create_node(GstDspVEnc *self)
 	/* only needed for jpegenc */
 	if (base->alg == GSTDSP_JPEGENC) {
 		/* SN_API == 0 doesn't have it, so don't fail */
-		gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P");
+		(void) gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P");
 	}
 
 	{

@@ -202,7 +202,6 @@ sink_setcaps(GstPad *pad,
 {
 	GstDspVpp *self;
 	GstDspBase *base;
-	GstStructure *in_struc;
 	GstCaps *out_caps;
 	gboolean ret;
 
@@ -214,8 +213,6 @@ sink_setcaps(GstPad *pad,
 		pr_info(self, "sink caps: %s", str);
 		g_free(str);
 	}
-
-	in_struc = gst_caps_get_structure(caps, 0);
 
 	base->codec = &td_vpp_codec;
 

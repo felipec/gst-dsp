@@ -143,7 +143,7 @@ create_node(GstDspBase *base)
 	pr_info(base, "algo=%s", codec->filename);
 
 	/* SN_API == 0 doesn't have it, so don't fail */
-	gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P");
+	(void) gstdsp_register(dsp_handle, &conversions_uuid, DSP_DCD_LIBRARYTYPE, "conversions.dll64P");
 
 	if (!gstdsp_register(dsp_handle, codec->uuid, DSP_DCD_LIBRARYTYPE, codec->filename)) {
 		pr_err(self, "failed to register algo node library");
