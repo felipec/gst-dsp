@@ -345,9 +345,6 @@ static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->max_mv_per_mb = 4;
 	in_param->intra_4x4_enable_idc = 2;
 
-	if (self->mode == 1)
-		in_param->intra_frame_interval = 0;
-
 	if (self->intra_refresh) {
 		unsigned pixels;
 
@@ -370,6 +367,8 @@ static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 		 *   equal to totalMbsInFrame/airMbPeriod
 		 */
 		in_param->intra_refresh_method = 1;
+
+		in_param->intra_frame_interval = 0;
 	}
 }
 
