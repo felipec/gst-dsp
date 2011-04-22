@@ -318,6 +318,7 @@ static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)
 	in_param->ref_framerate = self->framerate * 1000;
 	in_param->framerate = self->framerate * 1000;
 	in_param->bitrate = self->bitrate;
+	in_param->intra_frame_interval = self->keyframe_interval * self->framerate;
 
 	/* QP selection for the first frame */
 	bits_per_mb = (in_param->bitrate / self->framerate) /
