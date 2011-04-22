@@ -184,15 +184,6 @@ static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 		self->keyframe_event = NULL;
 	}
 	g_mutex_unlock(self->keyframe_mutex);
-
-	/* hack to manually force keyframes */
-	if (!self->intra_refresh) {
-		param->force_i_frame |= self->force_i_frame_counter >=
-			self->keyframe_interval * self->framerate;
-		if (param->force_i_frame)
-			self->force_i_frame_counter = 0;
-		self->force_i_frame_counter++;
-	}
 }
 
 static void create_codec_data(GstDspBase *base)
