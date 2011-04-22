@@ -269,8 +269,7 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 		return;
 
 	if (self->priv.h264.bytestream) {
-		if (self->mode == 1 && tb->keyframe)
-			strip_sps_pps_header(base, b, param);
+		strip_sps_pps_header(base, b, param);
 		return;
 	}
 
