@@ -79,6 +79,8 @@ dmm_buffer_begin(dmm_buffer_t *b,
 		size_t len)
 {
 	pr_debug(NULL, "%p", b);
+	if (len == 0)
+		return;
 	if (b->dir == DMA_FROM_DEVICE)
 		dsp_invalidate(b->handle, b->proc, b->data, len);
 	else
@@ -90,6 +92,8 @@ dmm_buffer_end(dmm_buffer_t *b,
 		size_t len)
 {
 	pr_debug(NULL, "%p", b);
+	if (len == 0)
+		return;
 	if (b->dir != DMA_TO_DEVICE)
 		dsp_invalidate(b->handle, b->proc, b->data, len);
 }
