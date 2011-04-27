@@ -19,18 +19,18 @@ G_BEGIN_DECLS
 #define GST_DSP_VPP_TYPE (gst_dsp_vpp_get_type())
 #define GST_DSP_VPP_CLASS(obj) (GstDspVppClass *)(obj)
 
-typedef struct GstDspVpp GstDspVpp;
-typedef struct GstDspVppClass GstDspVppClass;
+typedef struct _GstDspVpp GstDspVpp;
+typedef struct _GstDspVppClass GstDspVppClass;
 
 #include "gstdspbase.h"
 
-struct GstDspVpp {
+struct _GstDspVpp {
 	GstDspBase element;
 	int width, height;
 	int out_width, out_height;
 };
 
-struct GstDspVppClass {
+struct _GstDspVppClass {
 	GstDspBaseClass parent_class;
 };
 
