@@ -128,3 +128,15 @@ GST_DSP_MP4VENC_CLASS
 GstDspMp4VEncClass
 gst_dsp_mp4venc_get_type
 </SECTION>
+
+<SECTION>
+<FILE>element-dspvpp</FILE>
+<TITLE>dspvpp</TITLE>
+GstDspVpp
+<SUBSECTION Standard>
+GST_DSP_VPP
+GST_DSP_VPP_TYPE
+GST_DSP_VPP_CLASS
+GstDspVppClass
+gst_dsp_vpp_get_type
+</SECTION>
