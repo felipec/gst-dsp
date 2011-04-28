@@ -34,6 +34,8 @@ du_port_new(int id,
 {
 	du_port_t *p;
 	p = calloc(1, sizeof(*p));
+	if (!p)
+		return NULL;
 
 	p->id = id;
 	p->queue = async_queue_new();
