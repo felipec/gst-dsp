@@ -196,8 +196,12 @@ static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
 	GstDspVDec *self = GST_DSP_VDEC(base);
 	struct in_params *param;
 	param = tb->params->data;
+	uint32_t vc1_startcode = *(uint32_t *)tb->data->data;
 
-	if (self->wmv_is_vc1)
+	if ((vc1_startcode & 0x00FFFFFF) == 0x010000 && (vc1_startcode >> 24 >= 0x0A)
+			&& (vc1_startcode >> 24 <= 0x1F))
+		self->codec_data_sent = TRUE;
+	else if (self->wmv_is_vc1)
 		prefix_vc1(self, tb);
 
 	param->frame_index = g_atomic_int_exchange_and_add(&self->frame_index, 1);
