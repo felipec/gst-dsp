@@ -9,6 +9,7 @@ GST_DSP_BASE_CLASS
 GST_DSP_BASE_GET_CLASS
 GstDspBaseClass
 du_port_t
+td_buffer
 port_buffer_cb_t
 setup_params
 create_args
@@ -28,6 +29,8 @@ gstdsp_send_alg_ctrl
 gstdsp_base_flush_buffer
 gstdsp_setup_params_func
 gstdsp_debug
+gst_dsp_buffer_get_type
+gst_dsp_buffer_new
 </SECTION>
 
 <SECTION>
