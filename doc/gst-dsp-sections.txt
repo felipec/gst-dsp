@@ -92,6 +92,18 @@ gst_dsp_venc_get_type
 </SECTION>
 
 <SECTION>
+<FILE>element-dspadec</FILE>
+<TITLE>dspadec</TITLE>
+GstDspADec
+<SUBSECTION Standard>
+GST_DSP_ADEC
+GST_DSP_ADEC_TYPE
+GST_DSP_ADEC_CLASS
+GstDspADecClass
+gst_dsp_adec_get_type
+</SECTION>
+
+<SECTION>
 <FILE>element-dspjpegenc</FILE>
 <TITLE>dspjpegenc</TITLE>
 GstDspJpegEnc
