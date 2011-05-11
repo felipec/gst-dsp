@@ -106,7 +106,7 @@ struct _GstDspBase {
 	guint dsp_error;
 
 	void *(*create_node)(GstDspBase *base);
-	gboolean (*parse_func)(GstDspBase *base, GstBuffer *buf);
+	bool (*parse_func)(GstDspBase *base, GstBuffer *buf);
 	void (*reset)(GstDspBase *base);
 	void (*flush_buffer)(GstDspBase *base);
 	void (*got_message)(GstDspBase *self, struct dsp_msg *msg);

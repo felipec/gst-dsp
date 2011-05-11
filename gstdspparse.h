@@ -13,6 +13,6 @@
 #ifndef GST_DSP_PARSE_H
 #define GST_DSP_PARSE_H
 
-gboolean gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf);
+bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf);
 
 #endif

@@ -17,9 +17,7 @@
 #include "gstdspparse.h"
 
 static inline void
-set_framesize(GstDspBase *base,
-	      gint width,
-	      gint height)
+set_framesize(GstDspBase *base, int width, int height)
 {
 	GstDspVDec *vdec = GST_DSP_VDEC(base);
 
@@ -31,8 +29,8 @@ set_framesize(GstDspBase *base,
 		out_caps = base->tmp_caps;
 		struc = gst_caps_get_structure(out_caps, 0);
 		gst_structure_set(struc,
-				  "width", G_TYPE_INT, width,
-				  "height", G_TYPE_INT, height, NULL);
+				"width", G_TYPE_INT, width,
+				"height", G_TYPE_INT, height, NULL);
 		vdec->crop_width = width;
 		vdec->crop_height = height;
 	}
@@ -45,7 +43,7 @@ set_framesize(GstDspBase *base,
 	vdec->height = height;
 }
 
-gboolean gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
+bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
 {
 	guint format;
 	gint width, height;
