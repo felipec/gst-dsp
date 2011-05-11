@@ -190,8 +190,8 @@ search:
 
 		/* at same level of mbps, get the biggest bitrate */
 		if (cur->mbps >= tgt_mbps && cur->mbps == level->mbps &&
-		    !tgt_bitrate && cur->bitrate >= level->bitrate)
-		       ok = true;
+				!tgt_bitrate && cur->bitrate >= level->bitrate)
+			ok = true;
 
 		/* are the mbpf enough? (and don't overshoot) */
 		if (cur->mbpf >= tgt_mbpf && level->mbpf < tgt_mbpf)
