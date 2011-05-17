@@ -77,7 +77,10 @@ void pr_helper(unsigned int level,
 		else
 			syslog(log_level_to_syslog(level), "%s", tmp);
 #endif
-		g_printerr("%s: %s\n", function, tmp);
+		if (level == 0)
+			g_printerr("%s: %s\n", function, tmp);
+		else
+			g_print("%s: %s\n", function, tmp);
 	}
 	else if (level == 2)
 		g_print("%s:%s(%u): %s\n", file, function, line, tmp);
