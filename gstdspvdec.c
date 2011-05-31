@@ -302,6 +302,25 @@ configure_caps(GstDspVDec *self,
 	gst_caps_append_structure(out, out_struc);
 }
 
+static inline gboolean need_node_reset(GstDspVDec *self, GstCaps *new_caps)
+{
+	gint width, height;
+	GstStructure *struc;
+	GstDspBase *base = GST_DSP_BASE(self);
+
+	if (G_UNLIKELY(!base->node))
+		return FALSE;
+
+	struc = gst_caps_get_structure(new_caps, 0);
+	gst_structure_get_int(struc, "width", &width);
+	gst_structure_get_int(struc, "height", &height);
+
+	if (self->width == width && self->height == height)
+		return FALSE;
+
+	return TRUE;
+}
+
 static gboolean
 sink_setcaps(GstPad *pad,
 	     GstCaps *caps)
@@ -324,6 +343,9 @@ sink_setcaps(GstPad *pad,
 		g_free(str);
 	}
 #endif
+
+	if (need_node_reset(self, caps))
+		gstdsp_reinit(base);
 
 	in_struc = gst_caps_get_structure(caps, 0);
 

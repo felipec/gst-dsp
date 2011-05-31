@@ -924,6 +924,30 @@ leave:
 	return TRUE;
 }
 
+gboolean gstdsp_reinit(GstDspBase *self)
+{
+	/* deinit */
+	g_atomic_int_set(&self->status, GST_FLOW_WRONG_STATE);
+	async_queue_disable(self->ports[0]->queue);
+	async_queue_disable(self->ports[1]->queue);
+
+	if (!_dsp_stop(self))
+		gstdsp_post_error(self, "dsp stop failed");
+
+	if (self->reset)
+		self->reset(self);
+
+	gst_caps_replace(&self->tmp_caps, NULL);
+
+	/* init */
+	g_atomic_int_set(&self->status, GST_FLOW_OK);
+	self->done = FALSE;
+	async_queue_enable(self->ports[0]->queue);
+	async_queue_enable(self->ports[1]->queue);
+
+	return true;
+}
+
 static inline bool
 buffer_is_aligned(GstBuffer *buf, dmm_buffer_t *b)
 {
