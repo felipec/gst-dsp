@@ -305,6 +305,8 @@ sink_setcaps(GstPad *pad,
 		base->output_buffer_size = width * height / 2;
 		break;
 	case GSTDSP_JPEGENC:
+		if (width % 2 || height % 2)
+			return FALSE;
 		if (self->color_format == GST_MAKE_FOURCC('I', '4', '2', '0'))
 			base->input_buffer_size = ROUND_UP(width, 16) * ROUND_UP(height, 16) * 3 / 2;
 		else
