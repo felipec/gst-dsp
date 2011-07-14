@@ -109,6 +109,7 @@ struct _GstDspBase {
 
 	void *(*create_node)(GstDspBase *base);
 	bool (*parse_func)(GstDspBase *base, GstBuffer *buf);
+	void (*pre_process_buffer)(GstDspBase *base, GstBuffer *buf);
 	void (*reset)(GstDspBase *base);
 	void (*flush_buffer)(GstDspBase *base);
 	void (*got_message)(GstDspBase *self, struct dsp_msg *msg);

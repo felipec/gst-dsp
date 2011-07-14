@@ -1275,6 +1275,9 @@ pad_chain(GstPad *pad,
 
 	pr_debug(self, "begin");
 
+	if (self->pre_process_buffer)
+		self->pre_process_buffer(self, buf);
+
 	if (G_UNLIKELY(!self->node)) {
 		if (!init_node(self, buf)) {
 			gstdsp_post_error(self, "couldn't start node");
