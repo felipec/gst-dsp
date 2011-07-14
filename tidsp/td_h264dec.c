@@ -17,6 +17,8 @@
 #include "gstdspbase.h"
 #include "gstdspvdec.h"
 
+#include "gstdspparse.h"
+
 struct create_args {
 	uint32_t size;
 	uint16_t num_streams;
@@ -75,6 +77,39 @@ static void create_args(GstDspBase *base, unsigned *profile_id, void **arg_data)
 
 	*arg_data = malloc(sizeof(args));
 	memcpy(*arg_data, &args, sizeof(args));
+}
+
+static void check_stream_params(GstDspBase *self, GstBuffer *buf)
+{
+	GstDspVDec *vdec = GST_DSP_VDEC(self);
+
+	/* Use a fake vdec to get width and height (if any) */
+	GstDspVDec helper = *vdec;
+	GstCaps *new_caps = gst_caps_copy(GST_PAD_CAPS(self->sinkpad));
+
+	(GST_DSP_BASE(&helper))->tmp_caps = new_caps;
+
+	if (vdec->width != 0 && vdec->height != 0 &&
+			gst_dsp_h264_parse(GST_DSP_BASE(&helper), buf))
+	{
+		if (helper.width != vdec->width ||
+				helper.height != vdec->height)
+		{
+			/* generate new caps */
+			pr_debug(self, "frame size changed from %dx%d to %dx%d\n",
+					vdec->width,
+					vdec->height,
+					helper.width,
+					helper.height);
+
+			gst_caps_set_simple(new_caps,
+					"width", G_TYPE_INT, helper.width,
+					"height", G_TYPE_INT, helper.height, NULL);
+
+			gst_pad_set_caps(self->sinkpad, new_caps);
+		}
+	}
+	gst_caps_unref(new_caps);
 }
 
 static GstBuffer *transform_codec_data(GstDspVDec *self, GstBuffer *buf)
@@ -288,6 +323,7 @@ static void setup_params(GstDspBase *base)
 
 	p = base->ports[0];
 	p->send_cb = in_send_cb;
+	base->pre_process_buffer = check_stream_params;
 
 	p = base->ports[1];
 	gstdsp_port_setup_params(base, p, sizeof(*out_param), NULL);
