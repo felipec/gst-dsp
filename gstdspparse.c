@@ -564,7 +564,6 @@ bool gst_dsp_h264_parse(GstDspBase *base, GstBuffer *buf)
 
 try_again:
 	pr_debug(base, "avc codec_data: %d", avc);
-	vdec->priv.h264.is_avc = avc;
 
 	if (avc) {
 		unsigned tsize;
@@ -784,6 +783,8 @@ try_again:
 	}
 
 	pr_debug(base, "final width=%u, height=%u", crop_width, crop_height);
+
+	vdec->priv.h264.is_avc = avc;
 
 	set_framesize(base, width, height, 0, 0, crop_width, crop_height);
 	free(rbsp_buffer);
