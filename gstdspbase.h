@@ -121,6 +121,7 @@ struct _GstDspBase {
 	gint eos_timeout; /* how much to wait for the EOS from DSP (ms) */
 
 	GstBuffer *codec_data;
+	bool parsed;
 
 	/* hacks */
 	guint skip_hack; /* don't push x number of buffers */

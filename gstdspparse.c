@@ -56,6 +56,8 @@ set_framesize(GstDspBase *base,
 		base->output_buffer_size = width * height * 3 / 2;
 	vdec->width = width;
 	vdec->height = height;
+
+	base->parsed = true;
 }
 
 bool gst_dsp_h263_parse(GstDspBase *base, GstBuffer *buf)
@@ -555,6 +557,11 @@ bool gst_dsp_h264_parse(GstDspBase *base, GstBuffer *buf)
 
 	init_get_bits(&s, buf->data, buf->size * 8);
 
+	if (base->parsed) {
+		avc = vdec->priv.h264.is_avc;
+		goto try_again;
+	}
+
 	/* auto-detect whether avc or byte-stream;
 	 * as unconvential codec-data cases contain bytestream NALs */
 	if (get_bits_left(&s) < 32)
@@ -608,7 +615,7 @@ try_again:
 
 	/* pointing at NAL SPS, now analyze it */
 	if (get_bits_left(&s) < 40) {
-		if (avc) {
+		if (avc && !base->parsed) {
 			avc = false;
 			goto try_again;
 		} else {
@@ -791,7 +798,8 @@ try_again:
 	return true;
 
 not_enough_data:
-	pr_err(base, "not enough data");
+	if (!base->parsed)
+		pr_err(base, "not enough data");
 bail:
 	free(rbsp_buffer);
 	return false;
