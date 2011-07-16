@@ -321,6 +321,9 @@ sink_setcaps(GstPad *pad,
 		break;
 	}
 
+	if (base->node)
+		goto skip_setup;
+
 	switch (base->alg) {
 	case GSTDSP_JPEGENC:
 		du_port_alloc_buffers(base->ports[0], 1);
@@ -332,6 +335,7 @@ sink_setcaps(GstPad *pad,
 		break;
 	}
 
+skip_setup:
 	self->width = width;
 	self->height = height;
 
@@ -385,6 +389,9 @@ sink_setcaps(GstPad *pad,
 
 	if (!gst_pad_take_caps(base->srcpad, out_caps))
 		return FALSE;
+
+	if (base->node)
+		return TRUE;
 
 	base->node = create_node(self);
 	if (!base->node) {

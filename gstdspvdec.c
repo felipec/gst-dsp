@@ -322,6 +322,9 @@ sink_setcaps(GstPad *pad,
 
 	in_struc = gst_caps_get_structure(caps, 0);
 
+	if (base->node)
+		goto skip_setup;
+
 	name = gst_structure_get_name(in_struc);
 	if (strcmp(name, "video/x-h264") == 0) {
 		base->alg = GSTDSP_H264DEC;
@@ -387,6 +390,7 @@ sink_setcaps(GstPad *pad,
 		break;
 	}
 
+skip_setup:
 	out_caps = gst_caps_new_empty();
 	configure_caps(self, caps, out_caps);
 	base->tmp_caps = out_caps;
