@@ -572,9 +572,21 @@ try_again:
 		/* provided buffer is then codec_data */
 		if (get_bits_left(&s) < 32)
 			goto not_enough_data;
-		skip_bits(&s, 8);
+
+		/* configuration version == 1 */
+		if (buf->data[0] != 1)
+			return FALSE;
+
+		/* reserved */
+		d = get_bits(&s, 8);
+		if ((d & 0xfc) != 0xfc)
+			return FALSE;
+		d = get_bits(&s, 8);
+		if ((d & 0xe0) != 0xe0)
+			return FALSE;
+
 		/* number of SPS */
-		if ((get_bits(&s, 8) & 0x1F) == 0) {
+		if ((d & 0x1f) == 0) {
 			pr_debug(base, "invalid parameters in codec_data");
 			return false;
 		}
@@ -612,9 +624,14 @@ try_again:
 		init_get_bits(&s, rbsp_buffer, rbsp_len << 3);
 	}
 
+	b = get_bits(&s, 8);
+
+	/* forbidden bit */
+	if (b & 0x80)
+		goto bail;
+
 	/* need SPS NAL unit */
-	b = get_bits(&s, 8) & 0x1f;
-	if (b != 0x07)
+	if ((b & 0x1f) != 0x07)
 		goto bail;
 
 	profile = get_bits(&s, 8);
