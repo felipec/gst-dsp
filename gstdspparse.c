@@ -779,13 +779,15 @@ try_again:
 	pr_debug(base, "crop (%d,%d)(%d,%d)",
 			fc_left, fc_top, fc_right, fc_bottom);
 	if (chroma > 3) {
-		pr_err(base, "invalid SPS");
+		if (!base->parsed)
+			pr_err(base, "invalid SPS");
 		goto bail;
 	}
 	crop_width = width - (fc_left + fc_right) * subwc[chroma];
 	crop_height = height - (fc_top + fc_bottom) * subhc[chroma] * (2 - frame);
 	if (width < 0 || height < 0 || crop_width < 0 || crop_height < 0) {
-		pr_err(base, "invalid SPS");
+		if (!base->parsed)
+			pr_err(base, "invalid SPS");
 		goto bail;
 	}
 
