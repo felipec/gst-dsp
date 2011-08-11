@@ -103,6 +103,9 @@ create_node(GstDspBase *base)
 
 		codec->create_args(base, &attrs.profile_id, &arg_data);
 
+		if (!arg_data)
+			return NULL;
+
 		if (!dsp_node_allocate(dsp_handle, base->proc, codec->uuid, arg_data, &attrs, &node)) {
 			pr_err(self, "dsp node allocate failed");
 			free(arg_data);
