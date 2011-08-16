@@ -1175,15 +1175,23 @@ static gboolean base_query(GstPad *pad, GstQuery *query)
 	case GST_QUERY_LATENCY: {
 		gboolean live;
 		GstClockTime min, max;
+		GstClockTime frame_duration;
 
 		gst_query_parse_latency(query, &live, &min, &max);
 		pr_debug(base, "latency query live=%d, min=%" GST_TIME_FORMAT",max=%" GST_TIME_FORMAT,
 			live, GST_TIME_ARGS(min), GST_TIME_ARGS(max));
 
+		if (base->default_duration) {
+			frame_duration = base->default_duration;
+		} else {
+			frame_duration = base->ts_array[base->ts_in_pos - 1].time - base->ts_array[base->ts_out_pos].time;
+			frame_duration /= base->ts_in_pos - base->ts_out_pos;
+		}
+
 		if (base->codec->get_latency) {
 			GstClockTime latency;
 
-			latency = base->codec->get_latency(base) * 1000000;
+			latency = base->codec->get_latency(base, frame_duration / 1000000) * 1000000;
 
 			/* really need to avoid doing stuff with _NONE */
 			if (GST_CLOCK_TIME_IS_VALID(min))
