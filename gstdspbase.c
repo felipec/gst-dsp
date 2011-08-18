@@ -1184,8 +1184,35 @@ static gboolean base_query(GstPad *pad, GstQuery *query)
 		if (base->default_duration) {
 			frame_duration = base->default_duration;
 		} else {
-			frame_duration = base->ts_array[base->ts_in_pos - 1].time - base->ts_array[base->ts_out_pos].time;
-			frame_duration /= base->ts_in_pos - base->ts_out_pos;
+			GstClockTime c, first, last;
+			unsigned i, count = 0;
+
+			/* find first and last timestamps */
+			g_mutex_lock(base->ts_mutex);
+
+			i = base->ts_out_pos;
+			first = last = base->ts_array[i].time;
+
+			while (i != base->ts_in_pos) {
+				c = base->ts_array[i].time;
+				if (c < first)
+					first = c;
+				if (c > last)
+					last = c;
+				i = (i + 1) % ARRAY_SIZE(base->ts_array);
+				count++;
+			}
+
+			g_mutex_unlock(base->ts_mutex);
+
+			if (count > 0)
+				frame_duration = (last - first) / count;
+			else
+				frame_duration = 0;
+
+			/* more than 1s per frame means something's wrong */
+			if (frame_duration > GST_SECOND)
+				frame_duration = GST_SECOND;
 		}
 
 		if (base->codec->get_latency) {
