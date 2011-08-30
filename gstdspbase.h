@@ -155,7 +155,7 @@ static inline void gstdsp_port_setup_params(GstDspBase *self,
 	for (i = 0; i < p->num_buffers; i++) {
 		dmm_buffer_t *b;
 		b = dmm_buffer_calloc(self->dsp_handle,
-				      self->proc, size, p->dir);
+				      self->proc, size, DMA_BIDIRECTIONAL);
 		if (func)
 			func(self, b);
 		dmm_buffer_map(b);
