@@ -327,6 +327,18 @@ bool dsp_invalidate(int handle,
 		void *mpu_addr,
 		unsigned long size);
 
+bool dsp_begin_dma(int handle,
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size,
+		unsigned long dir);
+
+bool dsp_end_dma(int handle,
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size,
+		unsigned long dir);
+
 bool dsp_register_notify(int handle,
 		void *proc_handle,
 		unsigned int event_mask,

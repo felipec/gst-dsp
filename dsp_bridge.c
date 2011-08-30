@@ -113,6 +113,8 @@
 #define PROC_STOP               _IOWR(DB, DB_IOC(DB_PROC, 15), unsigned long)
 #define PROC_LOAD               _IOW(DB, DB_IOC(DB_PROC, 7), unsigned long)
 #define PROC_START              _IOW(DB, DB_IOC(DB_PROC, 9), unsigned long)
+#define PROC_BEGINDMA           _IOW(DB, DB_IOC(DB_PROC, 17), unsigned long)
+#define PROC_ENDDMA             _IOW(DB, DB_IOC(DB_PROC, 18), unsigned long)
 
 /* NODE Module */
 #define NODE_REGISTERNOTIFY	_IOWR(DB, DB_IOC(DB_NODE, 11), unsigned long)
@@ -913,6 +915,45 @@ bool dsp_invalidate(int handle,
 	};
 
 	return !ioctl(handle, PROC_INVALIDATEMEMORY, &arg);
+}
+
+struct dma_op {
+	void *proc_handle;
+	void *mpu_addr;
+	unsigned long size;
+	unsigned long dir;
+};
+
+bool dsp_begin_dma(int handle,
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size,
+		unsigned long dir)
+{
+	struct dma_op arg = {
+		.proc_handle = proc_handle,
+		.mpu_addr = mpu_addr,
+		.size = size,
+		.dir = dir,
+	};
+
+	return !ioctl(handle, PROC_BEGINDMA, &arg);
+}
+
+bool dsp_end_dma(int handle,
+		void *proc_handle,
+		void *mpu_addr,
+		unsigned long size,
+		unsigned long dir)
+{
+	struct dma_op arg = {
+		.proc_handle = proc_handle,
+		.mpu_addr = mpu_addr,
+		.size = size,
+		.dir = dir,
+	};
+
+	return !ioctl(handle, PROC_ENDDMA, &arg);
 }
 
 struct proc_get_info {

@@ -36,6 +36,9 @@ typedef struct {
 	void *allocated_data;
 	size_t size;
 	size_t len;
+#if DSP_API >= 2
+	size_t dma_len;
+#endif
 	void *reserve;
 	void *map;
 	bool need_copy;
@@ -81,10 +84,19 @@ dmm_buffer_begin(dmm_buffer_t *b,
 	pr_debug(NULL, "%p", b);
 	if (len == 0)
 		return;
+#if DSP_API < 2
 	if (b->dir == DMA_FROM_DEVICE)
 		dsp_invalidate(b->handle, b->proc, b->data, len);
 	else
 		dsp_flush(b->handle, b->proc, b->data, len, 1);
+#else
+	if (b->dma_len == (size_t) -1)
+		return;
+	if (dsp_begin_dma(b->handle, b->proc, b->data, len, b->dir))
+		b->dma_len = (size_t) -1;
+	else
+		b->dma_len = len;
+#endif
 }
 
 static inline void
@@ -94,8 +106,15 @@ dmm_buffer_end(dmm_buffer_t *b,
 	pr_debug(NULL, "%p", b);
 	if (len == 0)
 		return;
+#if DSP_API < 2
 	if (b->dir != DMA_TO_DEVICE)
 		dsp_invalidate(b->handle, b->proc, b->data, len);
+#else
+	if (b->dma_len == (size_t) -1)
+		return;
+	dsp_end_dma(b->handle, b->proc, b->data, b->dma_len, b->dir);
+	b->dma_len = 0;
+#endif
 }
 
 static inline void
