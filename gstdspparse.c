@@ -597,7 +597,7 @@ try_again:
 		/* frame size is recorded in Sequence Parameter Set (SPS) */
 		/* locate SPS NAL unit in bytestream */
 		while (get_bits_left(&s) >= 32) {
-			uint32_t d = AV_RB32(s.buffer + (s.index >> 3));
+			uint32_t d = show_bits(&s, 32);
 			if ((d >> 8 == 0x1) && ((d & 0x1F) == 0x07))
 				break;
 			skip_bits(&s, 8);

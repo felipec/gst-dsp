@@ -107,6 +107,16 @@ static inline unsigned get_bits(struct get_bit_context *s, int n)
 	return tmp;
 }
 
+static inline unsigned show_bits(struct get_bit_context *s, int n)
+{
+	unsigned index = s->index;
+	int re_cache = 0;
+	register int tmp;
+	re_cache = AV_RB32(((const uint8_t *)s->buffer) + (index >> 3)) << (index & 0x07);
+	tmp = ((uint32_t)re_cache) >> (32 - n);
+	return tmp;
+}
+
 static inline unsigned get_bits_count(const struct get_bit_context *s)
 {
 	return s->index;
