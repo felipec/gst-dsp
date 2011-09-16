@@ -1352,6 +1352,7 @@ instance_init(GTypeInstance *instance,
 {
 	GstDspBase *self;
 	GstElementClass *element_class;
+	GstPadTemplate *template;
 
 	element_class = GST_ELEMENT_CLASS(g_class);
 	self = GST_DSP_BASE(instance);
@@ -1363,14 +1364,15 @@ instance_init(GTypeInstance *instance,
 	self->send_buffer = send_buffer;
 	self->send_play_message = send_play_message;
 	self->send_stop_message = send_stop_message;
-	self->sinkpad =
-		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "sink"), "sink");
+
+	template = gst_element_class_get_pad_template(element_class, "sink");
+	self->sinkpad = gst_pad_new_from_template(template, "sink");
 
 	gst_pad_set_chain_function(self->sinkpad, pad_chain);
 	gst_pad_set_event_function(self->sinkpad, base_sink_event);
 
-	self->srcpad =
-		gst_pad_new_from_template(gst_element_class_get_pad_template(element_class, "src"), "src");
+	template = gst_element_class_get_pad_template(element_class, "src");
+	self->srcpad = gst_pad_new_from_template(template, "src");
 
 	gst_pad_use_fixed_caps(self->srcpad);
 
