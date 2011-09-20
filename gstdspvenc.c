@@ -286,6 +286,7 @@ sink_setcaps(GstPad *pad,
 		break;
 	case GSTDSP_H264ENC:
 		out_struc = gst_structure_new("video/x-h264",
+					      "alignment", G_TYPE_STRING, "au",
 					      NULL);
 		break;
 	default:
