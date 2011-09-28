@@ -47,7 +47,7 @@ gst-dsp-parse: parse-test.o gstdspbuffer.o gstdspparse.o gstdspvdec.o \
 	gstdspbase.o util.o dsp_bridge.o async_queue.o log.o \
 	tidsp.a
 gst-dsp-parse: override CFLAGS += $(GST_CFLAGS) -D DSPDIR='"$(dspdir)"'
-gst-dsp-parse: override LIBS += $(GST_LIBS) $(AVP_LIBS)
+gst-dsp-parse: override LIBS += $(GST_LIBS)
 bins += gst-dsp-parse
 
 doc: $(gst_plugin)
