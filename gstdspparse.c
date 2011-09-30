@@ -583,7 +583,7 @@ try_again:
 			return FALSE;
 		d = get_bits(&s, 8);
 		if ((d & 0xe0) != 0xe0)
-			return FALSE;
+			pr_debug(base, "unexpected parameter in codec_data, never minding");
 
 		/* number of SPS */
 		if ((d & 0x1f) == 0) {
