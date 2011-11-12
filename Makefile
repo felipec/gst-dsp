@@ -62,10 +62,10 @@ install: $(targets) $(bins)
 	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -MP -o $@ -c $<
 
 $(bins):
-	$(QUIET_LINK)$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(QUIET_LINK)$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 %.so::
-	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared -o $@ $^ $(LIBS)
+	$(QUIET_LINK)$(CC) $(LDFLAGS) -shared $^ $(LIBS) -o $@
 
 %.a::
 	$(QUIET_LINK)$(AR) rcs $@ $^
