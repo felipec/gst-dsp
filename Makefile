@@ -72,7 +72,7 @@ install: $(targets) $(bins)
 	install -m 755 -D gst-dsp-parse $(D)$(prefix)/bin/gst-dsp-parse
 
 %.o:: %.c
-	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -o $@ -c $<
+	$(QUIET_CC)$(CC) $(CFLAGS) -MMD -MP -o $@ -c $<
 
 $(bins):
 	$(QUIET_LINK)$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
