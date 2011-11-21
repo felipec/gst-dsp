@@ -392,7 +392,6 @@ sink_setcaps(GstPad *pad,
 	base->tmp_caps = out_caps;
 
 	ret = gst_pad_set_caps(pad, caps);
-
 	if (!ret)
 		return FALSE;
 
