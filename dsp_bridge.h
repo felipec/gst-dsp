@@ -24,6 +24,9 @@
 #define MAX_PROFILES 16
 #define DSP_MAXNAMELEN 32
 
+#define DSP_IN_BUFFER 0x4000
+#define DSP_OUT_BUFFER 0x8000
+
 struct dsp_uuid {
 	uint32_t field_1;
 	uint16_t field_2;

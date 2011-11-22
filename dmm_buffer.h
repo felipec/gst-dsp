@@ -119,7 +119,10 @@ static inline void
 dmm_buffer_map(dmm_buffer_t *b)
 {
 	size_t to_reserve;
+	unsigned long attr;
+
 	pr_debug(NULL, "%p", b);
+
 	if (b->map)
 		dsp_unmap(b->handle, b->proc, b->map);
 	if (b->reserve)
@@ -130,7 +133,17 @@ dmm_buffer_map(dmm_buffer_t *b)
 	 */
 	to_reserve = ROUND_UP(b->size, PAGE_SIZE) + PAGE_SIZE;
 	dsp_reserve(b->handle, b->proc, to_reserve, &b->reserve);
-	dsp_map(b->handle, b->proc, b->data, b->size, b->reserve, &b->map, 0);
+	switch (b->dir) {
+	case DMA_TO_DEVICE:
+		attr = DSP_IN_BUFFER; break;
+	case DMA_FROM_DEVICE:
+		attr = DSP_OUT_BUFFER; break;
+	case DMA_BIDIRECTIONAL:
+		attr = DSP_IN_BUFFER | DSP_OUT_BUFFER; break;
+	default:
+		attr = 0;
+	}
+	dsp_map(b->handle, b->proc, b->data, b->size, b->reserve, &b->map, attr);
 }
 
 static inline void
