@@ -13,7 +13,7 @@ tidsp.a: tidsp/td_mp4vdec.o tidsp/td_h264dec.o tidsp/td_wmvdec.o \
 	tidsp/td_jpegdec.o \
 	tidsp/td_mp4venc.o tidsp/td_jpegenc.o tidsp/td_h264enc.o \
 	tidsp/td_vpp.o tidsp/td_aacdec.o
-tidsp.a: override CFLAGS += -fPIC -I.
+tidsp.a: override CFLAGS += -I.
 
 # plugin
 
@@ -24,7 +24,7 @@ $(gst_plugin): plugin.o gstdspbuffer.o gstdspdummy.o gstdspbase.o gstdspvdec.o \
 	dsp_bridge.o util.o log.o gstdspparse.o async_queue.o gstdsph264enc.o \
 	gstdspvpp.o gstdspadec.o gstdspipp.o \
 	tidsp.a
-$(gst_plugin): override CFLAGS += $(GST_CFLAGS) -fPIC \
+$(gst_plugin): override CFLAGS += $(GST_CFLAGS) \
 	-D VERSION='"$(version)"' -D DSPDIR='"$(dspdir)"'
 $(gst_plugin): override LIBS += $(GST_LIBS)
 
@@ -53,6 +53,8 @@ QUIET_CLEAN = @echo '   CLEAN      '$@;
 endif
 
 .PHONY: doc doc-install
+
+%.so: override CFLAGS += -fPIC
 
 install: $(targets) $(bins)
 	install -m 755 -D libgstdsp.so $(D)$(prefix)/lib/gstreamer-0.10/libgstdsp.so
