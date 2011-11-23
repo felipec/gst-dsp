@@ -59,6 +59,8 @@ struct _GstDspVDecClass {
 	GstDspBaseClass parent_class;
 };
 
+void gstdsp_vdec_len_fixup(GstDspVDec *self, dmm_buffer_t *b);
+
 GType gst_dsp_vdec_get_type(void);
 
 G_END_DECLS

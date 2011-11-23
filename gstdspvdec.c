@@ -104,6 +104,15 @@ generate_src_template(void)
 	return caps;
 }
 
+void gstdsp_vdec_len_fixup(GstDspVDec *self, dmm_buffer_t *b)
+{
+	/* let the videosink know the real size */
+	if (self->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'))
+		b->len = self->crop_width * self->crop_height * 2;
+	else
+		b->len = self->crop_width * self->crop_height * 3 / 2;
+}
+
 static void *
 create_node(GstDspBase *base)
 {

@@ -295,11 +295,7 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 	if (param->error_code & 0xffff)
 		pr_err(base, "decode error");
 
-	/* let the videosink know the real size */
-	if (vdec->color_format == GST_MAKE_FOURCC('U', 'Y', 'V', 'Y'))
-		b->len = vdec->crop_width * vdec->crop_height * 2;
-	else
-		b->len = vdec->crop_width * vdec->crop_height * 3 / 2;
+	gstdsp_vdec_len_fixup(vdec, b);
 }
 
 static void in_send_cb(GstDspBase *base, struct td_buffer *tb)
