@@ -301,7 +301,7 @@ setup_buffers(GstDspBase *self)
 				dmm_buffer_allocate(b, self->output_buffer_size);
 				b->need_copy = true;
 			} else {
-				map_buffer(self, buf, &p->buffers[i]);
+				map_buffer(self, buf, tb);
 				gst_buffer_unref(buf);
 			}
 		}
@@ -313,7 +313,7 @@ setup_buffers(GstDspBase *self)
 			}
 		}
 
-		self->send_buffer(self, &p->buffers[i]);
+		self->send_buffer(self, tb);
 	}
 }
 
