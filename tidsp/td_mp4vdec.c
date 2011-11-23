@@ -106,6 +106,8 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 
 	pr_debug(self, "error: 0x%x, frame number: %u, frame type: %u",
 			param->error_code, param->frame_index, param->frame_type);
+
+	gstdsp_vdec_len_fixup(self, tb->data);
 }
 
 static void setup_in_params(GstDspBase *base, dmm_buffer_t *tmp)

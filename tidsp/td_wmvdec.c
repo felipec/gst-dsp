@@ -221,6 +221,8 @@ static void out_recv_cb(GstDspBase *base, struct td_buffer *tb)
 	if (param->error_code != 0)
 		pr_debug(self, "error in decoding: 0x%x, frame number: %d frame type: %u",
 				param->error_code, param->display_id, param->frame_type);
+
+	gstdsp_vdec_len_fixup(self, tb->data);
 }
 
 static void setup_params(GstDspBase *base)
