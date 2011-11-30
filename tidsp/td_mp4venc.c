@@ -153,9 +153,8 @@ static void try_extract_codec_data(GstDspBase *base, dmm_buffer_t *b)
 		goto done;
 	}
 
-	codec_buf = gst_buffer_new();
-	GST_BUFFER_DATA(codec_buf) = b->data;
-	GST_BUFFER_SIZE(codec_buf) = data - (guint8 *) b->data;
+	codec_buf = gst_buffer_new_and_alloc(data - (guint8 *) b->data);
+	memcpy(GST_BUFFER_DATA(codec_buf), b->data, GST_BUFFER_SIZE(codec_buf));
 	gstdsp_set_codec_data_caps(base, codec_buf);
 	gst_buffer_unref(codec_buf);
 done:
