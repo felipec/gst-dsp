@@ -157,6 +157,7 @@ static void try_extract_codec_data(GstDspBase *base, dmm_buffer_t *b)
 	GST_BUFFER_DATA(codec_buf) = b->data;
 	GST_BUFFER_SIZE(codec_buf) = data - (guint8 *) b->data;
 	gstdsp_set_codec_data_caps(base, codec_buf);
+	gst_buffer_unref(codec_buf);
 done:
 	self->priv.mpeg4.codec_data_done = TRUE;
 }
