@@ -360,7 +360,7 @@ output_loop(gpointer data)
 	GstPad *pad;
 	GstDspBase *self;
 	GstFlowReturn ret = GST_FLOW_OK;
-	GstBuffer *out_buf;
+	GstBuffer *out_buf = NULL;
 	dmm_buffer_t *b;
 	gboolean flush_buffer;
 	gboolean got_eos = FALSE;
@@ -368,7 +368,7 @@ output_loop(gpointer data)
 	GstEvent *event;
 	du_port_t *p;
 	struct td_buffer *tb;
-	bool pushed = false;
+	bool handled;
 	GstClockTime timestamp, duration;
 
 	pad = data;
@@ -538,9 +538,9 @@ output_loop(gpointer data)
 		pr_info(self, "pad push failed: %s", gst_flow_get_name(ret));
 		goto leave;
 	}
-	pushed = true;
 
 leave:
+	handled = tb->pinned && out_buf;
 	if (G_UNLIKELY(got_eos)) {
 		pr_info(self, "got eos");
 		self->eos_start.tv_sec = self->eos_start.tv_nsec = 0;
@@ -549,7 +549,7 @@ leave:
 		g_atomic_int_set(&self->deferred_eos, false);
 		ret = GST_FLOW_UNEXPECTED;
 		if (self->use_pinned) {
-			if (!tb->pinned || !pushed)
+			if (!handled)
 				self->send_buffer(self, tb);
 			goto nok;
 		}
@@ -565,7 +565,7 @@ leave:
 	}
 	else {
 		if (self->use_pinned) {
-			if (!tb->pinned || !pushed)
+			if (!handled)
 				self->send_buffer(self, tb);
 			goto nok;
 		}
