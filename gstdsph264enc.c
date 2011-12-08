@@ -76,7 +76,6 @@ instance_init(GTypeInstance *instance,
 	self->priv.h264.bytestream = true;
 	self->supported_levels = levels;
 	self->nr_supported_levels = ARRAY_SIZE(levels);
-	base->use_pinned = true;
 }
 
 static void

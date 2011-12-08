@@ -306,10 +306,8 @@ setup_buffers(GstDspBase *self)
 		}
 		else {
 			dmm_buffer_allocate(b, self->output_buffer_size);
-			if (self->use_pinned) {
-				dmm_buffer_map(b);
-				tb->pinned = tb->clean = true;
-			}
+			dmm_buffer_map(b);
+			tb->pinned = tb->clean = true;
 		}
 
 		self->send_buffer(self, tb);
@@ -427,13 +425,6 @@ output_loop(gpointer data)
 	}
 	g_mutex_unlock(self->ts_mutex);
 
-	/* a pending reallocation from the previous run */
-	if (G_UNLIKELY(!b->data)) {
-		dmm_buffer_allocate(b, self->output_buffer_size);
-		send_buffer(self, tb);
-		goto end;
-	}
-
 	if (G_UNLIKELY(!b->len)) {
 		/* no need to process this buffer */
 		/* no real frame data, so no need to consume a real frame's ts */
@@ -493,10 +484,6 @@ output_loop(gpointer data)
 	}
 	else {
 		out_buf = gst_dsp_buffer_new(self, tb);
-
-		if (!self->use_pinned)
-			/* invalidate data to force reallocation */
-			b->data = b->allocated_data = NULL;
 	}
 
 	if (G_UNLIKELY(self->skip_hack > 0)) {
@@ -550,31 +537,10 @@ leave:
 		g_atomic_int_set(&self->eos, true);
 		g_atomic_int_set(&self->deferred_eos, false);
 		ret = GST_FLOW_UNEXPECTED;
-		if (self->use_pinned) {
-			if (!handled)
-				self->send_buffer(self, tb);
-			goto nok;
-		}
-		/*
-		 * We don't want to allocate data unnecessarily; postpone after
-		 * EOS and flush.
-		 */
-		if (b->data)
-			send_buffer(self, tb);
-		else
-			/* we'll need to allocate on the next run */
-			async_queue_push(p->queue, tb);
 	}
-	else {
-		if (self->use_pinned) {
-			if (!handled)
-				self->send_buffer(self, tb);
-			goto nok;
-		}
-		if (!b->data)
-			dmm_buffer_allocate(b, self->output_buffer_size);
+
+	if (!handled)
 		self->send_buffer(self, tb);
-	}
 
 nok:
 	if (G_UNLIKELY(ret != GST_FLOW_OK))

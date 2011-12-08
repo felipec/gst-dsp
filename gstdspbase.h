@@ -104,7 +104,6 @@ struct _GstDspBase {
 	guint alg;
 
 	gboolean use_pad_alloc; /**< Use pad_alloc for output buffers. */
-	gboolean use_pinned; /**< Reuse output buffers. */
 	guint dsp_error;
 
 	void *(*create_node)(GstDspBase *base);
