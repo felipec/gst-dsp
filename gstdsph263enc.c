@@ -60,6 +60,7 @@ instance_init(GTypeInstance *instance,
 
 	base->alg = GSTDSP_H263ENC;
 	base->codec = &td_mp4venc_codec;
+	base->use_pinned = true;
 
 	self->supported_levels = levels;
 	self->nr_supported_levels = ARRAY_SIZE(levels);

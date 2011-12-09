@@ -95,6 +95,7 @@ instance_init(GTypeInstance *instance,
 	base->alg = GSTDSP_JPEGENC;
 	base->codec = &td_jpegenc_codec;
 	base->eos_timeout = 0;
+	base->use_pinned = true;
 
 	self->quality = DEFAULT_ENCODING_QUALITY;
 }
