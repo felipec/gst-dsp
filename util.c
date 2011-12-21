@@ -46,19 +46,19 @@ bool gstdsp_map_buffer(void *self,
 		GstBuffer *g_buf,
 		dmm_buffer_t *d_buf)
 {
-	if (buffer_is_aligned(GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf), d_buf)) {
-		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
+	if (buffer_is_aligned(g_buf->data, g_buf->size, d_buf)) {
+		dmm_buffer_use(d_buf, g_buf->data, g_buf->size);
 		gst_buffer_ref(g_buf);
 		return true;
 	}
 
 	if (d_buf->dir != DMA_TO_DEVICE) {
 		pr_warning(self, "buffer not aligned: %p-%p",
-			   GST_BUFFER_DATA(g_buf),
-			   GST_BUFFER_DATA(g_buf) + GST_BUFFER_SIZE(g_buf));
+			   g_buf->data,
+			   g_buf->data + g_buf->size);
 	}
 
-	dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
+	dmm_buffer_allocate(d_buf, g_buf->size);
 	d_buf->need_copy = true;
 	return false;
 }
