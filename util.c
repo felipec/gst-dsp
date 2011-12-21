@@ -42,10 +42,23 @@ buffer_is_aligned(void *buf_data, size_t buf_size, dmm_buffer_t *b)
 	return true;
 }
 
+static inline const char *
+dma_dir_to_str(int dir)
+{
+	switch (dir) {
+	case DMA_BIDIRECTIONAL: return "bidirectional";
+	case DMA_TO_DEVICE: return "to device";
+	case DMA_FROM_DEVICE: return "from device";
+	default: return "unknown";
+	}
+}
+
 bool gstdsp_map_buffer(void *self,
 		GstBuffer *buf,
 		dmm_buffer_t *b)
 {
+	int alignment = b->dir == DMA_TO_DEVICE ? 0 : 128;
+
 	if (buffer_is_aligned(buf->data, buf->size, b)) {
 		dmm_buffer_use(b, buf->data, buf->size);
 		gst_buffer_ref(buf);
@@ -53,9 +66,12 @@ bool gstdsp_map_buffer(void *self,
 	}
 
 	if (b->dir != DMA_TO_DEVICE) {
-		pr_warning(self, "buffer not aligned: %p-%p",
+		pr_warning(self, "buffer not aligned: %p(%u)-%p(%u): %s",
 			   buf->data,
-			   buf->data + buf->size);
+			   (size_t)buf->data % alignment,
+			   buf->data + buf->size,
+			   (size_t)buf->data + buf->size % alignment,
+			   dma_dir_to_str(b->dir));
 	}
 
 	dmm_buffer_allocate(b, buf->size);
