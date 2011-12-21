@@ -22,8 +22,8 @@ bool gstdsp_register(int dsp_handle,
 		     const char *filename);
 
 bool gstdsp_map_buffer(void *self,
-		struct _GstBuffer *g_buf,
-		dmm_buffer_t *d_buf);
+		struct _GstBuffer *buf,
+		dmm_buffer_t *b);
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
