@@ -239,7 +239,6 @@ static void transform_nal_encoding(GstDspVDec *self, struct td_buffer *tb)
 		alloc_data = b->allocated_data;
 		b->allocated_data = NULL;
 		dmm_buffer_allocate(b, osize);
-		b->len = osize;
 
 		odata = b->data;
 		while (size) {

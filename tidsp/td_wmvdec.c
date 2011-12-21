@@ -181,7 +181,6 @@ static inline void prefix_vc1(GstDspVDec *self, struct td_buffer *tb)
 		self->codec_data_sent = TRUE;
 		gst_buffer_unref(buf);
 	}
-	b->len = output_size;
 
 	/* release original data */
 	if (tb->user_data) {
