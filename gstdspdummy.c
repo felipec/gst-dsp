@@ -306,37 +306,6 @@ change_state(GstElement *element,
 	return ret;
 }
 
-static inline bool
-buffer_is_aligned(GstBuffer *buf, dmm_buffer_t *b)
-{
-	if ((unsigned long) GST_BUFFER_DATA(buf) % b->alignment != 0)
-		return false;
-	if (((unsigned long) GST_BUFFER_DATA(buf) + GST_BUFFER_SIZE(buf)) % b->alignment != 0)
-		return false;
-	return true;
-}
-
-static inline void
-map_buffer(GstDspDummy *self,
-	   GstBuffer *g_buf,
-	   dmm_buffer_t *d_buf)
-{
-	if (d_buf->alignment == 0 || buffer_is_aligned(g_buf, d_buf)) {
-		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
-		gst_buffer_ref(g_buf);
-		return;
-	}
-
-	if (d_buf->alignment != 0) {
-		pr_warning(self, "buffer not aligned: %p-%p",
-			   GST_BUFFER_DATA(g_buf),
-			   GST_BUFFER_DATA(g_buf) + GST_BUFFER_SIZE(g_buf));
-	}
-
-	dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
-	d_buf->need_copy = true;
-}
-
 static void
 post_error(GstDspDummy *self,
 		const char *message)
@@ -418,8 +387,8 @@ pad_chain(GstPad *pad,
 	}
 
 	/* map dsp to gpp address */
-	map_buffer(self, buf, self->in_buffer);
-	map_buffer(self, out_buf, self->out_buffer);
+	gstdsp_map_buffer(self, buf, self->in_buffer);
+	gstdsp_map_buffer(self, out_buf, self->out_buffer);
 
 	if (self->in_buffer->need_copy) {
 		memcpy(self->in_buffer->data, GST_BUFFER_DATA(buf), GST_BUFFER_SIZE(buf));

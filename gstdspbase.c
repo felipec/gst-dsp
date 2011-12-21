@@ -948,38 +948,13 @@ gboolean gstdsp_reinit(GstDspBase *self)
 	return true;
 }
 
-static inline bool
-buffer_is_aligned(GstBuffer *buf, dmm_buffer_t *b)
-{
-	if ((unsigned long) GST_BUFFER_DATA(buf) % b->alignment != 0)
-		return false;
-	if (((unsigned long) GST_BUFFER_DATA(buf) + GST_BUFFER_SIZE(buf)) % b->alignment != 0)
-		return false;
-	return true;
-}
-
 static inline void
 map_buffer(GstDspBase *self,
 	   GstBuffer *g_buf,
 	   struct td_buffer *tb)
 {
-	dmm_buffer_t *d_buf = tb->data;
-
-	if (d_buf->alignment == 0 || buffer_is_aligned(g_buf, d_buf)) {
-		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
-		gst_buffer_ref(g_buf);
+	if (gstdsp_map_buffer(self, g_buf, tb->data))
 		tb->user_data = g_buf;
-		return;
-	}
-
-	if (d_buf->alignment != 0) {
-		pr_warning(self, "buffer not aligned: %p-%p",
-			   GST_BUFFER_DATA(g_buf),
-			   GST_BUFFER_DATA(g_buf) + GST_BUFFER_SIZE(g_buf));
-	}
-
-	dmm_buffer_allocate(d_buf, GST_BUFFER_SIZE(g_buf));
-	d_buf->need_copy = true;
 }
 
 static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
