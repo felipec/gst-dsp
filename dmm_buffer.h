@@ -153,11 +153,12 @@ static inline void
 dmm_buffer_allocate(dmm_buffer_t *b,
 		size_t size)
 {
+	int alignment = b->dir == DMA_TO_DEVICE ? 0 : 128;
 	pr_debug(NULL, "%p", b);
 	free(b->allocated_data);
-	if (b->alignment != 0) {
-		b->size = ROUND_UP(size, b->alignment);
-		if (posix_memalign(&b->allocated_data, b->alignment, b->size) != 0)
+	if (alignment != 0) {
+		b->size = ROUND_UP(size, alignment);
+		if (posix_memalign(&b->allocated_data, alignment, b->size) != 0)
 			b->allocated_data = NULL;
 		b->data = b->allocated_data;
 	}

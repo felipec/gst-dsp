@@ -32,11 +32,12 @@ bool gstdsp_register(int dsp_handle,
 static inline bool
 buffer_is_aligned(void *buf_data, size_t buf_size, dmm_buffer_t *b)
 {
-	if (b->alignment == 0)
+	int alignment = b->dir == DMA_TO_DEVICE ? 0 : 128;
+	if (alignment == 0)
 		return true;
-	if ((size_t) buf_data % b->alignment != 0)
+	if ((size_t) buf_data % alignment != 0)
 		return false;
-	if (((size_t) buf_data + buf_size) % b->alignment != 0)
+	if (((size_t) buf_data + buf_size) % alignment != 0)
 		return false;
 	return true;
 }
@@ -51,7 +52,7 @@ bool gstdsp_map_buffer(void *self,
 		return true;
 	}
 
-	if (d_buf->alignment != 0) {
+	if (d_buf->dir != DMA_TO_DEVICE) {
 		pr_warning(self, "buffer not aligned: %p-%p",
 			   GST_BUFFER_DATA(g_buf),
 			   GST_BUFFER_DATA(g_buf) + GST_BUFFER_SIZE(g_buf));
