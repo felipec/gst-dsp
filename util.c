@@ -30,11 +30,13 @@ bool gstdsp_register(int dsp_handle,
 }
 
 static inline bool
-buffer_is_aligned(GstBuffer *buf, dmm_buffer_t *b)
+buffer_is_aligned(void *buf_data, size_t buf_size, dmm_buffer_t *b)
 {
-	if ((unsigned long) GST_BUFFER_DATA(buf) % b->alignment != 0)
+	if (b->alignment == 0)
+		return true;
+	if ((size_t) buf_data % b->alignment != 0)
 		return false;
-	if (((unsigned long) GST_BUFFER_DATA(buf) + GST_BUFFER_SIZE(buf)) % b->alignment != 0)
+	if (((size_t) buf_data + buf_size) % b->alignment != 0)
 		return false;
 	return true;
 }
@@ -43,7 +45,7 @@ bool gstdsp_map_buffer(void *self,
 		GstBuffer *g_buf,
 		dmm_buffer_t *d_buf)
 {
-	if (d_buf->alignment == 0 || buffer_is_aligned(g_buf, d_buf)) {
+	if (buffer_is_aligned(GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf), d_buf)) {
 		dmm_buffer_use(d_buf, GST_BUFFER_DATA(g_buf), GST_BUFFER_SIZE(g_buf));
 		gst_buffer_ref(g_buf);
 		return true;
