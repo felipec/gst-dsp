@@ -42,7 +42,6 @@ typedef struct {
 	void *reserve;
 	void *map;
 	bool need_copy;
-	size_t alignment;
 	int dir;
 } dmm_buffer_t;
 
@@ -57,7 +56,6 @@ dmm_buffer_new(int handle,
 	pr_debug(NULL, "%p", b);
 	b->handle = handle;
 	b->proc = proc;
-	b->alignment = 128;
 	b->dir = dir;
 
 	return b;

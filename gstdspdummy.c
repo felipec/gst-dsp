@@ -183,8 +183,6 @@ _dsp_start(GstDspDummy *self)
 	self->in_buffer = dmm_buffer_new(self->dsp_handle, self->proc, DMA_TO_DEVICE);
 	self->out_buffer = dmm_buffer_new(self->dsp_handle, self->proc, DMA_FROM_DEVICE);
 
-	self->in_buffer->alignment = 0;
-
 	self->events[0] = calloc(1, sizeof(struct dsp_notification));
 	if (!dsp_node_register_notify(self->dsp_handle, self->node,
 				      DSP_NODEMESSAGEREADY, 1,

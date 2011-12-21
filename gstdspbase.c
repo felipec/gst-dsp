@@ -279,7 +279,6 @@ setup_buffers(GstDspBase *self)
 	p = self->ports[0];
 	for (i = 0; i < p->num_buffers; i++) {
 		p->buffers[i].data = b = dmm_buffer_new(self->dsp_handle, self->proc, p->dir);
-		b->alignment = 0;
 		async_queue_push(p->queue, &p->buffers[i]);
 	}
 
