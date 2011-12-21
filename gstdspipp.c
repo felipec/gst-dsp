@@ -941,7 +941,7 @@ static bool queue_buffer(GstDspIpp *self, struct td_buffer *tb)
 		queue_msg1->size = sizeof(*queue_msg1);
 		queue_msg1->content_type = CONTENT_TYPE_IN_ARGS;
 		queue_msg1->algo_index = i;
-		queue_msg1->content_size_used = self->algos[i]->in->size;
+		queue_msg1->content_size_used = self->algos[i]->in->len;
 		queue_msg1->content_size = queue_msg1->content_size_used;
 		queue_msg1->content_ptr = (uint32_t)self->algos[i]->in->map;
 		cur_idx++;
@@ -954,7 +954,7 @@ static bool queue_buffer(GstDspIpp *self, struct td_buffer *tb)
 		queue_msg1->size = sizeof(*queue_msg1);
 		queue_msg1->content_type = CONTENT_TYPE_OUT_ARGS;
 		queue_msg1->algo_index = i;
-		queue_msg1->content_size_used = self->algos[i]->out->size;
+		queue_msg1->content_size_used = self->algos[i]->out->len;
 		queue_msg1->content_size = queue_msg1->content_size_used;
 		queue_msg1->content_ptr = (uint32_t)self->algos[i]->out->map;
 		cur_idx++;

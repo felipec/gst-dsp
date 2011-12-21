@@ -203,7 +203,7 @@ static void transform_nal_encoding(GstDspVDec *self, struct td_buffer *tb)
 	dmm_buffer_t *b = tb->data;
 
 	data = b->data;
-	size = b->size;
+	size = b->len;
 	lol = self->priv.h264.lol;
 
 	nal = 0;
@@ -233,7 +233,7 @@ static void transform_nal_encoding(GstDspVDec *self, struct td_buffer *tb)
 
 		/* set up for next run */
 		data = b->data;
-		size = b->size;
+		size = b->len;
 		osize = size + nal * (4 - lol);
 		/* save this so it is not free'd by subsequent allocate */
 		alloc_data = b->allocated_data;

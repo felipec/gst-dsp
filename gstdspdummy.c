@@ -435,7 +435,7 @@ pad_chain(GstPad *pad,
 		struct dsp_msg msg;
 
 		msg.cmd = 1;
-		msg.arg_1 = self->in_buffer->size;
+		msg.arg_1 = self->in_buffer->len;
 		dsp_node_put_message(self->dsp_handle, self->node, &msg, -1);
 		dsp_node_get_message(self->dsp_handle, self->node, &msg, -1);
 		if (!check_events(self, self->node, &msg)) {

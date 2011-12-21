@@ -991,8 +991,6 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 
 	pr_debug(self, "sending %s buffer", index == 0 ? "input" : "output");
 
-	buffer->len = buffer->size;
-
 	msg_data = tb->comm->data;
 
 	if (port->send_cb)
@@ -1021,7 +1019,7 @@ static inline bool send_buffer(GstDspBase *self, struct td_buffer *tb)
 
 	if (tb->params) {
 		msg_data->param_data = (uint32_t) tb->params->map;
-		msg_data->param_size = tb->params->size;
+		msg_data->param_size = tb->params->len;
 		msg_data->param_virt = (uint32_t) tb->params;
 	}
 

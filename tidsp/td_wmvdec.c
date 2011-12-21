@@ -144,7 +144,7 @@ static inline void prefix_vc1(GstDspVDec *self, struct td_buffer *tb)
 	dmm_buffer_t *b = tb->data;
 
 	input_data = b->data;
-	input_size = b->size;
+	input_size = b->len;
 
 	/* save this so it is not freed by subsequent allocate */
 	alloc_data = b->allocated_data;
