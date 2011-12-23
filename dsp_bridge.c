@@ -22,6 +22,7 @@
 #include <stdlib.h> /* for free */
 
 #include <malloc.h> /* for memalign */
+#include <string.h> /* for memset */
 
 #define ALLOCATE_SM
 
@@ -33,6 +34,8 @@
 #if DSP_API < 2
 #include <errno.h>
 #endif
+
+#define VALGRIND
 
 /*
  * Dspbridge ioctl numbering scheme
@@ -466,6 +469,9 @@ bool dsp_node_get_message(int handle,
 		.message = message,
 		.timeout = timeout,
 	};
+#ifdef VALGRIND
+	memset(message, 0, sizeof(*message));
+#endif
 
 	return !ioctl(handle, NODE_GETMESSAGE, &arg);
 }
@@ -598,6 +604,11 @@ static inline bool allocate_segments(int handle,
 	struct dsp_node_attr attr;
 	enum dsp_node_type node_type;
 
+#ifdef VALGRIND
+	memset(&cmm_info, 0, sizeof(cmm_info));
+	memset(&attr, 0, sizeof(attr));
+#endif
+
 	if (!get_cmm_info(handle, proc_handle, &cmm_info))
 		return false;
 
@@ -696,6 +707,9 @@ bool dsp_node_allocate(int handle,
 #ifdef ALLOCATE_HEAP
 	if (attrs) {
 		struct dsp_ndb_props props;
+#ifdef VALGRIND
+		memset(&props, 0, sizeof(props));
+#endif
 
 		if (!get_uuid_props(handle, proc_handle, node_uuid, &props)) {
 			attrs->gpp_va = NULL;
