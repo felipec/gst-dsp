@@ -924,7 +924,7 @@ static bool queue_buffer(GstDspIpp *self, struct td_buffer *tb)
 			queue_msg1->content_size = base->output_buffer_size;
 			queue_msg1->content_ptr = (uint32_t)self->out_buf_ptr->data->map;
 		} else {
-			dmm_buffer_t *b = ipp_calloc(self, base->input_buffer_size, DMA_TO_DEVICE);
+			dmm_buffer_t *b = ipp_calloc(self, base->input_buffer_size, DMA_FROM_DEVICE);
 			dmm_buffer_map(b);
 			self->intermediate_buf = b;
 			queue_msg1->content_size_used = base->input_buffer_size;
