@@ -91,9 +91,9 @@ dmm_buffer_begin(dmm_buffer_t *b,
 	if (b->dma_len == (size_t) -1)
 		return;
 	if (dsp_begin_dma(b->handle, b->proc, b->data, len, b->dir))
-		b->dma_len = (size_t) -1;
-	else
 		b->dma_len = len;
+	else
+		b->dma_len = (size_t) -1;
 #endif
 }
 
