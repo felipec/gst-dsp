@@ -70,7 +70,7 @@ bool gstdsp_map_buffer(void *self,
 			   buf->data,
 			   (size_t)buf->data % alignment,
 			   buf->data + buf->size,
-			   (size_t)buf->data + buf->size % alignment,
+			   (size_t)(buf->data + buf->size) % alignment,
 			   dma_dir_to_str(b->dir));
 	}
 
