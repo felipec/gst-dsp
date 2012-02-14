@@ -632,7 +632,7 @@ static dmm_buffer_t *str_to_ipp_str(GstDspIpp *self, const char *s)
 	struct ipp_name_string *ipp_s;
 	dmm_buffer_t *tmp;
 
-	tmp = ipp_calloc(self, sizeof(*ipp_s), DMA_TO_DEVICE);
+	tmp = ipp_calloc(self, sizeof(*ipp_s), DMA_BIDIRECTIONAL);
 	ipp_s = tmp->data;
 	ipp_s->size = strlen(s);
 	memcpy(ipp_s->str, s, ipp_s->size);
