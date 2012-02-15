@@ -37,3 +37,22 @@ the DSP running a proper baseimage (baseimage.dof).
 
 See:
 http://omapzoom.org/wiki/L23.i3.8_Release_Notes
+
+== compatibility ==
+
+gst-dsp supports multiple versions of DSP socket-nodes, and tidspbridge driver.
+
+socket nodes:
+
+ L23.i3.8: SN_API=2
+ L23.i3.3: SN_API=1
+
+Note that the jpeg encoder in L23.i3.8 doesn't work (they compiled it wrongly),
+and the one in L23.i3.3 might hang on some pipelines; you might have to turn
+off enable-last-buffer, since only one output buffer would be available at any
+given time.
+
+tidspbridge:
+
+ since staging: DSP_API=2
+ since ioctl renumbering: DSP_API=1
