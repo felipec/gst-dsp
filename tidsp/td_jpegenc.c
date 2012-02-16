@@ -80,7 +80,7 @@ struct dyn_params {
 	uint32_t huffman_table;
 	uint32_t quant_table;
 
-#if SN_API > 0
+#if SN_API > 1
 	/* apparently only sizes 32 and 52 work. */
 	uint32_t resize;
 #endif

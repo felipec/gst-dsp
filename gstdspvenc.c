@@ -328,7 +328,17 @@ sink_setcaps(GstPad *pad,
 	switch (base->alg) {
 	case GSTDSP_JPEGENC:
 		du_port_alloc_buffers(base->ports[0], 1);
+#if SN_API > 1
 		du_port_alloc_buffers(base->ports[1], 2);
+#else
+		/* old versions of the sn can't handle 2 buffers */
+		/*
+		 * Some constrained pipelines might starve because of this. You
+		 * might want to try enable-last-buffer=false on some sinks.
+		 * TODO Is there any way around this?
+		 */
+		du_port_alloc_buffers(base->ports[1], 1);
+#endif
 		break;
 	default:
 		du_port_alloc_buffers(base->ports[0], 2);
