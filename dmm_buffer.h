@@ -45,10 +45,7 @@ typedef struct {
 	int dir;
 } dmm_buffer_t;
 
-static inline dmm_buffer_t *
-dmm_buffer_new(int handle,
-		void *proc,
-		int dir)
+static inline dmm_buffer_t *dmm_buffer_new(int handle, void *proc, int dir)
 {
 	dmm_buffer_t *b;
 	b = calloc(1, sizeof(*b));
@@ -61,8 +58,7 @@ dmm_buffer_new(int handle,
 	return b;
 }
 
-static inline void
-dmm_buffer_free(dmm_buffer_t *b)
+static inline void dmm_buffer_free(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
 	if (!b)
@@ -75,9 +71,7 @@ dmm_buffer_free(dmm_buffer_t *b)
 	free(b);
 }
 
-static inline void
-dmm_buffer_begin(dmm_buffer_t *b,
-		size_t len)
+static inline void dmm_buffer_begin(dmm_buffer_t *b, size_t len)
 {
 	pr_debug(NULL, "%p", b);
 	if (len == 0)
@@ -97,9 +91,7 @@ dmm_buffer_begin(dmm_buffer_t *b,
 #endif
 }
 
-static inline void
-dmm_buffer_end(dmm_buffer_t *b,
-		size_t len)
+static inline void dmm_buffer_end(dmm_buffer_t *b, size_t len)
 {
 	pr_debug(NULL, "%p", b);
 	if (len == 0)
@@ -115,8 +107,7 @@ dmm_buffer_end(dmm_buffer_t *b,
 #endif
 }
 
-static inline void
-dmm_buffer_map(dmm_buffer_t *b)
+static inline void dmm_buffer_map(dmm_buffer_t *b)
 {
 	size_t to_reserve;
 	unsigned long attr;
@@ -146,8 +137,7 @@ dmm_buffer_map(dmm_buffer_t *b)
 	dsp_map(b->handle, b->proc, b->data, b->size, b->reserve, &b->map, attr);
 }
 
-static inline void
-dmm_buffer_unmap(dmm_buffer_t *b)
+static inline void dmm_buffer_unmap(dmm_buffer_t *b)
 {
 	pr_debug(NULL, "%p", b);
 	if (b->map) {
@@ -160,9 +150,7 @@ dmm_buffer_unmap(dmm_buffer_t *b)
 	}
 }
 
-static inline void
-dmm_buffer_allocate(dmm_buffer_t *b,
-		size_t size)
+static inline void dmm_buffer_allocate(dmm_buffer_t *b, size_t size)
 {
 	int alignment = b->dir == DMA_TO_DEVICE ? 0 : 128;
 	pr_debug(NULL, "%p", b);
@@ -180,21 +168,14 @@ dmm_buffer_allocate(dmm_buffer_t *b,
 	b->len = size;
 }
 
-static inline void
-dmm_buffer_use(dmm_buffer_t *b,
-		void *data,
-		size_t size)
+static inline void dmm_buffer_use(dmm_buffer_t *b, void *data, size_t size)
 {
 	pr_debug(NULL, "%p", b);
 	b->data = data;
 	b->len = b->size = size;
 }
 
-static inline dmm_buffer_t *
-dmm_buffer_calloc(int handle,
-		void *proc,
-		size_t size,
-		int dir)
+static inline dmm_buffer_t *dmm_buffer_calloc(int handle, void *proc, size_t size, int dir)
 {
 	dmm_buffer_t *tmp;
 	tmp = dmm_buffer_new(handle, proc, dir);
