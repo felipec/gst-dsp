@@ -12,18 +12,18 @@
 #define ASYNC_QUEUE_H
 
 #include <glib.h>
+#include <stdbool.h>
 
 struct async_queue {
 	GMutex *mutex;
 	GCond *condition;
 	GList *head;
 	GList *tail;
-	guint length;
-	gboolean enabled;
+	unsigned length;
+	bool enabled;
 };
 
-static inline struct async_queue *
-async_queue_new(void)
+static inline struct async_queue *async_queue_new(void)
 {
 	struct async_queue *queue;
 
@@ -31,13 +31,12 @@ async_queue_new(void)
 
 	queue->condition = g_cond_new();
 	queue->mutex = g_mutex_new();
-	queue->enabled = TRUE;
+	queue->enabled = true;
 
 	return queue;
 }
 
-static inline void
-async_queue_free(struct async_queue *queue)
+static inline void async_queue_free(struct async_queue *queue)
 {
 	g_cond_free(queue->condition);
 	g_mutex_free(queue->mutex);
@@ -46,9 +45,7 @@ async_queue_free(struct async_queue *queue)
 	g_slice_free(struct async_queue, queue);
 }
 
-static inline void
-async_queue_push(struct async_queue *queue,
-		 gpointer data)
+static inline void async_queue_push(struct async_queue *queue, void *data)
 {
 	g_mutex_lock(queue->mutex);
 
@@ -62,10 +59,9 @@ async_queue_push(struct async_queue *queue,
 	g_mutex_unlock(queue->mutex);
 }
 
-static inline gpointer
-async_queue_pop(struct async_queue *queue)
+static inline void *async_queue_pop(struct async_queue *queue)
 {
-	gpointer data = NULL;
+	void *data = NULL;
 
 	g_mutex_lock(queue->mutex);
 
@@ -94,10 +90,9 @@ leave:
 	return data;
 }
 
-static inline gpointer
-async_queue_pop_forced(struct async_queue *queue)
+static inline void *async_queue_pop_forced(struct async_queue *queue)
 {
-	gpointer data = NULL;
+	void *data = NULL;
 
 	g_mutex_lock(queue->mutex);
 
@@ -119,25 +114,22 @@ async_queue_pop_forced(struct async_queue *queue)
 	return data;
 }
 
-static inline void
-async_queue_disable(struct async_queue *queue)
+static inline void async_queue_disable(struct async_queue *queue)
 {
 	g_mutex_lock(queue->mutex);
-	queue->enabled = FALSE;
+	queue->enabled = false;
 	g_cond_broadcast(queue->condition);
 	g_mutex_unlock(queue->mutex);
 }
 
-static inline void
-async_queue_enable(struct async_queue *queue)
+static inline void async_queue_enable(struct async_queue *queue)
 {
 	g_mutex_lock(queue->mutex);
-	queue->enabled = TRUE;
+	queue->enabled = true;
 	g_mutex_unlock(queue->mutex);
 }
 
-static inline void
-async_queue_flush(struct async_queue *queue)
+static inline void async_queue_flush(struct async_queue *queue)
 {
 	g_mutex_lock(queue->mutex);
 	g_list_free(queue->head);
