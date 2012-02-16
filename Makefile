@@ -21,7 +21,7 @@ gst_plugin := libgstdsp.so
 
 $(gst_plugin): plugin.o gstdspbuffer.o gstdspdummy.o gstdspbase.o gstdspvdec.o \
 	gstdspvenc.o gstdsph263enc.o gstdspmp4venc.o gstdspjpegenc.o \
-	dsp_bridge.o util.o log.o gstdspparse.o async_queue.o gstdsph264enc.o \
+	dsp_bridge.o util.o log.o gstdspparse.o gstdsph264enc.o \
 	gstdspvpp.o gstdspadec.o gstdspipp.o \
 	tidsp.a
 $(gst_plugin): override CFLAGS += $(GST_CFLAGS) \
@@ -31,7 +31,7 @@ $(gst_plugin): override LIBS += $(GST_LIBS)
 targets += $(gst_plugin)
 
 gst-dsp-parse: parse-test.o gstdspbuffer.o gstdspparse.o gstdspvdec.o \
-	gstdspbase.o util.o dsp_bridge.o async_queue.o log.o \
+	gstdspbase.o util.o dsp_bridge.o log.o \
 	tidsp.a
 gst-dsp-parse: override CFLAGS += $(GST_CFLAGS) -D DSPDIR='"$(dspdir)"'
 gst-dsp-parse: override LIBS += $(GST_LIBS)
