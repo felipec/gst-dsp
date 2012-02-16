@@ -50,7 +50,7 @@ struct du_port_t {
 	int id;
 	struct td_buffer *buffers;
 	guint num_buffers;
-	AsyncQueue *queue;
+	struct async_queue *queue;
 	port_buffer_cb_t send_cb;
 	port_buffer_cb_t recv_cb;
 	int dir;

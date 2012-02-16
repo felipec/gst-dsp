@@ -13,9 +13,7 @@
 
 #include <glib.h>
 
-typedef struct AsyncQueue AsyncQueue;
-
-struct AsyncQueue {
+struct async_queue {
 	GMutex *mutex;
 	GCond *condition;
 	GList *head;
@@ -24,12 +22,12 @@ struct AsyncQueue {
 	gboolean enabled;
 };
 
-static inline AsyncQueue *
+static inline struct async_queue *
 async_queue_new(void)
 {
-	AsyncQueue *queue;
+	struct async_queue *queue;
 
-	queue = g_slice_new0(AsyncQueue);
+	queue = g_slice_new0(struct async_queue);
 
 	queue->condition = g_cond_new();
 	queue->mutex = g_mutex_new();
@@ -39,17 +37,17 @@ async_queue_new(void)
 }
 
 static inline void
-async_queue_free(AsyncQueue *queue)
+async_queue_free(struct async_queue *queue)
 {
 	g_cond_free(queue->condition);
 	g_mutex_free(queue->mutex);
 
 	g_list_free(queue->head);
-	g_slice_free(AsyncQueue, queue);
+	g_slice_free(struct async_queue, queue);
 }
 
 static inline void
-async_queue_push(AsyncQueue *queue,
+async_queue_push(struct async_queue *queue,
 		 gpointer data)
 {
 	g_mutex_lock(queue->mutex);
@@ -65,7 +63,7 @@ async_queue_push(AsyncQueue *queue,
 }
 
 static inline gpointer
-async_queue_pop(AsyncQueue *queue)
+async_queue_pop(struct async_queue *queue)
 {
 	gpointer data = NULL;
 
@@ -97,7 +95,7 @@ leave:
 }
 
 static inline gpointer
-async_queue_pop_forced(AsyncQueue *queue)
+async_queue_pop_forced(struct async_queue *queue)
 {
 	gpointer data = NULL;
 
@@ -122,7 +120,7 @@ async_queue_pop_forced(AsyncQueue *queue)
 }
 
 static inline void
-async_queue_disable(AsyncQueue *queue)
+async_queue_disable(struct async_queue *queue)
 {
 	g_mutex_lock(queue->mutex);
 	queue->enabled = FALSE;
@@ -131,7 +129,7 @@ async_queue_disable(AsyncQueue *queue)
 }
 
 static inline void
-async_queue_enable(AsyncQueue *queue)
+async_queue_enable(struct async_queue *queue)
 {
 	g_mutex_lock(queue->mutex);
 	queue->enabled = TRUE;
@@ -139,7 +137,7 @@ async_queue_enable(AsyncQueue *queue)
 }
 
 static inline void
-async_queue_flush(AsyncQueue *queue)
+async_queue_flush(struct async_queue *queue)
 {
 	g_mutex_lock(queue->mutex);
 	g_list_free(queue->head);
